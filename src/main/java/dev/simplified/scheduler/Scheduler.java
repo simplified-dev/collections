@@ -5,6 +5,7 @@ import dev.sbs.api.util.concurrent.ConcurrentList;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Scheduler {
 
@@ -17,7 +18,7 @@ public class Scheduler {
 		new ScheduledTask(this.executorService, () -> this.tasks.forEach(scheduledTask -> {
 			if (scheduledTask.isDone())
 				this.tasks.remove(scheduledTask);
-		}), 1000, 30_000, false);
+		}), 1000, 30_000, false, TimeUnit.MILLISECONDS);
 	}
 
 	public void cancel(int id) {
@@ -94,7 +95,20 @@ public class Scheduler {
 	 * @return The scheduled task.
 	 */
 	public ScheduledTask schedule(Runnable task, long initialDelay, long repeatDelay) {
-		return this.scheduleTask(task, initialDelay, repeatDelay, false);
+		return this.schedule(task, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * Runs a task (synchronously).
+	 *
+	 * @param task The task to run.
+	 * @param initialDelay The initial delay to wait before the task runs.
+	 * @param repeatDelay The repeat delay to wait before running the task again.
+	 * @param timeUnit The unit of time for initialDelay and repeatDelay.
+	 * @return The scheduled task.
+	 */
+	public ScheduledTask schedule(Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
+		return this.scheduleTask(task, initialDelay, repeatDelay, false, timeUnit);
 	}
 
 	/**
@@ -122,17 +136,30 @@ public class Scheduler {
 	 * Runs a task (asynchronously).
 	 *
 	 * @param task The task to run.
-	 * @param initialDelay The initial delay (in ticks) to wait before the task runs.
-	 * @param repeatDelay The repeat delay (in ticks) to wait before running the task again.
+	 * @param initialDelay The initial delay (in milliseconds) to wait before the task runs.
+	 * @param repeatDelay The repeat delay (in milliseconds) to wait before running the task again.
 	 * @return The scheduled task.
 	 */
 	public ScheduledTask scheduleAsync(Runnable task, long initialDelay, long repeatDelay) {
-		return this.scheduleTask(task, initialDelay, repeatDelay, true);
+		return this.scheduleAsync(task, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
 	}
 
-	private ScheduledTask scheduleTask(Runnable task, long initialDelay, long repeatDelay, boolean async) {
+	/**
+	 * Runs a task (asynchronously).
+	 *
+	 * @param task The task to run.
+	 * @param initialDelay The initial delay to wait before the task runs.
+	 * @param repeatDelay The repeat delay to wait before running the task again.
+	 * @param timeUnit The unit of time for initialDelay and repeatDelay.
+	 * @return The scheduled task.
+	 */
+	public ScheduledTask scheduleAsync(Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
+		return this.scheduleTask(task, initialDelay, repeatDelay, true, timeUnit);
+	}
+
+	private ScheduledTask scheduleTask(Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
 		synchronized (this.lock) {
-			ScheduledTask scheduledTask = new ScheduledTask(this.executorService, task, initialDelay, repeatDelay, async);
+			ScheduledTask scheduledTask = new ScheduledTask(this.executorService, task, initialDelay, repeatDelay, async, timeUnit);
 			this.tasks.add(scheduledTask);
 			return scheduledTask;
 		}

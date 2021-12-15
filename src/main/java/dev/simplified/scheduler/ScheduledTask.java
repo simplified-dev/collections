@@ -44,6 +44,12 @@ public final class ScheduledTask implements Runnable {
 	private final boolean async;
 
 	/**
+	 * The TimeUnit used for {@link #getInitialDelay()} and {@link #getRepeatDelay()}.
+	 */
+	@Getter
+	private final TimeUnit timeUnit;
+
+	/**
 	 * Is this task currently running?
 	 */
 	@Getter
@@ -73,7 +79,7 @@ public final class ScheduledTask implements Runnable {
 	 * @param repeatDelay The initialDelay (in ticks) to wait before calling the task again.
 	 * @param async If the task should be run asynchronously.
 	 */
-	ScheduledTask(ScheduledExecutorService executorService, final Runnable task, long initialDelay, long repeatDelay, boolean async) {
+	ScheduledTask(ScheduledExecutorService executorService, final Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
 		synchronized (this.lock) {
 			this.id = currentId++;
 		}
@@ -82,13 +88,14 @@ public final class ScheduledTask implements Runnable {
 		this.initialDelay = initialDelay;
 		this.repeatDelay = repeatDelay;
 		this.async = async;
+		this.timeUnit = timeUnit;
 		this.repeating = this.repeatDelay > 0;
 
 		// Schedule Task
-		if (repeatDelay > 0)
-			this.scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
+		if (this.isRepeating())
+			this.scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, repeatDelay, timeUnit);
 		else
-			this.scheduledFuture = executorService.schedule(this, initialDelay, TimeUnit.MILLISECONDS);
+			this.scheduledFuture = executorService.schedule(this, initialDelay, timeUnit);
 	}
 
 	/**
