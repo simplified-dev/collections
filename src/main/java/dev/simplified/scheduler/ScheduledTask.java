@@ -11,151 +11,147 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ScheduledTask implements Runnable {
 
-	private static volatile int currentId = 1;
+    private static volatile int currentId = 1;
 
-	/**
-	 * Get the time the task was created.
-	 */
-	@Getter
-	private final long addedTime = System.currentTimeMillis();
+    /**
+     * Get the time the task was created.
+     */
+    @Getter
+    private final long addedTime = System.currentTimeMillis();
 
-	/**
-	 * Get the id of the task.
-	 */
-	@Getter
-	private final int id;
+    /**
+     * Get the id of the task.
+     */
+    @Getter
+    private final int id;
 
-	/**
-	 * Get the delay (in milliseconds) before the task will run.
-	 */
-	@Getter
-	private final long initialDelay;
+    /**
+     * Get the delay (in milliseconds) before the task will run.
+     */
+    @Getter
+    private final long initialDelay;
 
-	/**
-	 * Get the delay (in milliseconds) before the task will repeat.
-	 */
-	@Getter
-	private final long repeatDelay;
+    /**
+     * Get the delay (in milliseconds) before the task will repeat.
+     */
+    @Getter
+    private final long repeatDelay;
 
-	/**
-	 * Is this an asynchronous task?
-	 */
-	@Getter
-	private final boolean async;
+    /**
+     * Is this an asynchronous task?
+     */
+    @Getter
+    private final boolean async;
 
-	/**
-	 * The TimeUnit used for {@link #getInitialDelay()} and {@link #getRepeatDelay()}.
-	 */
-	@Getter
-	private final TimeUnit timeUnit;
+    /**
+     * The TimeUnit used for {@link #getInitialDelay()} and {@link #getRepeatDelay()}.
+     */
+    @Getter
+    private final TimeUnit timeUnit;
+    private final Runnable runnableTask;
+    private final ScheduledFuture<?> scheduledFuture;
+    private final Object lock = new Object();
+    /**
+     * Is this task currently running?
+     */
+    @Getter
+    private boolean running;
+    /**
+     * Will this task run repeatedly?
+     */
+    @Getter
+    private boolean repeating;
+    /**
+     * Get the number of consecutive errors.
+     */
+    @Getter
+    private int consecutiveErrors = 0;
 
-	/**
-	 * Is this task currently running?
-	 */
-	@Getter
-	private boolean running;
+    /**
+     * Creates a new Scheduled Task.
+     *
+     * @param task         The task to run.
+     * @param initialDelay The initialDelay (in ticks) to wait before the task is ran.
+     * @param repeatDelay  The initialDelay (in ticks) to wait before calling the task again.
+     * @param async        If the task should be run asynchronously.
+     */
+    ScheduledTask(ScheduledExecutorService executorService, final Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
+        synchronized (this.lock) {
+            this.id = currentId++;
+        }
 
-	/**
-	 * Will this task run repeatedly?
-	 */
-	@Getter
-	private boolean repeating;
+        this.runnableTask = task;
+        this.initialDelay = initialDelay;
+        this.repeatDelay = repeatDelay;
+        this.async = async;
+        this.timeUnit = timeUnit;
+        this.repeating = this.repeatDelay > 0;
 
-	/**
-	 * Get the number of consecutive errors.
-	 */
-	@Getter
-	private int consecutiveErrors = 0;
+        // Schedule Task
+        if (this.isRepeating())
+            this.scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, repeatDelay, timeUnit);
+        else
+            this.scheduledFuture = executorService.schedule(this, initialDelay, timeUnit);
+    }
 
-	private final Runnable runnableTask;
-	private final ScheduledFuture<?> scheduledFuture;
-	private final Object lock = new Object();
+    /**
+     * Will attempt to cancel this task.
+     */
+    public void cancel() {
+        this.cancel(false);
+    }
 
-	/**
-	 * Creates a new Scheduled Task.
-	 *
-	 * @param task The task to run.
-	 * @param initialDelay The initialDelay (in ticks) to wait before the task is ran.
-	 * @param repeatDelay The initialDelay (in ticks) to wait before calling the task again.
-	 * @param async If the task should be run asynchronously.
-	 */
-	ScheduledTask(ScheduledExecutorService executorService, final Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
-		synchronized (this.lock) {
-			this.id = currentId++;
-		}
+    /**
+     * Will attempt to cancel this task, even if running.
+     */
+    public void cancel(boolean mayInterruptIfRunning) {
+        // Attempt Cancellation
+        this.scheduledFuture.cancel(mayInterruptIfRunning);
 
-		this.runnableTask = task;
-		this.initialDelay = initialDelay;
-		this.repeatDelay = repeatDelay;
-		this.async = async;
-		this.timeUnit = timeUnit;
-		this.repeating = this.repeatDelay > 0;
+        if (this.scheduledFuture.isDone()) {
+            this.repeating = false;
+            this.running = false;
+        }
+    }
 
-		// Schedule Task
-		if (this.isRepeating())
-			this.scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, repeatDelay, timeUnit);
-		else
-			this.scheduledFuture = executorService.schedule(this, initialDelay, timeUnit);
-	}
+    /**
+     * Gets if the current task is done.
+     *
+     * @return True if the task has completed normally, encountered an exception or cancelled.
+     */
+    public boolean isDone() {
+        return this.scheduledFuture.isDone();
+    }
 
-	/**
-	 * Will attempt to cancel this task.
-	 */
-	public void cancel() {
-		this.cancel(false);
-	}
+    /**
+     * Gets if the current task is canceled.
+     *
+     * @return True if the task is canceled.
+     */
+    public boolean isCanceled() {
+        return this.scheduledFuture.isCancelled();
+    }
 
-	/**
-	 * Will attempt to cancel this task, even if running.
-	 */
-	public void cancel(boolean mayInterruptIfRunning) {
-		// Attempt Cancellation
-		this.scheduledFuture.cancel(mayInterruptIfRunning);
+    @Override
+    public void run() {
+        try {
+            // Run Task
+            this.running = true;
 
-		if (this.scheduledFuture.isDone()) {
-			this.repeating = false;
-			this.running = false;
-		}
-	}
+            if (this.isAsync())
+                this.runnableTask.run();
+            else {
+                synchronized (this.lock) {
+                    this.runnableTask.run();
+                }
+            }
 
-	/**
-	 * Gets if the current task is done.
-	 *
-	 * @return True if the task has completed normally, encountered an exception or cancelled.
-	 */
-	public boolean isDone() {
-		return this.scheduledFuture.isDone();
-	}
-
-	/**
-	 * Gets if the current task is canceled.
-	 *
-	 * @return True if the task is canceled.
-	 */
-	public boolean isCanceled() {
-		return this.scheduledFuture.isCancelled();
-	}
-
-	@Override
-	public void run() {
-		try {
-			// Run Task
-			this.running = true;
-
-			if (this.isAsync())
-				this.runnableTask.run();
-			else {
-				synchronized (this.lock) {
-					this.runnableTask.run();
-				}
-			}
-
-			this.consecutiveErrors = 0;
-		} catch (Exception ignore) {
-			this.consecutiveErrors++;
-		} finally {
-			this.running = false;
-		}
-	}
+            this.consecutiveErrors = 0;
+        } catch (Exception ignore) {
+            this.consecutiveErrors++;
+        } finally {
+            this.running = false;
+        }
+    }
 
 }
