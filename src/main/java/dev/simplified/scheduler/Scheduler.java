@@ -17,9 +17,9 @@ import java.util.concurrent.TimeoutException;
 
 public final class Scheduler implements ScheduledExecutorService {
 
-    private final ScheduledExecutorService internalExecutor;
-    private final ConcurrentList<ScheduledTask> tasks = Concurrent.newList();
-    private final Object lock = new Object();
+    private final @NotNull ScheduledExecutorService internalExecutor;
+    private final @NotNull ConcurrentList<ScheduledTask> tasks = Concurrent.newList();
+    private final @NotNull Object lock = new Object();
 
     public Scheduler() {
         this(1);
@@ -58,15 +58,15 @@ public final class Scheduler implements ScheduledExecutorService {
         });
     }
 
-    public void cancel(ScheduledTask task) {
+    public void cancel(@NotNull ScheduledTask task) {
         this.cancel(task, false);
     }
 
-    public void cancel(ScheduledTask task, boolean mayInterruptIfRunning) {
+    public void cancel(@NotNull ScheduledTask task, boolean mayInterruptIfRunning) {
         task.cancel(mayInterruptIfRunning);
     }
 
-    public ConcurrentList<ScheduledTask> getTasks() {
+    public @NotNull ConcurrentList<ScheduledTask> getTasks() {
         return Concurrent.newUnmodifiableList(this.tasks);
     }
 
@@ -78,7 +78,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param task The task to run.
      * @return The scheduled task.
      */
-    public ScheduledTask repeat(Runnable task) {
+    public @NotNull ScheduledTask repeat(Runnable task) {
         return this.schedule(task, 0, 50);
     }
 
@@ -88,7 +88,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param task The task to run.
      * @return The scheduled task.
      */
-    public ScheduledTask repeatAsync(Runnable task) {
+    public @NotNull ScheduledTask repeatAsync(Runnable task) {
         return this.scheduleAsync(task, 0, 50);
     }
 
@@ -98,7 +98,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param task The task to run.
      * @return The scheduled task.
      */
-    public ScheduledTask schedule(Runnable task) {
+    public @NotNull ScheduledTask schedule(Runnable task) {
         return this.schedule(task, 0);
     }
 
@@ -109,7 +109,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param delay The delay (in milliseconds) to wait before the task runs.
      * @return The scheduled task.
      */
-    public ScheduledTask schedule(Runnable task, long delay) {
+    public @NotNull ScheduledTask schedule(Runnable task, long delay) {
         return this.schedule(task, delay, 0);
     }
 
@@ -121,7 +121,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param repeatDelay  The repeat delay (in milliseconds) to wait before running the task again.
      * @return The scheduled task.
      */
-    public ScheduledTask schedule(Runnable task, long initialDelay, long repeatDelay) {
+    public @NotNull ScheduledTask schedule(Runnable task, long initialDelay, long repeatDelay) {
         return this.schedule(task, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
     }
 
@@ -134,7 +134,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param timeUnit     The unit of time for initialDelay and repeatDelay.
      * @return The scheduled task.
      */
-    public ScheduledTask schedule(Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
+    public @NotNull ScheduledTask schedule(Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
         return this.scheduleTask(task, initialDelay, repeatDelay, false, timeUnit);
     }
 
@@ -144,7 +144,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param task The task to run.
      * @return The scheduled task.
      */
-    public ScheduledTask scheduleAsync(Runnable task) {
+    public @NotNull ScheduledTask scheduleAsync(Runnable task) {
         return this.scheduleAsync(task, 0);
     }
 
@@ -155,7 +155,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param initialDelay The initial delay (in milliseconds) to wait before the task runs.
      * @return The scheduled task.
      */
-    public ScheduledTask scheduleAsync(Runnable task, long initialDelay) {
+    public @NotNull ScheduledTask scheduleAsync(Runnable task, long initialDelay) {
         return this.scheduleAsync(task, initialDelay, 0);
     }
 
@@ -167,7 +167,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param repeatDelay  The repeat delay (in milliseconds) to wait before running the task again.
      * @return The scheduled task.
      */
-    public ScheduledTask scheduleAsync(Runnable task, long initialDelay, long repeatDelay) {
+    public @NotNull ScheduledTask scheduleAsync(Runnable task, long initialDelay, long repeatDelay) {
         return this.scheduleAsync(task, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
     }
 
@@ -180,11 +180,11 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param timeUnit     The unit of time for initialDelay and repeatDelay.
      * @return The scheduled task.
      */
-    public ScheduledTask scheduleAsync(Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
+    public @NotNull ScheduledTask scheduleAsync(Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
         return this.scheduleTask(task, initialDelay, repeatDelay, true, timeUnit);
     }
 
-    private ScheduledTask scheduleTask(Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
+    private @NotNull ScheduledTask scheduleTask(Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
         synchronized (this.lock) {
             ScheduledTask scheduledTask = new ScheduledTask(this, task, initialDelay, repeatDelay, async, timeUnit);
             this.tasks.add(scheduledTask);
@@ -192,27 +192,23 @@ public final class Scheduler implements ScheduledExecutorService {
         }
     }
 
-    @NotNull
     @Override
-    public ScheduledFuture<?> schedule(@NotNull Runnable command, long delay, @NotNull TimeUnit unit) {
+    public @NotNull ScheduledFuture<?> schedule(@NotNull Runnable command, long delay, @NotNull TimeUnit unit) {
         return this.internalExecutor.schedule(command, delay, unit);
     }
 
-    @NotNull
     @Override
-    public <V> ScheduledFuture<V> schedule(@NotNull Callable<V> callable, long delay, @NotNull TimeUnit unit) {
+    public <V> @NotNull ScheduledFuture<V> schedule(@NotNull Callable<V> callable, long delay, @NotNull TimeUnit unit) {
         return this.internalExecutor.schedule(callable, delay, unit);
     }
 
-    @NotNull
     @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(@NotNull Runnable command, long initialDelay, long period, @NotNull TimeUnit unit) {
+    public @NotNull ScheduledFuture<?> scheduleAtFixedRate(@NotNull Runnable command, long initialDelay, long period, @NotNull TimeUnit unit) {
         return this.internalExecutor.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
-    @NotNull
     @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(@NotNull Runnable command, long initialDelay, long delay, @NotNull TimeUnit unit) {
+    public @NotNull ScheduledFuture<?> scheduleWithFixedDelay(@NotNull Runnable command, long initialDelay, long delay, @NotNull TimeUnit unit) {
         return this.internalExecutor.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
@@ -221,9 +217,8 @@ public final class Scheduler implements ScheduledExecutorService {
         this.internalExecutor.shutdown();
     }
 
-    @NotNull
     @Override
-    public List<Runnable> shutdownNow() {
+    public @NotNull List<Runnable> shutdownNow() {
         return this.internalExecutor.shutdownNow();
     }
 
@@ -242,44 +237,38 @@ public final class Scheduler implements ScheduledExecutorService {
         return this.internalExecutor.awaitTermination(timeout, unit);
     }
 
-    @NotNull
     @Override
-    public <T> Future<T> submit(@NotNull Callable<T> task) {
+    public <T> @NotNull Future<T> submit(@NotNull Callable<T> task) {
         return this.internalExecutor.submit(task);
     }
 
-    @NotNull
     @Override
-    public <T> Future<T> submit(@NotNull Runnable task, T result) {
+    public <T> @NotNull Future<T> submit(@NotNull Runnable task, T result) {
         return this.internalExecutor.submit(task, result);
     }
 
-    @NotNull
     @Override
-    public Future<?> submit(@NotNull Runnable task) {
+    public @NotNull Future<?> submit(@NotNull Runnable task) {
         return this.internalExecutor.submit(task);
     }
 
-    @NotNull
     @Override
-    public <T> List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks) throws InterruptedException {
+    public <T> @NotNull List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks) throws InterruptedException {
         return this.internalExecutor.invokeAll(tasks);
     }
 
-    @NotNull
     @Override
-    public <T> List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException {
+    public <T> @NotNull List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException {
         return this.internalExecutor.invokeAll(tasks, timeout, unit);
     }
 
-    @NotNull
     @Override
-    public <T> T invokeAny(@NotNull Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+    public <T> @NotNull T invokeAny(@NotNull Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
         return this.internalExecutor.invokeAny(tasks);
     }
 
     @Override
-    public <T> T invokeAny(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public <T> @NotNull T invokeAny(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         return this.internalExecutor.invokeAny(tasks, timeout, unit);
     }
 
