@@ -1,6 +1,8 @@
 package dev.sbs.api.scheduler;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -9,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Scheduled Task for the {@link Scheduler}.
  */
+@Getter
 public final class ScheduledTask implements Runnable {
 
     private static volatile int currentId = 1;
@@ -16,56 +19,46 @@ public final class ScheduledTask implements Runnable {
     /**
      * Get the time the task was created.
      */
-    @Getter
     private final long addedTime = System.currentTimeMillis();
-
     /**
      * Get the id of the task.
      */
-    @Getter
     private final int id;
-
     /**
      * Get the delay (in milliseconds) before the task will run.
      */
-    @Getter
     private final long initialDelay;
-
     /**
      * Get the delay (in milliseconds) before the task will repeat.
      */
-    @Getter
     private final long repeatDelay;
-
     /**
      * Is this an asynchronous task?
      */
-    @Getter
     private final boolean async;
-
     /**
      * The TimeUnit used for {@link #getInitialDelay()} and {@link #getRepeatDelay()}.
      */
-    @Getter
-    private final TimeUnit timeUnit;
-    private final Runnable runnableTask;
-    private final ScheduledFuture<?> scheduledFuture;
-    private final Object lock = new Object();
+    private final @NotNull TimeUnit timeUnit;
     /**
      * Is this task currently running?
      */
-    @Getter
     private boolean running;
     /**
      * Will this task run repeatedly?
      */
-    @Getter
     private boolean repeating;
     /**
      * Get the number of consecutive errors.
      */
-    @Getter
     private int consecutiveErrors = 0;
+
+    @Getter(AccessLevel.NONE)
+    private final @NotNull Runnable runnableTask;
+    @Getter(AccessLevel.NONE)
+    private final @NotNull ScheduledFuture<?> scheduledFuture;
+    @Getter(AccessLevel.NONE)
+    private final @NotNull Object lock = new Object();
 
     /**
      * Creates a new Scheduled Task.
@@ -75,7 +68,7 @@ public final class ScheduledTask implements Runnable {
      * @param repeatDelay  The initialDelay (in ticks) to wait before calling the task again.
      * @param async        If the task should be run asynchronously.
      */
-    ScheduledTask(ScheduledExecutorService executorService, final Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
+    ScheduledTask(@NotNull ScheduledExecutorService executorService, @NotNull  final Runnable task, long initialDelay, long repeatDelay, boolean async, @NotNull TimeUnit timeUnit) {
         synchronized (this.lock) {
             this.id = currentId++;
         }

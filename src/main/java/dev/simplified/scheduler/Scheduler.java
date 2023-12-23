@@ -78,7 +78,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param task The task to run.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask repeat(Runnable task) {
+    public @NotNull ScheduledTask repeat(@NotNull Runnable task) {
         return this.schedule(task, 0, 50);
     }
 
@@ -88,7 +88,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param task The task to run.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask repeatAsync(Runnable task) {
+    public @NotNull ScheduledTask repeatAsync(@NotNull Runnable task) {
         return this.scheduleAsync(task, 0, 50);
     }
 
@@ -98,7 +98,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param task The task to run.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask schedule(Runnable task) {
+    public @NotNull ScheduledTask schedule(@NotNull Runnable task) {
         return this.schedule(task, 0);
     }
 
@@ -109,7 +109,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param delay The delay (in milliseconds) to wait before the task runs.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask schedule(Runnable task, long delay) {
+    public @NotNull ScheduledTask schedule(@NotNull Runnable task, long delay) {
         return this.schedule(task, delay, 0);
     }
 
@@ -121,7 +121,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param repeatDelay  The repeat delay (in milliseconds) to wait before running the task again.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask schedule(Runnable task, long initialDelay, long repeatDelay) {
+    public @NotNull ScheduledTask schedule(@NotNull Runnable task, long initialDelay, long repeatDelay) {
         return this.schedule(task, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
     }
 
@@ -134,7 +134,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param timeUnit     The unit of time for initialDelay and repeatDelay.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask schedule(Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
+    public @NotNull ScheduledTask schedule(@NotNull Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
         return this.scheduleTask(task, initialDelay, repeatDelay, false, timeUnit);
     }
 
@@ -144,7 +144,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param task The task to run.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask scheduleAsync(Runnable task) {
+    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task) {
         return this.scheduleAsync(task, 0);
     }
 
@@ -155,7 +155,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param initialDelay The initial delay (in milliseconds) to wait before the task runs.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask scheduleAsync(Runnable task, long initialDelay) {
+    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, long initialDelay) {
         return this.scheduleAsync(task, initialDelay, 0);
     }
 
@@ -167,7 +167,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param repeatDelay  The repeat delay (in milliseconds) to wait before running the task again.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask scheduleAsync(Runnable task, long initialDelay, long repeatDelay) {
+    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, long initialDelay, long repeatDelay) {
         return this.scheduleAsync(task, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
     }
 
@@ -180,11 +180,11 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param timeUnit     The unit of time for initialDelay and repeatDelay.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask scheduleAsync(Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
+    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
         return this.scheduleTask(task, initialDelay, repeatDelay, true, timeUnit);
     }
 
-    private @NotNull ScheduledTask scheduleTask(Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
+    private @NotNull ScheduledTask scheduleTask(@NotNull Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
         synchronized (this.lock) {
             ScheduledTask scheduledTask = new ScheduledTask(this, task, initialDelay, repeatDelay, async, timeUnit);
             this.tasks.add(scheduledTask);
