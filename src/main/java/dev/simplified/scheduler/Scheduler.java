@@ -3,6 +3,7 @@ package dev.sbs.api.scheduler;
 import dev.sbs.api.util.collection.concurrent.Concurrent;
 import dev.sbs.api.util.collection.concurrent.ConcurrentList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 import java.util.Collection;
 import java.util.List;
@@ -32,26 +33,26 @@ public final class Scheduler implements ScheduledExecutorService {
         new ScheduledTask(this, () -> this.tasks.forEach(scheduledTask -> {
             if (scheduledTask.isDone())
                 this.tasks.remove(scheduledTask);
-        }), 1000, 30_000, false, TimeUnit.MILLISECONDS);
+        }), 1_000, 30_000, false, TimeUnit.MILLISECONDS);
     }
 
     /**
      * Causes the currently executing thread to sleep (temporarily cease execution) for the specified number of milliseconds, subject to the precision and accuracy of system timers and schedulers. The thread does not lose ownership of any monitors.
      *
      * @param millis the length of time to sleep in milliseconds
+     * @throws IllegalArgumentException if the value of millis is negative
      */
-    public static void sleep(long millis) {
+    public static void sleep(@Range(from = 0, to = Long.MAX_VALUE) long millis) {
         try {
             Thread.sleep(millis);
-        } catch (InterruptedException ignore) {
-        }
+        } catch (InterruptedException ignore) { }
     }
 
-    public void cancel(int id) {
+    public void cancel(@Range(from = 1, to = Long.MAX_VALUE) long id) {
         this.cancel(id, false);
     }
 
-    public void cancel(int id, boolean mayInterruptIfRunning) {
+    public void cancel(@Range(from = 1, to = Long.MAX_VALUE) long id, boolean mayInterruptIfRunning) {
         this.tasks.forEach(scheduledTask -> {
             if (scheduledTask.getId() == id)
                 this.cancel(scheduledTask, mayInterruptIfRunning);
@@ -109,7 +110,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param delay The delay (in milliseconds) to wait before the task runs.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask schedule(@NotNull Runnable task, long delay) {
+    public @NotNull ScheduledTask schedule(@NotNull Runnable task, @Range(from = 0, to = Long.MAX_VALUE) long delay) {
         return this.schedule(task, delay, 0);
     }
 
@@ -121,7 +122,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param repeatDelay  The repeat delay (in milliseconds) to wait before running the task again.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask schedule(@NotNull Runnable task, long initialDelay, long repeatDelay) {
+    public @NotNull ScheduledTask schedule(@NotNull Runnable task, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long repeatDelay) {
         return this.schedule(task, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
     }
 
@@ -134,7 +135,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param timeUnit     The unit of time for initialDelay and repeatDelay.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask schedule(@NotNull Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
+    public @NotNull ScheduledTask schedule(@NotNull Runnable task, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long repeatDelay, @NotNull TimeUnit timeUnit) {
         return this.scheduleTask(task, initialDelay, repeatDelay, false, timeUnit);
     }
 
@@ -155,7 +156,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param initialDelay The initial delay (in milliseconds) to wait before the task runs.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, long initialDelay) {
+    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay) {
         return this.scheduleAsync(task, initialDelay, 0);
     }
 
@@ -167,7 +168,7 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param repeatDelay  The repeat delay (in milliseconds) to wait before running the task again.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, long initialDelay, long repeatDelay) {
+    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long repeatDelay) {
         return this.scheduleAsync(task, initialDelay, repeatDelay, TimeUnit.MILLISECONDS);
     }
 
@@ -180,11 +181,11 @@ public final class Scheduler implements ScheduledExecutorService {
      * @param timeUnit     The unit of time for initialDelay and repeatDelay.
      * @return The scheduled task.
      */
-    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, long initialDelay, long repeatDelay, TimeUnit timeUnit) {
+    public @NotNull ScheduledTask scheduleAsync(@NotNull Runnable task, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long repeatDelay, @NotNull TimeUnit timeUnit) {
         return this.scheduleTask(task, initialDelay, repeatDelay, true, timeUnit);
     }
 
-    private @NotNull ScheduledTask scheduleTask(@NotNull Runnable task, long initialDelay, long repeatDelay, boolean async, TimeUnit timeUnit) {
+    private @NotNull ScheduledTask scheduleTask(@NotNull Runnable task, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long repeatDelay, boolean async, @NotNull TimeUnit timeUnit) {
         synchronized (this.lock) {
             ScheduledTask scheduledTask = new ScheduledTask(this, task, initialDelay, repeatDelay, async, timeUnit);
             this.tasks.add(scheduledTask);
@@ -193,22 +194,22 @@ public final class Scheduler implements ScheduledExecutorService {
     }
 
     @Override
-    public @NotNull ScheduledFuture<?> schedule(@NotNull Runnable command, long delay, @NotNull TimeUnit unit) {
+    public @NotNull ScheduledFuture<?> schedule(@NotNull Runnable command, @Range(from = 0, to = Long.MAX_VALUE) long delay, @NotNull TimeUnit unit) {
         return this.internalExecutor.schedule(command, delay, unit);
     }
 
     @Override
-    public <V> @NotNull ScheduledFuture<V> schedule(@NotNull Callable<V> callable, long delay, @NotNull TimeUnit unit) {
+    public <V> @NotNull ScheduledFuture<V> schedule(@NotNull Callable<V> callable, @Range(from = 0, to = Long.MAX_VALUE) long delay, @NotNull TimeUnit unit) {
         return this.internalExecutor.schedule(callable, delay, unit);
     }
 
     @Override
-    public @NotNull ScheduledFuture<?> scheduleAtFixedRate(@NotNull Runnable command, long initialDelay, long period, @NotNull TimeUnit unit) {
+    public @NotNull ScheduledFuture<?> scheduleAtFixedRate(@NotNull Runnable command, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long period, @NotNull TimeUnit unit) {
         return this.internalExecutor.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     @Override
-    public @NotNull ScheduledFuture<?> scheduleWithFixedDelay(@NotNull Runnable command, long initialDelay, long delay, @NotNull TimeUnit unit) {
+    public @NotNull ScheduledFuture<?> scheduleWithFixedDelay(@NotNull Runnable command, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long delay, @NotNull TimeUnit unit) {
         return this.internalExecutor.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
@@ -233,7 +234,7 @@ public final class Scheduler implements ScheduledExecutorService {
     }
 
     @Override
-    public boolean awaitTermination(long timeout, @NotNull TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(@Range(from = 0, to = Long.MAX_VALUE) long timeout, @NotNull TimeUnit unit) throws InterruptedException {
         return this.internalExecutor.awaitTermination(timeout, unit);
     }
 

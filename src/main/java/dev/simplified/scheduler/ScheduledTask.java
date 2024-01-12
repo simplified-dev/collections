@@ -3,6 +3,7 @@ package dev.sbs.api.scheduler;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -14,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Getter
 public final class ScheduledTask implements Runnable {
 
-    private static volatile int currentId = 1;
+    private static volatile long currentId = 1;
 
     /**
      * Get the time the task was created.
@@ -23,7 +24,7 @@ public final class ScheduledTask implements Runnable {
     /**
      * Get the id of the task.
      */
-    private final int id;
+    private final long id;
     /**
      * Get the delay (in milliseconds) before the task will run.
      */
@@ -68,7 +69,14 @@ public final class ScheduledTask implements Runnable {
      * @param repeatDelay  The initialDelay (in ticks) to wait before calling the task again.
      * @param async        If the task should be run asynchronously.
      */
-    ScheduledTask(@NotNull ScheduledExecutorService executorService, @NotNull  final Runnable task, long initialDelay, long repeatDelay, boolean async, @NotNull TimeUnit timeUnit) {
+    ScheduledTask(
+        @NotNull ScheduledExecutorService executorService,
+        @NotNull final Runnable task,
+        @Range(from = 0, to = Long.MAX_VALUE) long initialDelay,
+        @Range(from = 0, to = Long.MAX_VALUE) long repeatDelay,
+        boolean async,
+        @NotNull TimeUnit timeUnit
+    ) {
         synchronized (this.lock) {
             this.id = currentId++;
         }
@@ -142,8 +150,6 @@ public final class ScheduledTask implements Runnable {
             this.consecutiveErrors = 0;
         } catch (Exception ignore) {
             this.consecutiveErrors++;
-        } finally {
-            this.running = false;
         }
     }
 
