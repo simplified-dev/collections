@@ -2,6 +2,7 @@ package dev.sbs.api.collection.concurrent;
 
 import dev.sbs.api.collection.concurrent.atomic.AtomicSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,15 +32,15 @@ public class ConcurrentSet<E> extends AtomicSet<E, HashSet<E>> {
 	 * Create a new concurrent set and fill it with the given array.
 	 */
 	@SafeVarargs
-	public ConcurrentSet(@NotNull E... array) {
+	public ConcurrentSet(@Nullable E... array) {
 		this(Arrays.asList(array));
 	}
 
 	/**
 	 * Create a new concurrent set and fill it with the given collection.
 	 */
-	public ConcurrentSet(@NotNull Collection<? extends E> collection) {
-		super(new HashSet<>(collection));
+	public ConcurrentSet(@Nullable Collection<? extends E> collection) {
+		super(collection == null ? new HashSet<>() : new HashSet<>(collection));
 	}
 
 	public @NotNull ConcurrentSet<E> toUnmodifiableSet() {
