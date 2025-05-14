@@ -38,7 +38,7 @@ public class Graph<T> {
      *
      * @return Sorted nodes.
      */
-    public ConcurrentList<T> topologicalSort() {
+    public @NotNull ConcurrentList<T> topologicalSort() {
         Stack<T> stack = new Stack<>();
 
         // iterate through all the nodes and their neighbours if not already visited.
