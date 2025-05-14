@@ -1,9 +1,9 @@
 package dev.sbs.api.collection.search;
 
 import dev.sbs.api.collection.concurrent.Concurrent;
+import dev.sbs.api.collection.stream.triple.TriPredicate;
 import dev.sbs.api.data.exception.DataException;
 import dev.sbs.api.mutable.pair.Pair;
-import dev.sbs.api.stream.triple.TriPredicate;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
