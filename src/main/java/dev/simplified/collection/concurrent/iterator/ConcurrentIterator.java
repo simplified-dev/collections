@@ -1,5 +1,7 @@
 package dev.sbs.api.collection.concurrent.iterator;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -28,7 +30,7 @@ public abstract class ConcurrentIterator<E> implements Iterator<E> {
 	}
 
 	@Override
-	public E next() {
+	public @NotNull E next() {
 		if (this.hasNext())
 			return (E) this.snapshot[this.last = this.cursor++];
 		else

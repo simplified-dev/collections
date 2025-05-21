@@ -3,9 +3,11 @@ package dev.sbs.api.collection.concurrent.atomic;
 import dev.sbs.api.collection.concurrent.iterator.ConcurrentIterator;
 import dev.sbs.api.collection.search.Searchable;
 import dev.sbs.api.collection.stream.PairStream;
+import dev.sbs.api.collection.stream.StreamUtil;
 import dev.sbs.api.mutable.primitive.MutableBoolean;
 import dev.sbs.api.util.NumberUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.AbstractMap;
@@ -29,8 +31,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	/**
 	 * Create a new concurrent map.
 	 */
-	protected AtomicMap(@NotNull M ref, Map<? extends K, ? extends V> items) {
+	protected AtomicMap(@NotNull M ref, @Nullable Map<? extends K, ? extends V> items) {
 		if (Objects.nonNull(items)) ref.putAll(items);
+		this.ref = ref;
+	}
+
+	/**
+	 * Create a new concurrent map.
+	 */
+	protected AtomicMap(@NotNull M ref, @Nullable Map.Entry<? extends K, ? extends V>... items) {
+		StreamUtil.ofArrays(items).filter(Objects::nonNull).forEach(entry -> ref.put(entry.getKey(), entry.getValue()));
 		this.ref = ref;
 	}
 

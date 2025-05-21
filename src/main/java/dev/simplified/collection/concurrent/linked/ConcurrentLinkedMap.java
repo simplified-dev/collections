@@ -2,7 +2,7 @@ package dev.sbs.api.collection.concurrent.linked;
 
 import dev.sbs.api.collection.MaxSizeLinkedMap;
 import dev.sbs.api.collection.concurrent.atomic.AtomicMap;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +25,7 @@ public class ConcurrentLinkedMap<K, V> extends AtomicMap<K, V, MaxSizeLinkedMap<
 	 * Create a new concurrent map.
 	 */
 	public ConcurrentLinkedMap() {
-		super(new MaxSizeLinkedMap<>(), null);
+		super(new MaxSizeLinkedMap<>(), (HashMap<K, V>) null);
 	}
 
 	/**
@@ -34,7 +34,7 @@ public class ConcurrentLinkedMap<K, V> extends AtomicMap<K, V, MaxSizeLinkedMap<
 	 * @param maxSize The maximum number of entries allowed in the map.
 	 */
 	public ConcurrentLinkedMap(int maxSize) {
-		super(new MaxSizeLinkedMap<>(maxSize), null);
+		super(new MaxSizeLinkedMap<>(maxSize), (HashMap<K, V>) null);
 	}
 
 	/**
@@ -42,7 +42,7 @@ public class ConcurrentLinkedMap<K, V> extends AtomicMap<K, V, MaxSizeLinkedMap<
 	 *
 	 * @param map Map to fill the new map with.
 	 */
-	public ConcurrentLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
+	public ConcurrentLinkedMap(@Nullable Map<? extends K, ? extends V> map) {
 		super(new MaxSizeLinkedMap<>(), map);
 	}
 
@@ -52,7 +52,7 @@ public class ConcurrentLinkedMap<K, V> extends AtomicMap<K, V, MaxSizeLinkedMap<
 	 * @param map Map to fill the new map with.
 	 * @param maxSize The maximum number of entries allowed in the map.
 	 */
-	public ConcurrentLinkedMap(@NotNull Map<? extends K, ? extends V> map, int maxSize) {
+	public ConcurrentLinkedMap(@Nullable Map<? extends K, ? extends V> map, int maxSize) {
 		super(new MaxSizeLinkedMap<>(maxSize), map);
 	}
 

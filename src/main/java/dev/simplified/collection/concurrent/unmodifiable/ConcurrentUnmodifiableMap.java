@@ -4,6 +4,7 @@ import dev.sbs.api.collection.concurrent.Concurrent;
 import dev.sbs.api.collection.concurrent.ConcurrentMap;
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,7 +44,7 @@ public class ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
     /**
      * Create a new unmodifiable concurrent map and fill it with the given map.
      */
-    public ConcurrentUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
+    public ConcurrentUnmodifiableMap(@Nullable Map<? extends K, ? extends V> map) {
         super(map);
     }
 
@@ -51,8 +52,8 @@ public class ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
      * Create a new concurrent map and fill it with the given pairs.
      */
     @SafeVarargs
-    public ConcurrentUnmodifiableMap(@NotNull Map.Entry<K, V>... pairs) {
-        super(Arrays.stream(pairs).collect(Concurrent.toMap()));
+    public ConcurrentUnmodifiableMap(@Nullable Map.Entry<K, V>... pairs) {
+        super(pairs);
     }
 
     @Override
@@ -101,8 +102,8 @@ public class ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
         throw new UnsupportedOperationException();
     }
 
-    @Override @NotNull
-    public final Collection<V> values() {
+    @Override
+    public final @NotNull Collection<V> values() {
         if (this.unmodifiableValues == null)
             this.unmodifiableValues = Concurrent.newUnmodifiableCollection(super.values());
 
@@ -132,7 +133,7 @@ public class ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
         }
 
         @Override
-        public Spliterator<Map.Entry<K, V>> spliterator() {
+        public @NotNull Spliterator<Map.Entry<K, V>> spliterator() {
             return new UnmodifiableSpliterator<>(this.ref.spliterator());
         }
 

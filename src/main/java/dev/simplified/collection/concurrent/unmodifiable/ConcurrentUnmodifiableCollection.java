@@ -2,11 +2,12 @@ package dev.sbs.api.collection.concurrent.unmodifiable;
 
 import dev.sbs.api.collection.concurrent.ConcurrentCollection;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * An unmodifiable concurrent list that allows for simultaneous fast reading and iteration utilizing {@link AtomicReference}.
@@ -23,7 +24,7 @@ public class ConcurrentUnmodifiableCollection<E> extends ConcurrentCollection<E>
 	 * Create a new unmodifiable concurrent list.
 	 */
 	public ConcurrentUnmodifiableCollection() {
-		super((Collection<? extends E>) null);
+		super();
 	}
 
 	/**
@@ -31,44 +32,49 @@ public class ConcurrentUnmodifiableCollection<E> extends ConcurrentCollection<E>
 	 */
 	@SafeVarargs
 	public ConcurrentUnmodifiableCollection(@NotNull E... array) {
-		this(Arrays.asList(array));
+		super(array);
 	}
 
 	/**
 	 * Create a new unmodifiable concurrent list and fill it with the given collection.
 	 */
-	public ConcurrentUnmodifiableCollection(@NotNull Collection<? extends E> collection) {
-		super(new ArrayList<>(collection));
+	public ConcurrentUnmodifiableCollection(@Nullable Collection<? extends E> collection) {
+		super(collection);
 	}
 
 	@Override
-	public boolean add(@NotNull E element) {
+	public final boolean add(@NotNull E element) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public boolean addAll(@NotNull Collection<? extends E> collection) {
+	public final boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void clear() {
+	public final boolean addAll(@NotNull Collection<? extends E> collection) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public final void clear() {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	@SuppressWarnings("all")
-	public boolean remove(Object element) {
+	public final boolean remove(Object element) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public boolean removeAll(@NotNull Collection<?> collection) {
+	public final boolean removeAll(@NotNull Collection<?> collection) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public boolean retainAll(@NotNull Collection<?> collection) {
+	public final boolean retainAll(@NotNull Collection<?> collection) {
 		throw new UnsupportedOperationException();
 	}
 

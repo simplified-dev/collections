@@ -11,9 +11,9 @@ import java.util.Queue;
 
 public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E> {
 
-	protected final ConcurrentLinkedList<E> storage;
+	protected final @NotNull ConcurrentLinkedList<E> storage;
 
-	protected AtomicQueue(Collection<? extends E> collection) {
+	protected AtomicQueue(@NotNull Collection<? extends E> collection) {
 		this.storage = Concurrent.newLinkedList(collection);
 	}
 

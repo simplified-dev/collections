@@ -17,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -52,6 +53,10 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 		} finally {
 			this.lock.writeLock().unlock();
 		}
+	}
+
+	public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) {
+		return (predicate.get() && this.add(element));
 	}
 
 	@Override
@@ -209,14 +214,14 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 		return StreamSupport.stream(this.spliterator(), false);
 	}
 
-	@Override @NotNull
-	public Object[] toArray() {
+	@Override
+	public @NotNull Object[] toArray() {
 		return this.ref.toArray();
 	}
 
-	@Override @NotNull
+	@Override
 	@SuppressWarnings("SuspiciousToArrayCall")
-	public <U> U[] toArray(@NotNull U[] array) {
+	public <U> @NotNull U[] toArray(@NotNull U[] array) {
 		return this.ref.toArray(array);
 	}
 

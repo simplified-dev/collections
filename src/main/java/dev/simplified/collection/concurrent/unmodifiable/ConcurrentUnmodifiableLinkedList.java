@@ -4,14 +4,15 @@ import dev.sbs.api.collection.concurrent.Concurrent;
 import dev.sbs.api.collection.concurrent.ConcurrentList;
 import dev.sbs.api.collection.concurrent.linked.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * An unmodifiable concurrent linked list that allows for simultaneous fast reading and iteration utilizing {@link AtomicReference}.
@@ -28,7 +29,7 @@ public class ConcurrentUnmodifiableLinkedList<E> extends ConcurrentLinkedList<E>
 	 * Create a new unmodifiable concurrent list.
 	 */
 	public ConcurrentUnmodifiableLinkedList() {
-		super((Collection<? extends E>) null);
+		super();
 	}
 
 	/**
@@ -36,13 +37,13 @@ public class ConcurrentUnmodifiableLinkedList<E> extends ConcurrentLinkedList<E>
 	 */
 	@SafeVarargs
 	public ConcurrentUnmodifiableLinkedList(@NotNull E... array) {
-		super(Arrays.asList(array));
+		super(array);
 	}
 
 	/**
 	 * Create a new unmodifiable concurrent list and fill it with the given collection.
 	 */
-	public ConcurrentUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
+	public ConcurrentUnmodifiableLinkedList(@Nullable Collection<? extends E> collection) {
 		super(collection);
 	}
 
@@ -58,6 +59,11 @@ public class ConcurrentUnmodifiableLinkedList<E> extends ConcurrentLinkedList<E>
 
 	@Override
 	public final boolean addAll(@NotNull Collection<? extends E> collection) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public final boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -163,7 +169,7 @@ public class ConcurrentUnmodifiableLinkedList<E> extends ConcurrentLinkedList<E>
 	}
 
 	@Override
-	public @NotNull ConcurrentLinkedList<E> subList(int fromIndex, int toIndex) {
+	public final @NotNull ConcurrentLinkedList<E> subList(int fromIndex, int toIndex) {
 		return new ConcurrentUnmodifiableLinkedList<>(super.subList(fromIndex, toIndex));
 	}
 

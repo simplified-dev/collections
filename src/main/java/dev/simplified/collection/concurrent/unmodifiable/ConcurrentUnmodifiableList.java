@@ -3,14 +3,15 @@ package dev.sbs.api.collection.concurrent.unmodifiable;
 import dev.sbs.api.collection.concurrent.Concurrent;
 import dev.sbs.api.collection.concurrent.ConcurrentList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * An unmodifiable concurrent list that allows for simultaneous fast reading and iteration utilizing {@link AtomicReference}.
@@ -27,7 +28,7 @@ public class ConcurrentUnmodifiableList<E> extends ConcurrentList<E> {
 	 * Create a new unmodifiable concurrent list.
 	 */
 	public ConcurrentUnmodifiableList() {
-		super((Collection<? extends E>) null);
+		super();
 	}
 
 	/**
@@ -35,13 +36,13 @@ public class ConcurrentUnmodifiableList<E> extends ConcurrentList<E> {
 	 */
 	@SafeVarargs
 	public ConcurrentUnmodifiableList(@NotNull E... array) {
-		this(Arrays.asList(array));
+		super(array);
 	}
 
 	/**
 	 * Create a new unmodifiable concurrent list and fill it with the given collection.
 	 */
-	public ConcurrentUnmodifiableList(@NotNull Collection<? extends E> collection) {
+	public ConcurrentUnmodifiableList(@Nullable Collection<? extends E> collection) {
 		super(collection);
 	}
 
@@ -62,6 +63,11 @@ public class ConcurrentUnmodifiableList<E> extends ConcurrentList<E> {
 
 	@Override
 	public final boolean addAll(int index, @NotNull Collection<? extends E> collection) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public final boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -162,7 +168,7 @@ public class ConcurrentUnmodifiableList<E> extends ConcurrentList<E> {
 	}
 
 	@Override
-	public @NotNull ConcurrentList<E> subList(int fromIndex, int toIndex) {
+	public final @NotNull ConcurrentList<E> subList(int fromIndex, int toIndex) {
 		return Concurrent.newUnmodifiableList(super.subList(fromIndex, toIndex));
 	}
 

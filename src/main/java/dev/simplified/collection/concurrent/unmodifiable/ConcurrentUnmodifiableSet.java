@@ -2,11 +2,12 @@ package dev.sbs.api.collection.concurrent.unmodifiable;
 
 import dev.sbs.api.collection.concurrent.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * An unmodifiable concurrent set that allows for simultaneous fast reading and iteration utilizing {@link AtomicReference}.
@@ -23,7 +24,7 @@ public class ConcurrentUnmodifiableSet<E> extends ConcurrentSet<E> {
 	 * Create a new unmodifiable concurrent set.
 	 */
 	public ConcurrentUnmodifiableSet() {
-		super(new HashSet<>());
+		super();
 	}
 
 	/**
@@ -31,14 +32,14 @@ public class ConcurrentUnmodifiableSet<E> extends ConcurrentSet<E> {
 	 */
 	@SafeVarargs
 	public ConcurrentUnmodifiableSet(@NotNull E... array) {
-		this(Arrays.asList(array));
+		super(array);
 	}
 
 	/**
 	 * Create a new unmodifiable concurrent set and fill it with the given collection.
 	 */
-	public ConcurrentUnmodifiableSet(@NotNull Collection<? extends E> collection) {
-		super(new HashSet<>(collection));
+	public ConcurrentUnmodifiableSet(@Nullable Collection<? extends E> collection) {
+		super(collection);
 	}
 
 	@Override
@@ -48,6 +49,11 @@ public class ConcurrentUnmodifiableSet<E> extends ConcurrentSet<E> {
 
 	@Override
 	public final boolean addAll(@NotNull Collection<? extends E> collection) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public final boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) {
 		throw new UnsupportedOperationException();
 	}
 

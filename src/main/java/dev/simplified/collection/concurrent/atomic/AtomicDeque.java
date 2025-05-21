@@ -9,7 +9,7 @@ import java.util.NoSuchElementException;
 
 public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> {
 
-	protected AtomicDeque(Collection<? extends E> collection) {
+	protected AtomicDeque(@NotNull Collection<? extends E> collection) {
 		super(collection);
 	}
 

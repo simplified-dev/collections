@@ -2,9 +2,9 @@ package dev.sbs.api.collection.concurrent;
 
 import dev.sbs.api.collection.concurrent.atomic.AtomicMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractMap;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,22 +26,22 @@ public class ConcurrentMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> {
      * Create a new concurrent map.
      */
     public ConcurrentMap() {
-        super(new HashMap<>(), null);
-    }
-
-    /**
-     * Create a new concurrent map and fill it with the given map.
-     */
-    public ConcurrentMap(@NotNull Map<? extends K, ? extends V> map) {
-        super(new HashMap<>(), map);
+        super(new HashMap<>(), (Map<K, V>) null);
     }
 
     /**
      * Create a new concurrent map and fill it with the given pairs.
      */
     @SafeVarargs
-    public ConcurrentMap(@NotNull Map.Entry<K, V>... pairs) {
-        super(new HashMap<>(), Arrays.stream(pairs).collect(Concurrent.toMap()));
+    public ConcurrentMap(@Nullable Map.Entry<K, V>... pairs) {
+        super(new HashMap<>(), pairs);
+    }
+
+    /**
+     * Create a new concurrent map and fill it with the given map.
+     */
+    public ConcurrentMap(@Nullable Map<? extends K, ? extends V> map) {
+        super(new HashMap<>(), map);
     }
 
     public @NotNull ConcurrentMap<K, V> toUnmodifiableMap() {

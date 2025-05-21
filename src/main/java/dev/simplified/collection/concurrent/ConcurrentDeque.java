@@ -2,6 +2,7 @@ package dev.sbs.api.collection.concurrent;
 
 import dev.sbs.api.collection.concurrent.atomic.AtomicDeque;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,8 +40,8 @@ public class ConcurrentDeque<E> extends AtomicDeque<E> {
 	/**
 	 * Create a new concurrent deque and fill it with the given collection.
 	 */
-	public ConcurrentDeque(@NotNull Collection<? extends E> collection) {
-		super(new LinkedList<>(collection));
+	public ConcurrentDeque(@Nullable Collection<? extends E> collection) {
+		super(collection == null ? new LinkedList<>() : new LinkedList<>(collection));
 	}
 
 }
