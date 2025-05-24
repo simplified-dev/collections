@@ -17,9 +17,15 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 /**
- * Helper class to build a new concurrent collection instance.
+ * Provides factory methods for creating concurrent collection and map implementations with optional initialization parameters.
+ * <p>
+ * This utility class contains various static methods to create thread-safe collections, queues, deques, lists, maps, sets,
+ * and their linked and unmodifiable counterparts.
+ * <p>
+ * It also provides collectors to create concurrent collections and maps from {@link Stream Streams}.
  */
 public final class Concurrent {
 
