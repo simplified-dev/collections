@@ -2,8 +2,8 @@ package dev.sbs.api.collection.concurrent.atomic;
 
 import dev.sbs.api.collection.concurrent.iterator.ConcurrentIterator;
 import dev.sbs.api.collection.search.Searchable;
-import dev.sbs.api.collection.stream.StreamUtil;
-import dev.sbs.api.collection.stream.triple.TripleStream;
+import dev.sbs.api.stream.StreamUtil;
+import dev.sbs.api.stream.triple.TripleStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
