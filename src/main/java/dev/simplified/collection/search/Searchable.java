@@ -18,7 +18,7 @@ public interface Searchable<E> {
 
     @NotNull Stream<E> stream() throws DataException;
 
-    default <S> Stream<E> compare(SearchFunction.Match match, TriPredicate<Function<E, S>, E, S> compare, Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
+    default <S> @NotNull Stream<E> compare(SearchFunction.Match match, TriPredicate<Function<E, S>, E, S> compare, Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
         Stream<E> itemsCopy = this.stream();
 
         if (match == SearchFunction.Match.ANY) {
@@ -39,7 +39,7 @@ public interface Searchable<E> {
         return itemsCopy;
     }
 
-    default <S> Stream<E> contains(SearchFunction.Match match, TriPredicate<Function<E, List<S>>, E, S> compare, Iterable<Pair<Function<E, List<S>>, S>> predicates) throws DataException {
+    default <S> @NotNull Stream<E> contains(SearchFunction.Match match, TriPredicate<Function<E, List<S>>, E, S> compare, Iterable<Pair<Function<E, List<S>>, S>> predicates) throws DataException {
         Stream<E> itemsCopy = this.stream();
 
         if (match == SearchFunction.Match.ANY) {

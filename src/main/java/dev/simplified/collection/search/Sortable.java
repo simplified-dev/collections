@@ -16,27 +16,27 @@ import java.util.stream.StreamSupport;
 public interface Sortable<E> extends Searchable<E> {
 
     // --- CONTAINS FIRST ---
-    default <S> Optional<E> containsFirst(@NotNull Function<E, List<S>> function, S value) throws DataException {
+    default <S> @NotNull Optional<E> containsFirst(@NotNull Function<E, List<S>> function, S value) throws DataException {
         return this.containsFirst(SearchFunction.Match.ALL, function, value);
     }
 
-    default <S> Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Function<E, List<S>> function, S value) throws DataException {
+    default <S> @NotNull Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Function<E, List<S>> function, S value) throws DataException {
         return this.containsFirst(match, Pair.of(function, value));
     }
 
-    default <S> Optional<E> containsFirst(@NotNull Pair<Function<E, List<S>>, S>... predicates) throws DataException {
+    default <S> @NotNull Optional<E> containsFirst(@NotNull Pair<Function<E, List<S>>, S>... predicates) throws DataException {
         return this.containsFirst(SearchFunction.Match.ALL, predicates);
     }
 
-    default <S> Optional<E> containsFirst(@NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) throws DataException {
+    default <S> @NotNull Optional<E> containsFirst(@NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) throws DataException {
         return this.containsFirst(SearchFunction.Match.ALL, predicates);
     }
 
-    default <S> Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, List<S>>, S>... predicates) throws DataException {
+    default <S> @NotNull Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, List<S>>, S>... predicates) throws DataException {
         return this.containsFirst(match, Concurrent.newList(predicates));
     }
 
-    default <S> Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) throws DataException {
+    default <S> @NotNull Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) throws DataException {
         return this.containsAll(match, predicates).findFirst();
     }
 
@@ -65,27 +65,27 @@ public interface Sortable<E> extends Searchable<E> {
     }
 
     // --- FIND FIRST ---
-    default <S> Optional<E> findFirst(@NotNull Function<E, S> function, S value) throws DataException {
+    default <S> @NotNull Optional<E> findFirst(@NotNull Function<E, S> function, S value) throws DataException {
         return this.findFirst(SearchFunction.Match.ALL, function, value);
     }
 
-    default <S> Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) throws DataException {
+    default <S> @NotNull Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) throws DataException {
         return this.findFirst(match, Pair.of(function, value));
     }
 
-    default <S> Optional<E> findFirst(@NotNull Pair<Function<E, S>, S>... predicates) throws DataException {
+    default <S> @NotNull Optional<E> findFirst(@NotNull Pair<Function<E, S>, S>... predicates) throws DataException {
         return this.findFirst(SearchFunction.Match.ALL, predicates);
     }
 
-    default <S> Optional<E> findFirst(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
+    default <S> @NotNull Optional<E> findFirst(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
         return this.findFirst(SearchFunction.Match.ALL, predicates);
     }
 
-    default <S> Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) throws DataException {
+    default <S> @NotNull Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) throws DataException {
         return this.findFirst(match, Concurrent.newList(predicates));
     }
 
-    default <S> Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
+    default <S> @NotNull Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
         return this.compare(
             match,
             (predicate, it, value) -> {
@@ -124,27 +124,27 @@ public interface Sortable<E> extends Searchable<E> {
     }
 
     // --- FIND LAST ---
-    default <S> Optional<E> findLast(@NotNull Function<E, S> function, S value) throws DataException {
+    default <S> @NotNull Optional<E> findLast(@NotNull Function<E, S> function, S value) throws DataException {
         return this.findLast(SearchFunction.Match.ALL, function, value);
     }
 
-    default <S> Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) throws DataException {
+    default <S> @NotNull Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) throws DataException {
         return this.findLast(match, Pair.of(function, value));
     }
 
-    default <S> Optional<E> findLast(@NotNull Pair<Function<E, S>, S>... predicates) throws DataException {
+    default <S> @NotNull Optional<E> findLast(@NotNull Pair<Function<E, S>, S>... predicates) throws DataException {
         return this.findLast(SearchFunction.Match.ALL, predicates);
     }
 
-    default <S> Optional<E> findLast(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
+    default <S> @NotNull Optional<E> findLast(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
         return this.findLast(SearchFunction.Match.ALL, predicates);
     }
 
-    default <S> Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) throws DataException {
+    default <S> @NotNull Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) throws DataException {
         return this.findLast(match, Concurrent.newList(predicates));
     }
 
-    default <S> Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
+    default <S> @NotNull Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) throws DataException {
         return this.compare(
             match,
             (predicate, it, value) -> {
@@ -184,19 +184,19 @@ public interface Sortable<E> extends Searchable<E> {
     }
 
     // --- MATCH FIRST ---
-    default Optional<E> matchFirst(@NotNull Predicate<E>... predicates) throws DataException {
+    default @NotNull Optional<E> matchFirst(@NotNull Predicate<E>... predicates) throws DataException {
         return this.matchFirst(Concurrent.newList(predicates));
     }
 
-    default Optional<E> matchFirst(@NotNull Iterable<Predicate<E>> predicates) throws DataException {
+    default @NotNull Optional<E> matchFirst(@NotNull Iterable<Predicate<E>> predicates) throws DataException {
         return this.matchFirst(SearchFunction.Match.ALL, predicates);
     }
 
-    default Optional<E> matchFirst(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) throws DataException {
+    default @NotNull Optional<E> matchFirst(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) throws DataException {
         return this.matchFirst(match, Concurrent.newList(predicates));
     }
 
-    default Optional<E> matchFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) throws DataException {
+    default @NotNull Optional<E> matchFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) throws DataException {
         return this.compare(
             match,
             (predicate, it, value) -> {
@@ -229,19 +229,19 @@ public interface Sortable<E> extends Searchable<E> {
     }
 
     // --- MATCH LAST ---
-    default Optional<E> matchLast(@NotNull Predicate<E>... predicates) throws DataException {
+    default @NotNull Optional<E> matchLast(@NotNull Predicate<E>... predicates) throws DataException {
         return this.matchLast(Concurrent.newList(predicates));
     }
 
-    default Optional<E> matchLast(@NotNull Iterable<Predicate<E>> predicates) throws DataException {
+    default @NotNull Optional<E> matchLast(@NotNull Iterable<Predicate<E>> predicates) throws DataException {
         return this.matchLast(SearchFunction.Match.ALL, predicates);
     }
 
-    default Optional<E> matchLast(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) throws DataException {
+    default @NotNull Optional<E> matchLast(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) throws DataException {
         return this.matchLast(match, Concurrent.newList(predicates));
     }
 
-    default Optional<E> matchLast(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) throws DataException {
+    default @NotNull Optional<E> matchLast(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) throws DataException {
         return this.compare(
             match,
             (predicate, it, value) -> {
