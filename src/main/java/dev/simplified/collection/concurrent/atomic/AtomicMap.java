@@ -21,7 +21,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends AbstractMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>>, Searchable<Map.Entry<K, V>>, Serializable {
 
@@ -140,8 +139,8 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		return !this.isEmpty();
 	}
 
-	public final @NotNull Stream<Entry<K, V>> parallelStream() {
-		return this.entrySet().parallelStream();
+	public final @NotNull PairStream<K, V> parallelStream() {
+		return this.stream().parallel();
 	}
 
 	@Override
