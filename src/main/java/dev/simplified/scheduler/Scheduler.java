@@ -17,7 +17,7 @@ public final class Scheduler implements Executor {
     private final @NotNull ConcurrentList<ScheduledTask> tasks = Concurrent.newList();
 
     public Scheduler() {
-        this(4);
+        this(Runtime.getRuntime().availableProcessors());
     }
 
     public Scheduler(int corePoolSize) {
