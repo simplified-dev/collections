@@ -5,35 +5,33 @@ import dev.sbs.api.collection.concurrent.ConcurrentList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-public final class Scheduler implements ScheduledExecutorService {
+public final class Scheduler implements Executor {
 
-    private final @NotNull ScheduledExecutorService internalExecutor;
+    private final @NotNull ScheduledExecutorService syncExecutor;
+    private final @NotNull ScheduledExecutorService asyncExecutor;
     private final @NotNull ConcurrentList<ScheduledTask> tasks = Concurrent.newList();
-    private final @NotNull Object lock = new Object();
 
     public Scheduler() {
-        this(1);
+        this(4);
     }
 
     public Scheduler(int corePoolSize) {
-        this.internalExecutor = Executors.newScheduledThreadPool(corePoolSize);
+        this.syncExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.asyncExecutor = Executors.newScheduledThreadPool(corePoolSize);
 
         // Schedule Permanent Cleaner
-        new ScheduledTask(this, () -> this.tasks.forEach(scheduledTask -> {
-            if (scheduledTask.isDone())
-                this.tasks.remove(scheduledTask);
-        }), 1_000, 30_000, false, TimeUnit.MILLISECONDS);
+        new ScheduledTask(
+            this.syncExecutor,
+            () -> this.tasks.removeIf(ScheduledTask::isDone),
+            1_000,
+            30_000,
+            TimeUnit.MILLISECONDS
+        );
     }
 
     /**
@@ -53,10 +51,10 @@ public final class Scheduler implements ScheduledExecutorService {
     }
 
     public void cancel(@Range(from = 1, to = Long.MAX_VALUE) long id, boolean mayInterruptIfRunning) {
-        this.tasks.forEach(scheduledTask -> {
-            if (scheduledTask.getId() == id)
-                this.cancel(scheduledTask, mayInterruptIfRunning);
-        });
+        this.tasks.stream()
+            .filter(scheduledTask -> scheduledTask.getId() == id)
+            .findFirst()
+            .ifPresent(scheduledTask -> scheduledTask.cancel(mayInterruptIfRunning));
     }
 
     public void cancel(@NotNull ScheduledTask task) {
@@ -72,7 +70,7 @@ public final class Scheduler implements ScheduledExecutorService {
     }
 
     /**
-     * Repeats a task (synchronously) every 50 milliseconds.<br><br>
+     * Repeats a task (synchronously) every 50 milliseconds.
      * <p>
      * Warning: This method is run on the main thread, don't do anything heavy.
      *
@@ -186,96 +184,34 @@ public final class Scheduler implements ScheduledExecutorService {
     }
 
     private @NotNull ScheduledTask scheduleTask(@NotNull Runnable task, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long repeatDelay, boolean async, @NotNull TimeUnit timeUnit) {
-        synchronized (this.lock) {
-            ScheduledTask scheduledTask = new ScheduledTask(this, task, initialDelay, repeatDelay, async, timeUnit);
-            this.tasks.add(scheduledTask);
-            return scheduledTask;
-        }
+        ScheduledTask scheduledTask = new ScheduledTask(
+            async ? this.asyncExecutor : this.syncExecutor,
+            task,
+            initialDelay,
+            repeatDelay,
+            timeUnit
+        );
+
+        this.tasks.add(scheduledTask);
+        return scheduledTask;
     }
 
-    @Override
-    public @NotNull ScheduledFuture<?> schedule(@NotNull Runnable command, @Range(from = 0, to = Long.MAX_VALUE) long delay, @NotNull TimeUnit unit) {
-        return this.internalExecutor.schedule(command, delay, unit);
-    }
-
-    @Override
-    public <V> @NotNull ScheduledFuture<V> schedule(@NotNull Callable<V> callable, @Range(from = 0, to = Long.MAX_VALUE) long delay, @NotNull TimeUnit unit) {
-        return this.internalExecutor.schedule(callable, delay, unit);
-    }
-
-    @Override
-    public @NotNull ScheduledFuture<?> scheduleAtFixedRate(@NotNull Runnable command, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long period, @NotNull TimeUnit unit) {
-        return this.internalExecutor.scheduleAtFixedRate(command, initialDelay, period, unit);
-    }
-
-    @Override
-    public @NotNull ScheduledFuture<?> scheduleWithFixedDelay(@NotNull Runnable command, @Range(from = 0, to = Long.MAX_VALUE) long initialDelay, @Range(from = 0, to = Long.MAX_VALUE) long delay, @NotNull TimeUnit unit) {
-        return this.internalExecutor.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-    }
-
-    @Override
     public void shutdown() {
-        this.internalExecutor.shutdown();
+        this.syncExecutor.shutdown();
+        this.asyncExecutor.shutdown();
     }
 
-    @Override
-    public @NotNull List<Runnable> shutdownNow() {
-        return this.internalExecutor.shutdownNow();
-    }
-
-    @Override
     public boolean isShutdown() {
-        return this.internalExecutor.isShutdown();
+        return this.syncExecutor.isShutdown() && this.asyncExecutor.isShutdown();
     }
 
-    @Override
     public boolean isTerminated() {
-        return this.internalExecutor.isTerminated();
-    }
-
-    @Override
-    public boolean awaitTermination(@Range(from = 0, to = Long.MAX_VALUE) long timeout, @NotNull TimeUnit unit) throws InterruptedException {
-        return this.internalExecutor.awaitTermination(timeout, unit);
-    }
-
-    @Override
-    public <T> @NotNull Future<T> submit(@NotNull Callable<T> task) {
-        return this.internalExecutor.submit(task);
-    }
-
-    @Override
-    public <T> @NotNull Future<T> submit(@NotNull Runnable task, T result) {
-        return this.internalExecutor.submit(task, result);
-    }
-
-    @Override
-    public @NotNull Future<?> submit(@NotNull Runnable task) {
-        return this.internalExecutor.submit(task);
-    }
-
-    @Override
-    public <T> @NotNull List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        return this.internalExecutor.invokeAll(tasks);
-    }
-
-    @Override
-    public <T> @NotNull List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException {
-        return this.internalExecutor.invokeAll(tasks, timeout, unit);
-    }
-
-    @Override
-    public <T> @NotNull T invokeAny(@NotNull Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        return this.internalExecutor.invokeAny(tasks);
-    }
-
-    @Override
-    public <T> @NotNull T invokeAny(@NotNull Collection<? extends Callable<T>> tasks, long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return this.internalExecutor.invokeAny(tasks, timeout, unit);
+        return this.syncExecutor.isTerminated() && this.asyncExecutor.isTerminated();
     }
 
     @Override
     public void execute(@NotNull Runnable command) {
-        this.internalExecutor.execute(command);
+        this.asyncExecutor.execute(command);
     }
 
 }

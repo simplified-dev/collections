@@ -2,95 +2,103 @@ package dev.sbs.api.scheduler;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Scheduled Task for the {@link Scheduler}.
+ * Represents a scheduled task that is executed by a {@link Scheduler}.
+ * <p>
+ * The task can be configured with an initial delay and a repeating period.
+ * It provides mechanisms for canceling, tracking its state (e.g., running, done, or canceled),
+ * and handling execution errors.
+ * <p>
+ * This class is immutable except for its internal state, such as
+ * {@code running}, {@code repeating}, and {@code consecutiveErrors}, which are updated
+ * during the lifecycle of the task.
  */
 @Getter
+@Log4j2
 public final class ScheduledTask implements Runnable {
 
-    private static volatile long currentId = 1;
+    private static AtomicLong currentId = new AtomicLong(1);
 
     /**
-     * Get the time the task was created.
+     * The time the task was created.
      */
     private final long addedTime = System.currentTimeMillis();
+
     /**
-     * Get the id of the task.
+     * The id of the task.
      */
     private final long id;
+
     /**
-     * Get the delay (in milliseconds) before the task will run.
+     * The time (in milliseconds) before the task will run.
      */
     private final long initialDelay;
+
     /**
-     * Get the delay (in milliseconds) before the task will repeat.
+     * The time (in milliseconds) before the task will repeat.
      */
-    private final long repeatDelay;
+    private final long period;
+
     /**
-     * Is this an asynchronous task?
-     */
-    private final boolean async;
-    /**
-     * The TimeUnit used for {@link #getInitialDelay()} and {@link #getRepeatDelay()}.
+     * The TimeUnit used for {@link #getInitialDelay()} and {@link #getPeriod()}.
      */
     private final @NotNull TimeUnit timeUnit;
+
     /**
      * Is this task currently running?
      */
-    private boolean running;
+    private volatile boolean running;
+
     /**
      * Will this task run repeatedly?
      */
-    private boolean repeating;
+    private volatile boolean repeating;
+
     /**
-     * Get the number of consecutive errors.
+     * The number of consecutive errors.
      */
-    private int consecutiveErrors = 0;
+    private AtomicInteger consecutiveErrors = new AtomicInteger(0);
 
     @Getter(AccessLevel.NONE)
     private final @NotNull Runnable runnableTask;
+
     @Getter(AccessLevel.NONE)
     private final @NotNull ScheduledFuture<?> scheduledFuture;
-    @Getter(AccessLevel.NONE)
-    private final @NotNull Object lock = new Object();
 
     /**
      * Creates a new Scheduled Task.
      *
      * @param task         The task to run.
-     * @param initialDelay The initialDelay (in ticks) to wait before the task is ran.
-     * @param repeatDelay  The initialDelay (in ticks) to wait before calling the task again.
-     * @param async        If the task should be run asynchronously.
+     * @param initialDelay The initialDelay (in ticks) to wait before the task is run.
+     * @param period  The initialDelay (in ticks) to wait before calling the task again.
      */
     ScheduledTask(
         @NotNull ScheduledExecutorService executorService,
         @NotNull final Runnable task,
         @Range(from = 0, to = Long.MAX_VALUE) long initialDelay,
-        @Range(from = 0, to = Long.MAX_VALUE) long repeatDelay,
-        boolean async,
+        @Range(from = 0, to = Long.MAX_VALUE) long period,
         @NotNull TimeUnit timeUnit
     ) {
-        synchronized (this.lock) {
-            this.id = currentId++;
-        }
-
+        this.id = currentId.getAndIncrement();
         this.runnableTask = task;
         this.initialDelay = initialDelay;
-        this.repeatDelay = repeatDelay;
-        this.async = async;
+        this.period = period;
         this.timeUnit = timeUnit;
-        this.repeating = this.repeatDelay > 0;
+        this.repeating = this.period > 0;
 
         // Schedule Task
         if (this.isRepeating())
-            this.scheduledFuture = executorService.scheduleWithFixedDelay(this, initialDelay, repeatDelay, timeUnit);
+            this.scheduledFuture = executorService.scheduleAtFixedRate(this, initialDelay, period, timeUnit);
         else
             this.scheduledFuture = executorService.schedule(this, initialDelay, timeUnit);
     }
@@ -138,18 +146,13 @@ public final class ScheduledTask implements Runnable {
         try {
             // Run Task
             this.running = true;
-
-            if (this.isAsync())
-                this.runnableTask.run();
-            else {
-                synchronized (this.lock) {
-                    this.runnableTask.run();
-                }
-            }
-
-            this.consecutiveErrors = 0;
-        } catch (Exception ignore) {
-            this.consecutiveErrors++;
+            this.runnableTask.run();
+            this.consecutiveErrors.set(0);
+        } catch (Exception ex) {
+            this.consecutiveErrors.incrementAndGet();
+            log.error("Task {} failed: {}", this.id, ex.getMessage(), ex);
+        } finally {
+            this.running = false;
         }
     }
 
