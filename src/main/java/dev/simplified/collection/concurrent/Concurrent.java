@@ -9,6 +9,7 @@ import dev.sbs.api.collection.concurrent.unmodifiable.ConcurrentUnmodifiableList
 import dev.sbs.api.collection.concurrent.unmodifiable.ConcurrentUnmodifiableMap;
 import dev.sbs.api.collection.concurrent.unmodifiable.ConcurrentUnmodifiableSet;
 import dev.sbs.api.stream.StreamUtil;
+import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -20,13 +21,13 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 /**
- * Provides factory methods for creating concurrent collection and map implementations with optional initialization parameters.
+ * This utility class provides factory methods for creating thread-safe
+ * concurrent collection, queue, set, list, and map implementations with
+ * linked and unmodifiable counterparts.
  * <p>
- * This utility class contains various static methods to create thread-safe collections, queues, deques, lists, maps, sets,
- * and their linked and unmodifiable counterparts.
- * <p>
- * It also provides collectors to create concurrent collections and maps from {@link Stream Streams}.
+ * It also provides concurrect collectors for {@link Stream#collect}.
  */
+@UtilityClass
 public final class Concurrent {
 
 	public static <E> @NotNull ConcurrentCollection<E> newCollection() {
