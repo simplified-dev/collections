@@ -18,6 +18,7 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -182,6 +183,33 @@ public final class StreamUtil {
 
     public static @NotNull Stream<String> prependEach(@NotNull Stream<String> stringStream, @NotNull String entryValue, @NotNull String lastEntry) {
         return modifyStream(stringStream, (value, index, size) -> (index < size - 1 ? entryValue : lastEntry) + value);
+    }
+
+    public static <E> @NotNull Collector<E, ?, StringBuilder> toStringBuilder() {
+        return toStringBuilder(true);
+    }
+
+    public static <E> @NotNull Collector<E, ?, StringBuilder> toStringBuilder(boolean newLine) {
+        return Collector.of(
+            StringBuilder::new,
+            newLine ? (builder, element) -> builder.append(element).append(System.lineSeparator()) : StringBuilder::append,
+            (left, right) -> {
+                if (newLine)
+                    left.append(right).append(System.lineSeparator());
+                else
+                    left.append(right);
+
+                return left;
+            }
+        );
+    }
+
+    public static <E> @NotNull Collector<E, ?, StringBuilder> toStringBuilder(@NotNull String separator) {
+        return Collector.of(
+            StringBuilder::new,
+            (builder, element) -> builder.append(element.toString()).append(separator),
+            (left, right) -> left.append(right.toString())
+        );
     }
 
     @AllArgsConstructor(access = AccessLevel.PACKAGE)

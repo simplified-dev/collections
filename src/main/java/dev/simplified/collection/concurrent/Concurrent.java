@@ -414,36 +414,6 @@ public final class Concurrent {
 		);
 	}
 
-	public static <E> @NotNull Collector<E, ?, StringBuilder> toStringBuilder() {
-		return toStringBuilder(true);
-	}
-
-	@SuppressWarnings("all")
-	public static <E> @NotNull Collector<E, ?, StringBuilder> toStringBuilder(boolean newLine) {
-		return new StreamCollector<E, StringBuilder, StringBuilder>(
-			StringBuilder::new,
-			newLine ? (builder, element) -> builder.append(element).append(System.lineSeparator()) : StringBuilder::append,
-			(left, right) -> {
-				if (newLine)
-					left.append(right).append(System.lineSeparator());
-				else
-					left.append(right);
-
-				return left;
-			},
-			ORDERED_CHARACTERISTICS
-		);
-	}
-
-	public static <E> @NotNull Collector<E, ?, StringBuilder> toStringBuilder(@NotNull String separator) {
-		return new StreamCollector<>(
-			StringBuilder::new,
-			(builder, element) -> builder.append(element.toString()).append(separator),
-			(left, right) -> left.append(right.toString()),
-			ORDERED_CHARACTERISTICS
-		);
-	}
-
 	@Getter
 	@Accessors(fluent = true)
 	@RequiredArgsConstructor
