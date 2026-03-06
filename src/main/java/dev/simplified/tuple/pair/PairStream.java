@@ -1,8 +1,5 @@
 package dev.sbs.api.tuple.pair;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.collection.concurrent.ConcurrentMap;
-import dev.sbs.api.collection.concurrent.linked.ConcurrentLinkedMap;
 import dev.sbs.api.function.TriFunction;
 import org.jetbrains.annotations.NotNull;
 
@@ -87,22 +84,6 @@ public interface PairStream<K, V> extends Stream<Map.Entry<K, V>> {
 
     default @NotNull PairStream<K, V> peek(@NotNull BiConsumer<? super K, ? super V> action) {
         return of(this.underlying().peek(entry -> action.accept(entry.getKey(), entry.getValue())));
-    }
-
-    @SuppressWarnings("all")
-    default @NotNull PairStream<K, V> with(@NotNull Consumer<? super Map.Entry<K, V>> action) {
-        return of(this.underlying().map(entry -> {
-            action.accept(entry);
-            return entry;
-        }));
-    }
-
-    @SuppressWarnings("all")
-    default @NotNull PairStream<K, V> with(@NotNull BiConsumer<? super K, ? super V> action) {
-        return of(this.underlying().map(entry -> {
-            action.accept(entry.getKey(), entry.getValue());
-            return entry;
-        }));
     }
 
     @Override
@@ -473,66 +454,6 @@ public interface PairStream<K, V> extends Stream<Map.Entry<K, V>> {
     @Override
     default <A> @NotNull A @NotNull [] toArray(@NotNull IntFunction<A[]> generator) {
         return this.underlying().toArray(generator);
-    }
-
-    default @NotNull ConcurrentMap<K, V> toConcurrentMap() {
-        return this.underlying().collect(Concurrent.toMap());
-    }
-
-    default @NotNull ConcurrentMap<K, V> toConcurrentMap(@NotNull BinaryOperator<V> mergeFunction) {
-        return this.underlying().collect(Concurrent.toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction));
-    }
-
-    default <K2, V2> @NotNull ConcurrentMap<K2, V2> toConcurrentMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, V2> valueMapper) {
-        return this.underlying().collect(Concurrent.toMap(keyMapper, valueMapper));
-    }
-
-    default <K2, V2> @NotNull ConcurrentMap<K2, V2> toConcurrentMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, ? extends V2> valueMapper, BinaryOperator<V2> mergeFunction) {
-        return this.underlying().collect(Concurrent.toMap(keyMapper, valueMapper, mergeFunction));
-    }
-
-    default <K2, V2> @NotNull ConcurrentMap<K2, V2> toConcurrentMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, ? extends V2> valueMapper, BinaryOperator<V2> mergeFunction, Supplier<ConcurrentMap<K2, V2>> mapSupplier) {
-        return this.underlying().collect(Concurrent.toMap(keyMapper, valueMapper, mergeFunction, mapSupplier));
-    }
-
-    default @NotNull ConcurrentLinkedMap<K, V> toConcurrentLinkedMap() {
-        return this.underlying().collect(Concurrent.toLinkedMap());
-    }
-
-    default @NotNull ConcurrentLinkedMap<K, V> toConcurrentLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
-        return this.underlying().collect(Concurrent.toLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction));
-    }
-
-    default <K2, V2> @NotNull ConcurrentLinkedMap<K2, V2> toConcurrentLinkedMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, ? extends V2> valueMapper) {
-        return this.underlying().collect(Concurrent.toLinkedMap(keyMapper, valueMapper));
-    }
-
-    default <K2, V2> @NotNull ConcurrentLinkedMap<K2, V2> toConcurrentLinkedMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, ? extends V2> valueMapper, BinaryOperator<V2> mergeFunction) {
-        return this.underlying().collect(Concurrent.toLinkedMap(keyMapper, valueMapper, mergeFunction));
-    }
-
-    default <K2, V2> @NotNull ConcurrentLinkedMap<K2, V2> toConcurrentLinkedMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, ? extends V2> valueMapper, BinaryOperator<V2> mergeFunction, Supplier<ConcurrentLinkedMap<K2, V2>> mapSupplier) {
-        return this.underlying().collect(Concurrent.toLinkedMap(keyMapper, valueMapper, mergeFunction, mapSupplier));
-    }
-
-    default @NotNull ConcurrentMap<K, V> toConcurrentUnmodifiableMap() {
-        return this.underlying().collect(Concurrent.toUnmodifiableMap());
-    }
-
-    default @NotNull ConcurrentMap<K, V> toConcurrentUnmodifiableMap(@NotNull BinaryOperator<V> mergeFunction) {
-        return this.underlying().collect(Concurrent.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction));
-    }
-
-    default <K2, V2> @NotNull ConcurrentMap<K2, V2> toConcurrentUnmodifiableMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, ? extends V2> valueMapper) {
-        return this.underlying().collect(Concurrent.toUnmodifiableMap(keyMapper, valueMapper));
-    }
-
-    default <K2, V2> @NotNull ConcurrentMap<K2, V2> toConcurrentUnmodifiableMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, ? extends V2> valueMapper, BinaryOperator<V2> mergeFunction) {
-        return this.underlying().collect(Concurrent.toUnmodifiableMap(keyMapper, valueMapper, mergeFunction));
-    }
-
-    default <K2, V2> @NotNull ConcurrentMap<K2, V2> toConcurrentUnmodifiableMap(Function<? super Map.Entry<K, V>, ? extends K2> keyMapper, Function<? super Map.Entry<K, V>, ? extends V2> valueMapper, BinaryOperator<V2> mergeFunction, Supplier<ConcurrentMap<K2, V2>> mapSupplier) {
-        return this.underlying().collect(Concurrent.toUnmodifiableMap(keyMapper, valueMapper, mergeFunction, mapSupplier));
     }
 
 }
