@@ -45,7 +45,7 @@ public class ConcurrentSet<E> extends AtomicSet<E, HashSet<E>> {
 	}
 
 	@Override
-	protected @NotNull AtomicCollection<E, HashSet<E>> createEmpty() {
+	protected final @NotNull AtomicCollection<E, HashSet<E>> createEmpty() {
 		return Concurrent.newSet();
 	}
 

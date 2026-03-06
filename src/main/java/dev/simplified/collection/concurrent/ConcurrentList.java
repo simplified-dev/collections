@@ -48,7 +48,7 @@ public class ConcurrentList<E> extends AtomicList<E, ArrayList<E>> {
 	}
 
 	@Override
-	protected @NotNull AtomicList<E, ArrayList<E>> createEmpty() {
+	protected final @NotNull AtomicList<E, ArrayList<E>> createEmpty() {
 		return Concurrent.newList();
 	}
 

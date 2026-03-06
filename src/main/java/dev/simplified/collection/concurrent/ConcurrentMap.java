@@ -44,6 +44,21 @@ public class ConcurrentMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> {
         super(new HashMap<>(), map);
     }
 
+    @Override
+    protected final @NotNull ConcurrentSet<Entry<K, V>> createEmptyEntrySet() {
+        return Concurrent.newSet();
+    }
+
+    @Override
+    protected final @NotNull ConcurrentSet<K> createEmptyKeySet() {
+        return Concurrent.newSet();
+    }
+
+    @Override
+    protected final @NotNull ConcurrentList<V> createEmptyValueList() {
+        return Concurrent.newList();
+    }
+
     public @NotNull ConcurrentMap<K, V> toUnmodifiableMap() {
         return Concurrent.newUnmodifiableMap(this);
     }

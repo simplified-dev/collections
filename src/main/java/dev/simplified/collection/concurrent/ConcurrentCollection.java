@@ -46,7 +46,7 @@ public class ConcurrentCollection<E> extends AtomicCollection<E, AbstractCollect
 	}
 
 	@Override
-	protected @NotNull AtomicCollection<E, AbstractCollection<E>> createEmpty() {
+	protected final @NotNull AtomicCollection<E, AbstractCollection<E>> createEmpty() {
 		return Concurrent.newCollection();
 	}
 
