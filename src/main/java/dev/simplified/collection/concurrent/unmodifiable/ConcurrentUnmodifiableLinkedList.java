@@ -1,17 +1,17 @@
 package dev.sbs.api.collection.concurrent.unmodifiable;
 
 import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.collection.concurrent.ConcurrentList;
 import dev.sbs.api.collection.concurrent.linked.ConcurrentLinkedList;
+import dev.sbs.api.collection.query.SortOrder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -23,6 +23,7 @@ import java.util.function.Supplier;
  *
  * @param <E> type of elements
  */
+@SuppressWarnings("all")
 public class ConcurrentUnmodifiableLinkedList<E> extends ConcurrentLinkedList<E> {
 
 	/**
@@ -78,10 +79,8 @@ public class ConcurrentUnmodifiableLinkedList<E> extends ConcurrentLinkedList<E>
 	}
 
 	@Override
-	public final ConcurrentUnmodifiableLinkedList<E> inverse() {
-		ConcurrentList<E> list = Concurrent.newList(this);
-		Collections.reverse(list);
-		return Concurrent.newUnmodifiableLinkedList(list);
+	public final @NotNull ConcurrentUnmodifiableLinkedList<E> inverse() {
+		return Concurrent.newUnmodifiableLinkedList(super.inverse());
 	}
 
 	@Override
@@ -161,6 +160,31 @@ public class ConcurrentUnmodifiableLinkedList<E> extends ConcurrentLinkedList<E>
 	@Override
 	public final E set(int index, E element) {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public @NotNull ConcurrentUnmodifiableLinkedList<E> sorted(@NotNull Function<E, ? extends Comparable>... sortFunctions) {
+		return Concurrent.newUnmodifiableLinkedList(super.sorted(sortFunctions));
+	}
+
+	@Override
+	public @NotNull ConcurrentUnmodifiableLinkedList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable>... functions) {
+		return Concurrent.newUnmodifiableLinkedList(super.sorted(sortOrder, functions));
+	}
+
+	@Override
+	public @NotNull ConcurrentUnmodifiableLinkedList<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable>> functions) {
+		return Concurrent.newUnmodifiableLinkedList(super.sorted(functions));
+	}
+
+	@Override
+	public @NotNull ConcurrentUnmodifiableLinkedList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable>> functions) {
+		return Concurrent.newUnmodifiableLinkedList(super.sorted(sortOrder, functions));
+	}
+
+	@Override
+	public @NotNull ConcurrentUnmodifiableLinkedList<E> sorted(Comparator<? super E> comparator) {
+		return Concurrent.newUnmodifiableLinkedList(super.sorted(comparator));
 	}
 
 	@Override

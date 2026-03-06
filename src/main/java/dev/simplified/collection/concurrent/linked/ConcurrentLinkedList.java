@@ -51,33 +51,38 @@ public class ConcurrentLinkedList<E> extends AtomicList<E, LinkedList<E>> implem
 	}
 
 	@Override
-	public ConcurrentLinkedList<E> sorted(@NotNull Function<E, ? extends Comparable>... sortFunctions) {
-		super.sorted(sortFunctions);
-		return this;
+	protected @NotNull AtomicList<E, LinkedList<E>> createEmpty() {
+		return Concurrent.newLinkedList();
 	}
 
 	@Override
-	public ConcurrentLinkedList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable>... functions) {
-		super.sorted(sortOrder, functions);
-		return this;
+	public @NotNull ConcurrentLinkedList<E> inverse() {
+		return (ConcurrentLinkedList<E>) super.inverse();
 	}
 
 	@Override
-	public ConcurrentLinkedList<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable>> functions) {
-		super.sorted(functions);
-		return this;
+	public @NotNull ConcurrentLinkedList<E> sorted(@NotNull Function<E, ? extends Comparable>... sortFunctions) {
+		return (ConcurrentLinkedList<E>) super.sorted(sortFunctions);
 	}
 
 	@Override
-	public ConcurrentLinkedList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable>> functions) {
-		super.sorted(sortOrder, functions);
-		return this;
+	public @NotNull ConcurrentLinkedList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable>... functions) {
+		return (ConcurrentLinkedList<E>) super.sorted(sortOrder, functions);
 	}
 
 	@Override
-	public ConcurrentLinkedList<E> sorted(Comparator<? super E> comparator) {
-		super.sorted(comparator);
-		return this;
+	public @NotNull ConcurrentLinkedList<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable>> functions) {
+		return (ConcurrentLinkedList<E>) super.sorted(functions);
+	}
+
+	@Override
+	public @NotNull ConcurrentLinkedList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable>> functions) {
+		return (ConcurrentLinkedList<E>) super.sorted(sortOrder, functions);
+	}
+
+	@Override
+	public @NotNull ConcurrentLinkedList<E> sorted(Comparator<? super E> comparator) {
+		return (ConcurrentLinkedList<E>) super.sorted(comparator);
 	}
 
 	public @NotNull ConcurrentLinkedList<E> toUnmodifiableLinkedList() {

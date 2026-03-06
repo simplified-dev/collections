@@ -17,6 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -62,7 +63,29 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) {
-		return (predicate.get() && this.add(element));
+		try {
+			this.lock.writeLock().lock();
+
+			if (predicate.get())
+				return this.ref.add(element);
+
+			return false;
+		} finally {
+			this.lock.writeLock().unlock();
+		}
+	}
+
+	public boolean addIf(@NotNull Predicate<T> predicate, @NotNull E element) {
+		try {
+			this.lock.writeLock().lock();
+
+			if (predicate.test(this.ref))
+				return this.ref.add(element);
+
+			return false;
+		} finally {
+			this.lock.writeLock().unlock();
+		}
 	}
 
 	/**
@@ -118,6 +141,8 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.readLock().unlock();
 		}
 	}
+
+	protected abstract @NotNull AtomicCollection<E, T> createEmpty();
 
 	/**
 	 * {@inheritDoc}
@@ -211,10 +236,16 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @param replaceWith The element to replace with.
 	 */
 	public final boolean replace(@NotNull E existingElement, @NotNull E replaceWith) {
-		if (this.remove(existingElement))
-			return this.add(replaceWith);
+		try {
+			this.lock.writeLock().lock();
 
-		return false;
+			if (this.ref.remove(existingElement))
+				return this.ref.add(replaceWith);
+
+			return false;
+		} finally {
+			this.lock.writeLock().unlock();
+		}
 	}
 
 	/**
@@ -248,7 +279,12 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public final int size() {
-		return this.ref.size();
+		try {
+			this.lock.readLock().lock();
+			return this.ref.size();
+		} finally {
+			this.lock.readLock().unlock();
+		}
 	}
 
 	/**
@@ -264,7 +300,12 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public Object @NotNull [] toArray() {
-		return this.ref.toArray();
+		try {
+			this.lock.readLock().lock();
+			return this.ref.toArray();
+		} finally {
+			this.lock.readLock().unlock();
+		}
 	}
 
 	/**
@@ -273,7 +314,12 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	@Override
 	@SuppressWarnings("SuspiciousToArrayCall")
 	public <U> U @NotNull [] toArray(@NotNull U @NotNull [] array) {
-		return this.ref.toArray(array);
+		try {
+			this.lock.readLock().lock();
+			return this.ref.toArray(array);
+		} finally {
+			this.lock.readLock().unlock();
+		}
 	}
 
 	/**

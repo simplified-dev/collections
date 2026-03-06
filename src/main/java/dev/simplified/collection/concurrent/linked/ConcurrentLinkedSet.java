@@ -1,5 +1,7 @@
 package dev.sbs.api.collection.concurrent.linked;
 
+import dev.sbs.api.collection.concurrent.Concurrent;
+import dev.sbs.api.collection.concurrent.atomic.AtomicCollection;
 import dev.sbs.api.collection.concurrent.atomic.AtomicSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +44,11 @@ public class ConcurrentLinkedSet<E> extends AtomicSet<E, LinkedHashSet<E>> {
 	 */
 	public ConcurrentLinkedSet(@Nullable Collection<? extends E> collection) {
 		super(collection == null ? new LinkedHashSet<>() : new LinkedHashSet<>(collection));
+	}
+
+	@Override
+	protected @NotNull AtomicCollection<E, LinkedHashSet<E>> createEmpty() {
+		return Concurrent.newLinkedSet();
 	}
 
 }

@@ -1,5 +1,6 @@
 package dev.sbs.api.collection.concurrent;
 
+import dev.sbs.api.collection.concurrent.atomic.AtomicCollection;
 import dev.sbs.api.collection.concurrent.atomic.AtomicSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +42,11 @@ public class ConcurrentSet<E> extends AtomicSet<E, HashSet<E>> {
 	 */
 	public ConcurrentSet(@Nullable Collection<? extends E> collection) {
 		super(collection == null ? new HashSet<>() : new HashSet<>(collection));
+	}
+
+	@Override
+	protected @NotNull AtomicCollection<E, HashSet<E>> createEmpty() {
+		return Concurrent.newSet();
 	}
 
 	public @NotNull ConcurrentSet<E> toUnmodifiableSet() {

@@ -45,4 +45,9 @@ public class ConcurrentCollection<E> extends AtomicCollection<E, AbstractCollect
 		super(collection == null ? new ArrayList<>() : new ArrayList<>(collection));
 	}
 
+	@Override
+	protected @NotNull AtomicCollection<E, AbstractCollection<E>> createEmpty() {
+		return Concurrent.newCollection();
+	}
+
 }
