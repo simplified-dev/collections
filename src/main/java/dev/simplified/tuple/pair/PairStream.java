@@ -16,6 +16,20 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+/**
+ * A specialized stream interface that operates on {@link Map.Entry} objects.
+ * <p>
+ * Providing manipulation of keys and values, enabling a variety of methods for
+ * transformation, filtering, mapping, and reduction specifically tailored to
+ * {@link Map.Entry} objects, their keys, and their values.
+ * <p>
+ * {@code PairStream} is constructed from a {@link Map}, {@link Stream} of
+ * entries, or a stream of keys combined with a mapping function and maintains
+ * standard compatibility with {@link Stream} operations.
+ *
+ * @param <K> The type of keys represented in the stream.
+ * @param <V> The type of values represented in the stream.
+ */
 @FunctionalInterface
 public interface PairStream<K, V> extends Stream<Map.Entry<K, V>> {
 

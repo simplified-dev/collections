@@ -19,6 +19,20 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+/**
+ * A specialized stream interface that operates on {@link Triple} objects.
+ * <p>
+ * Providing manipulation of a Triple's {@code left}, {@code middle}, {@code right} elements,
+ * enabling a variety of methods for transformation, filtering, mapping, and reduction specifically
+ * tailored to {@link Triple} objects and their elements.
+ * <p>
+ * {@code TripleStream} is constructed from a {@link Stream} of triples, or a stream of left elements
+ * combined with mapping functions and maintains standard compatibility with {@link Stream} operations.
+ *
+ * @param <L> the type of the left element
+ * @param <M> the type of the middle element
+ * @param <R> the type of the right element
+ */
 @FunctionalInterface
 public interface TripleStream<L, M, R> extends Stream<Triple<L, M, R>> {
 
