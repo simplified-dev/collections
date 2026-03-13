@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.*;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -40,7 +39,7 @@ import java.util.stream.Stream;
  * @param <R> the type of the right element
  */
 @FunctionalInterface
-public interface TripleStream<L, M, R> extends Stream<Triple<L, M, R>> {
+public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
 
     // Create
 
@@ -318,7 +317,7 @@ public interface TripleStream<L, M, R> extends Stream<Triple<L, M, R>> {
 
     /** {@inheritDoc} */
     @Override
-    default @NotNull DoubleStream flatMapToDouble(Function<? super Triple<L, M, R>, ? extends DoubleStream> mapper) {
+    default @NotNull DoubleStream flatMapToDouble(@NotNull Function<? super Triple<L, M, R>, ? extends DoubleStream> mapper) {
         return this.underlying().flatMapToDouble(mapper);
     }
 
@@ -336,7 +335,7 @@ public interface TripleStream<L, M, R> extends Stream<Triple<L, M, R>> {
 
     /** {@inheritDoc} */
     @Override
-    default @NotNull IntStream flatMapToInt(Function<? super Triple<L, M, R>, ? extends IntStream> mapper) {
+    default @NotNull IntStream flatMapToInt(@NotNull Function<? super Triple<L, M, R>, ? extends IntStream> mapper) {
         return this.underlying().flatMapToInt(mapper);
     }
 
@@ -354,7 +353,7 @@ public interface TripleStream<L, M, R> extends Stream<Triple<L, M, R>> {
 
     /** {@inheritDoc} */
     @Override
-    default @NotNull LongStream flatMapToLong(Function<? super Triple<L, M, R>, ? extends LongStream> mapper) {
+    default @NotNull LongStream flatMapToLong(@NotNull Function<? super Triple<L, M, R>, ? extends LongStream> mapper) {
         return this.underlying().flatMapToLong(mapper);
     }
 
@@ -710,7 +709,7 @@ public interface TripleStream<L, M, R> extends Stream<Triple<L, M, R>> {
 
     /** {@inheritDoc} */
     @Override
-    default TripleStream<L, M ,R> sorted() {
+    default @NotNull TripleStream<L, M ,R> sorted() {
         return of(this.underlying().sorted());
     }
 
@@ -756,56 +755,7 @@ public interface TripleStream<L, M, R> extends Stream<Triple<L, M, R>> {
     // Collect
 
     /**
-     * Performs a <a href="package-summary.html#MutableReduction">mutable
-     * reduction</a> operation on the elements of this stream using a
-     * {@code Collector}.  A {@code Collector}
-     * encapsulates the functions used as arguments to
-     * {@link Stream#collect(Supplier, BiConsumer, BiConsumer)}, allowing for reuse of
-     * collection strategies and composition of collect operations such as
-     * multiple-level grouping or partitioning.
-     *
-     * <p>If the stream is parallel, and the {@code Collector}
-     * is {@link Collector.Characteristics#CONCURRENT concurrent}, and
-     * either the stream is unordered or the collector is
-     * {@link Collector.Characteristics#UNORDERED unordered},
-     * then a concurrent reduction will be performed (see {@link Collector} for
-     * details on concurrent reduction.)
-     *
-     * <p>This is a <a href="package-summary.html#StreamOps">terminal
-     * operation</a>.
-     *
-     * <p>When executed in parallel, multiple intermediate results may be
-     * instantiated, populated, and merged so as to maintain isolation of
-     * mutable data structures.  Therefore, even when executed in parallel
-     * with non-thread-safe data structures (such as {@code ArrayList}), no
-     * additional synchronization is needed for a parallel reduction.
-     *
-     * @apiNote
-     * The following will accumulate strings into a List:
-     * <pre>{@code
-     *     List<String> asList = stringStream.collect(Collectors.toList());
-     * }</pre>
-     *
-     * <p>The following will classify {@code Person} objects by city:
-     * <pre>{@code
-     *     Map<String, List<Person>> peopleByCity
-     *         = personStream.collect(Collectors.groupingBy(Person::getCity));
-     * }</pre>
-     *
-     * <p>The following will classify {@code Person} objects by state and city,
-     * cascading two {@code Collector}s together:
-     * <pre>{@code
-     *     Map<String, Map<String, List<Person>>> peopleByStateAndCity
-     *         = personStream.collect(Collectors.groupingBy(Person::getState,
-     *                                                      Collectors.groupingBy(Person::getCity)));
-     * }</pre>
-     *
-     * @param <T> the type of the result
-     * @param <A> the intermediate accumulation type of the {@code Collector}
-     * @param collector the {@code Collector} describing the reduction
-     * @return the result of the reduction
-     * @see Stream#collect(Supplier, BiConsumer, BiConsumer)
-     * @see Collectors
+     * {@inheritDoc}
      */
     @Override
     default <T, A> T collect(@NotNull Collector<? super Triple<L, M, R>, A, T> collector) {

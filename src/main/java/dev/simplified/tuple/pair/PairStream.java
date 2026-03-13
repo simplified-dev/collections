@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.*;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -38,7 +37,7 @@ import java.util.stream.Stream;
  * @param <V> the type of values represented in the stream
  */
 @FunctionalInterface
-public interface PairStream<K, V> extends Stream<Map.Entry<K, V>> {
+public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
 
     // Create
 
@@ -654,7 +653,7 @@ public interface PairStream<K, V> extends Stream<Map.Entry<K, V>> {
 
     /** {@inheritDoc} */
     @Override
-    default PairStream<K, V> sorted() {
+    default @NotNull PairStream<K, V> sorted() {
         return of(this.underlying().sorted());
     }
 
@@ -687,56 +686,7 @@ public interface PairStream<K, V> extends Stream<Map.Entry<K, V>> {
     // Collect
 
     /**
-     * Performs a <a href="package-summary.html#MutableReduction">mutable
-     * reduction</a> operation on the elements of this stream using a
-     * {@code Collector}.  A {@code Collector}
-     * encapsulates the functions used as arguments to
-     * {@link Stream#collect(Supplier, BiConsumer, BiConsumer)}, allowing for reuse of
-     * collection strategies and composition of collect operations such as
-     * multiple-level grouping or partitioning.
-     *
-     * <p>If the stream is parallel, and the {@code Collector}
-     * is {@link Collector.Characteristics#CONCURRENT concurrent}, and
-     * either the stream is unordered or the collector is
-     * {@link Collector.Characteristics#UNORDERED unordered},
-     * then a concurrent reduction will be performed (see {@link Collector} for
-     * details on concurrent reduction.)
-     *
-     * <p>This is a <a href="package-summary.html#StreamOps">terminal
-     * operation</a>.
-     *
-     * <p>When executed in parallel, multiple intermediate results may be
-     * instantiated, populated, and merged so as to maintain isolation of
-     * mutable data structures.  Therefore, even when executed in parallel
-     * with non-thread-safe data structures (such as {@code ArrayList}), no
-     * additional synchronization is needed for a parallel reduction.
-     *
-     * @apiNote
-     * The following will accumulate strings into a List:
-     * <pre>{@code
-     *     List<String> asList = stringStream.collect(Collectors.toList());
-     * }</pre>
-     *
-     * <p>The following will classify {@code Person} objects by city:
-     * <pre>{@code
-     *     Map<String, List<Person>> peopleByCity
-     *         = personStream.collect(Collectors.groupingBy(Person::getCity));
-     * }</pre>
-     *
-     * <p>The following will classify {@code Person} objects by state and city,
-     * cascading two {@code Collector}s together:
-     * <pre>{@code
-     *     Map<String, Map<String, List<Person>>> peopleByStateAndCity
-     *         = personStream.collect(Collectors.groupingBy(Person::getState,
-     *                                                      Collectors.groupingBy(Person::getCity)));
-     * }</pre>
-     *
-     * @param <R> the type of the result
-     * @param <A> the intermediate accumulation type of the {@code Collector}
-     * @param collector the {@code Collector} describing the reduction
-     * @return the result of the reduction
-     * @see Stream#collect(Supplier, BiConsumer, BiConsumer)
-     * @see Collectors
+     * {@inheritDoc}
      */
     @Override
     default <R, A> R collect(@NotNull Collector<? super Map.Entry<K, V>, A, R> collector) {
