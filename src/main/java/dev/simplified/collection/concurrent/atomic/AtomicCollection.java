@@ -2,6 +2,7 @@ package dev.sbs.api.collection.concurrent.atomic;
 
 import dev.sbs.api.collection.concurrent.iterator.ConcurrentIterator;
 import dev.sbs.api.collection.query.Searchable;
+import dev.sbs.api.tuple.single.SingleStream;
 import dev.sbs.api.tuple.triple.TripleStream;
 import dev.sbs.api.util.StreamUtil;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +20,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @SuppressWarnings("all")
@@ -209,8 +209,8 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @NotNull Stream<E> parallelStream() {
-		return StreamSupport.stream(this.spliterator(), true);
+	public final @NotNull SingleStream<E> parallelStream() {
+		return SingleStream.of(StreamSupport.stream(this.spliterator(), true));
 	}
 
 	/**
@@ -291,8 +291,8 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @NotNull Stream<E> stream() {
-		return StreamSupport.stream(this.spliterator(), false);
+	public final @NotNull SingleStream<E> stream() {
+		return SingleStream.of(StreamSupport.stream(this.spliterator(), false));
 	}
 
 	/**
