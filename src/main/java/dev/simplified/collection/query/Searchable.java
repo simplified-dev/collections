@@ -4,6 +4,7 @@ import dev.sbs.api.collection.concurrent.Concurrent;
 import dev.sbs.api.function.TriPredicate;
 import dev.sbs.api.persistence.exception.SessionException;
 import dev.sbs.api.tuple.pair.Pair;
+import dev.sbs.api.tuple.single.SingleStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -16,10 +17,10 @@ import java.util.stream.StreamSupport;
 @FunctionalInterface
 public interface Searchable<E> {
 
-    @NotNull Stream<E> stream() throws SessionException;
+    @NotNull SingleStream<E> stream() throws SessionException;
 
-    default <S> @NotNull Stream<E> compare(SearchFunction.Match match, TriPredicate<Function<E, S>, E, S> compare, Iterable<Pair<Function<E, S>, S>> predicates) throws SessionException {
-        Stream<E> itemsCopy = this.stream();
+    default <S> @NotNull SingleStream<E> compare(SearchFunction.Match match, TriPredicate<Function<E, S>, E, S> compare, Iterable<Pair<Function<E, S>, S>> predicates) throws SessionException {
+        SingleStream<E> itemsCopy = this.stream();
 
         if (match == SearchFunction.Match.ANY) {
             itemsCopy = itemsCopy.filter(it -> {
@@ -39,8 +40,8 @@ public interface Searchable<E> {
         return itemsCopy;
     }
 
-    default <S> @NotNull Stream<E> contains(SearchFunction.Match match, TriPredicate<Function<E, List<S>>, E, S> compare, Iterable<Pair<Function<E, List<S>>, S>> predicates) throws SessionException {
-        Stream<E> itemsCopy = this.stream();
+    default <S> @NotNull SingleStream<E> contains(SearchFunction.Match match, TriPredicate<Function<E, List<S>>, E, S> compare, Iterable<Pair<Function<E, List<S>>, S>> predicates) throws SessionException {
+        SingleStream<E> itemsCopy = this.stream();
 
         if (match == SearchFunction.Match.ANY) {
             itemsCopy = itemsCopy.filter(it -> {
