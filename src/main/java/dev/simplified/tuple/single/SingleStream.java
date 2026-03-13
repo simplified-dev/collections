@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.*;
@@ -66,6 +67,19 @@ public interface SingleStream<E> extends Stream<E> {
      */
     static <E> @NotNull SingleStream<E> of(@NotNull Collection<E> collection) {
         return of(collection.stream());
+    }
+
+    /**
+     * Combines two streams into a single stream by concatenating their elements in order.
+     *
+     * @param <T> the type of elements in the streams
+     * @param a the first stream to concatenate
+     * @param b the second stream to concatenate
+     * @return a new stream containing all elements from the first stream,
+     *         followed by all elements from the second stream
+     */
+    static <T> @NotNull SingleStream<T> concat(@NotNull Stream<? extends T> a, @NotNull Stream<? extends T> b) {
+        return of(Stream.concat(a, b));
     }
 
     // Close
@@ -363,12 +377,13 @@ public interface SingleStream<E> extends Stream<E> {
      * Expands each element into a {@link Pair}, using the element itself as the key and
      * the result of {@code valueMapper} as the value.
      *
-     * @param <R>         the type of the pair value
-     * @param valueMapper a function producing the value from each element
+     * @param <K>         the type of the pair key
+     * @param <V>         the type of the pair value
+     * @param entryMapper a function producing the entry from each element
      * @return a {@link PairStream} of {@code (element, mappedValue)} pairs
      */
-    default <R> @NotNull PairStream<E, R> expandToPair(@NotNull Function<? super E, ? extends R> valueMapper) {
-        return PairStream.of(this.underlying().map(e -> Pair.of(e, valueMapper.apply(e))));
+    default <K, V> @NotNull PairStream<K, V> expandToPair(@NotNull Function<? super E, ? extends Map.Entry<K, V>> entryMapper) {
+        return PairStream.of(this.underlying().map(entryMapper));
     }
 
     /**
@@ -382,6 +397,19 @@ public interface SingleStream<E> extends Stream<E> {
      */
     default <K, V> @NotNull PairStream<K, V> expandToPair(@NotNull Function<? super E, ? extends K> keyMapper, @NotNull Function<? super E, ? extends V> valueMapper) {
         return PairStream.of(this.underlying().map(e -> Pair.of(keyMapper.apply(e), valueMapper.apply(e))));
+    }
+
+    /**
+     * Expands each element into a {@link Triple} by independently mapping to a Triple.
+     *
+     * @param <L>          the type of the triple middle element
+     * @param <M>          the type of the triple middle element
+     * @param <R>          the type of the triple right element
+     * @param tripleMapper a function producing the triple value from each element
+     * @return a {@link TripleStream} of {@code (element, middle, right)} triples
+     */
+    default <L, M, R> @NotNull TripleStream<L, M, R> expandToTriple(@NotNull Function<? super E, ? extends Triple<L, M, R>> tripleMapper) {
+        return TripleStream.of(this.underlying().map(tripleMapper));
     }
 
     /**
