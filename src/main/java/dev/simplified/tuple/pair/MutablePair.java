@@ -1,62 +1,102 @@
 package dev.sbs.api.tuple.pair;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.Objects;
 
 /**
- * <p>A mutable pair consisting of two {@code Object} elements.</p>
- *
- * <p>Not #ThreadSafe#</p>
+ * A mutable pair consisting of two {@code Object} elements.
+ * <p>
+ * Not thread-safe.
  *
  * @param <L> the left element type
  * @param <R> the right element type
  */
 @Getter
 @Setter
-@NoArgsConstructor(force = true)
-@AllArgsConstructor
-public final class MutablePair<L, R> extends Pair<L, R> {
+@NoArgsConstructor
+public final class MutablePair<L, R> implements Pair<L, R> {
+
+    /** Left object, may be null. */
+    public @Nullable L left;
+    /** Right object, may be null. */
+    public @Nullable R right;
 
     /**
-     * Left object
-     */
-    public L left;
-    /**
-     * Right object
-     */
-    public R right;
-
-    /**
-     * <p>Obtains an immutable pair of from two objects inferring the generic types.</p>
+     * Creates a new mutable pair with the specified values.
      *
-     * <p>This factory allows the pair to be created using inference to
-     * obtain the generic types.</p>
+     * @param left  the left value, may be null
+     * @param right the right value, may be null
+     */
+    public MutablePair(@Nullable L left, @Nullable R right) {
+        this.left = left;
+        this.right = right;
+    }
+
+    /**
+     * Returns a mutable pair of two objects, inferring the generic types.
      *
      * @param <L>   the left element type
      * @param <R>   the right element type
      * @param left  the left element, may be null
      * @param right the right element, may be null
-     * @return a pair formed from the two parameters, not null
+     * @return a mutable pair formed from the two parameters, not null
      */
-    public static <L, R> MutablePair<L, R> of(L left, R right) {
+    public static <L, R> @NotNull MutablePair<L, R> of(@Nullable L left, @Nullable R right) {
         return new MutablePair<>(left, right);
     }
 
-    //-----------------------------------------------------------------------
+    /**
+     * Sets the right element (value) and returns the previous value, implementing
+     * {@link Map.Entry#setValue(Object)}.
+     *
+     * @param value the new right value, may be null
+     * @return the previous right value, may be null
+     */
+    @Override
+    public @Nullable R setValue(@Nullable R value) {
+        R previous = getRight();
+        setRight(value);
+        return previous;
+    }
 
     /**
-     * Sets the {@code Map.Entry} value.
-     * This sets the right element of the pair.
+     * Compares this pair to another based on the two elements, satisfying the
+     * {@link Map.Entry} equality contract.
      *
-     * @param value the right value to set, not null
-     * @return the old value for the right element
+     * @param obj the object to compare to, null returns false
+     * @return {@code true} if the other object is a {@link Map.Entry} with equal key and value
      */
-    public R setValue(R value) {
-        R result = getRight();
-        setRight(value);
-        return result;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Map.Entry<?, ?> other)) return false;
+        return Objects.equals(getKey(), other.getKey()) && Objects.equals(getValue(), other.getValue());
+    }
+
+    /**
+     * Returns a hash code following the {@link Map.Entry} specification.
+     *
+     * @return the hash code
+     */
+    @Override
+    public int hashCode() {
+        return (left == null ? 0 : left.hashCode()) ^ (right == null ? 0 : right.hashCode());
+    }
+
+    /**
+     * Returns a string representation of this pair in the format {@code (left,right)}.
+     *
+     * @return a string describing this pair, not null
+     */
+    @Override
+    public @NotNull String toString() {
+        return String.format("(%s,%s)", left, right);
     }
 
 }

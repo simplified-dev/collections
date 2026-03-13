@@ -1,15 +1,17 @@
 package dev.sbs.api.tuple.triple;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * <p>A mutable triple consisting of three {@code Object} elements.</p>
- *
- * <p>Not #ThreadSafe#</p>
+ * A mutable triple consisting of three {@code Object} elements.
+ * <p>
+ * Not thread-safe.
  *
  * @param <L> the left element type
  * @param <M> the middle element type
@@ -17,19 +19,20 @@ import org.jetbrains.annotations.NotNull;
  */
 @Getter
 @Setter
-@NoArgsConstructor(force = true)
+@EqualsAndHashCode
+@NoArgsConstructor
 @AllArgsConstructor
-public final class MutableTriple<L, M, R> extends Triple<L, M, R> {
+public final class MutableTriple<L, M, R> implements Triple<L, M, R> {
 
-    public L left;
-    public M middle;
-    public R right;
+    /** Left object, may be null. */
+    public @Nullable L left;
+    /** Middle object, may be null. */
+    public @Nullable M middle;
+    /** Right object, may be null. */
+    public @Nullable R right;
 
     /**
-     * <p>Obtains a mutable triple of three objects inferring the generic types.</p>
-     *
-     * <p>This factory allows the triple to be created using inference to
-     * obtain the generic types.</p>
+     * Returns a mutable triple of three objects, inferring the generic types.
      *
      * @param <L>    the left element type
      * @param <M>    the middle element type
@@ -37,10 +40,20 @@ public final class MutableTriple<L, M, R> extends Triple<L, M, R> {
      * @param left   the left element, may be null
      * @param middle the middle element, may be null
      * @param right  the right element, may be null
-     * @return a triple formed from the three parameters, not null
+     * @return a mutable triple formed from the three parameters, not null
      */
-    public static <L, M, R> @NotNull MutableTriple<L, M, R> of(final L left, final M middle, final R right) {
+    public static <L, M, R> @NotNull MutableTriple<L, M, R> of(@Nullable L left, @Nullable M middle, @Nullable R right) {
         return new MutableTriple<>(left, middle, right);
+    }
+
+    /**
+     * Returns a string representation of this triple in the format {@code (left,middle,right)}.
+     *
+     * @return a string describing this triple, not null
+     */
+    @Override
+    public @NotNull String toString() {
+        return String.format("(%s,%s,%s)", left, middle, right);
     }
 
 }

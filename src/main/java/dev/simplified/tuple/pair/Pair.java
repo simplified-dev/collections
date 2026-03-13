@@ -5,129 +5,121 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
- * <p>A pair consisting of two elements.</p>
- *
- * <p>This class is an abstract implementation defining the basic API.
- * It refers to the elements as 'left' and 'right'. It also implements the
- * {@code Map.Entry} interface where the key is 'left' and the value is 'right'.</p>
- *
- * <p>Subclass implementations may be mutable or immutable.
- * However, there is no restriction on the type of the stored objects that may be stored.
- * If mutable objects are stored in the pair, then the pair itself effectively becomes mutable.</p>
+ * A pair consisting of two elements.
+ * <p>
+ * This interface defines the basic API for a two-element tuple, referring to the
+ * elements as 'left' and 'right'. It also implements the {@link Map.Entry} interface
+ * where the left element is the key and the right element is the value.
+ * <p>
+ * Implementations may be mutable or immutable. If mutable objects are stored in the
+ * pair, then the pair itself effectively becomes mutable.
  *
  * @param <L> the left element type
  * @param <R> the right element type
+ * @see ImmutablePair
+ * @see MutablePair
  */
-public abstract class Pair<L, R> implements Map.Entry<L, R>, Comparable<Pair<L, R>> {
+public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
 
     /**
-     * <p>Obtains an immutable pair of from two objects inferring the generic types.</p>
-     *
-     * <p>This factory allows the pair to be created using inference to
-     * obtain the generic types.</p>
+     * Returns an immutable pair of two objects, inferring the generic types.
      *
      * @param <L>   the left element type
      * @param <R>   the right element type
      * @param left  the left element, may be null
      * @param right the right element, may be null
-     * @return a pair formed from the two parameters, not null
+     * @return an immutable pair formed from the two parameters, not null
      */
-    public static <L, R> Pair<L, R> of(@Nullable L left, @Nullable R right) {
+    static <L, R> @NotNull Pair<L, R> of(@Nullable L left, @Nullable R right) {
         return new ImmutablePair<>(left, right);
     }
 
     /**
-     * <p>Obtains an immutable pair of from an entry object inferring the generic types.</p>
-     *
-     * <p>This factory allows the pair to be created using inference to
-     * obtain the generic types.</p>
+     * Returns an immutable pair copied from a {@link Map.Entry}, inferring the generic types.
+     * If {@code entry} is {@code null}, returns an empty pair.
      *
      * @param <L>   the left element type
      * @param <R>   the right element type
-     * @param entry the entry, may not be null
-     * @return a pair formed from the entry parameter, not null
+     * @param entry the entry to copy, may be null
+     * @return an immutable pair formed from the entry, not null
      */
-    public static <L, R> Pair<L, R> from(@Nullable Map.Entry<? extends L, ? extends R> entry) {
+    static <L, R> @NotNull Pair<L, R> from(@Nullable Map.Entry<? extends L, ? extends R> entry) {
         return entry != null ? new ImmutablePair<>(entry.getKey(), entry.getValue()) : empty();
     }
 
     /**
-     * <p>Obtains an immutable pair of null objects.</p>
+     * Returns an immutable pair where both elements are {@code null}.
      *
-     * @param <L>   the left element type
-     * @param <R>   the right element type
-     * @return a pair formed from null parameters
+     * @param <L> the left element type
+     * @param <R> the right element type
+     * @return an empty pair, not null
      */
-    public static <L, R> Pair<L, R> empty() {
+    static <L, R> @NotNull Pair<L, R> empty() {
         return new ImmutablePair<>(null, null);
     }
 
-    //-----------------------------------------------------------------------
-
     /**
-     * <p>Gets the left element from this pair.</p>
-     *
-     * <p>When treated as a key-value pair, this is the key.</p>
+     * Gets the left element from this pair.
+     * <p>
+     * When treated as a key-value pair, this is the key.
      *
      * @return the left element, may be null
      */
-    public abstract L getLeft();
+    @Nullable L getLeft();
 
     /**
-     * <p>Gets the right element from this pair.</p>
-     *
-     * <p>When treated as a key-value pair, this is the value.</p>
+     * Gets the right element from this pair.
+     * <p>
+     * When treated as a key-value pair, this is the value.
      *
      * @return the right element, may be null
      */
-    public abstract R getRight();
+    @Nullable R getRight();
 
     /**
-     * <p>Gets the key from this pair.</p>
-     *
-     * <p>This method implements the {@code Map.Entry} interface returning the
-     * left element as the key.</p>
+     * Gets the key from this pair, implementing {@link Map.Entry#getKey()}.
+     * <p>
+     * Returns the same value as {@link #getLeft()}.
      *
      * @return the left element as the key, may be null
      */
-    public final L getKey() {
-        return this.getLeft();
+    @Override
+    default @Nullable L getKey() {
+        return getLeft();
     }
 
     /**
-     * <p>Gets the value from this pair.</p>
-     *
-     * <p>This method implements the {@code Map.Entry} interface returning the
-     * right element as the value.</p>
+     * Gets the value from this pair, implementing {@link Map.Entry#getValue()}.
+     * <p>
+     * Returns the same value as {@link #getRight()}.
      *
      * @return the right element as the value, may be null
      */
-    public R getValue() {
-        return this.getRight();
+    @Override
+    default @Nullable R getValue() {
+        return getRight();
     }
 
     /**
-     * <p>Gets if the left and right values are null.</p>
+     * Returns {@code true} if both the left and right elements are {@code null}.
      *
-     * @return true if both values are null
+     * @return {@code true} if both elements are null, {@code false} otherwise
      */
-    public boolean isEmpty() {
-        return Objects.isNull(this.getLeft()) && Objects.isNull(this.getRight());
+    default boolean isEmpty() {
+        return getLeft() == null && getRight() == null;
     }
 
-    //-----------------------------------------------------------------------
-
     /**
-     * <p>Compares the pair based on the left element followed by the right element.
-     * The types must be {@code Comparable}.</p>
+     * Compares this pair to another in natural order, first by the left element,
+     * then by the right element. The element types must be {@link Comparable}.
      *
      * @param other the other pair, not null
      * @return negative if this is less, zero if equal, positive if greater
      */
-    public int compareTo(Pair<L, R> other) {
+    @Override
+    default int compareTo(@NotNull Pair<L, R> other) {
         return new CompareToBuilder()
             .append(getLeft(), other.getLeft())
             .append(getRight(), other.getRight())
@@ -135,57 +127,15 @@ public abstract class Pair<L, R> implements Map.Entry<L, R>, Comparable<Pair<L, 
     }
 
     /**
-     * <p>Compares this pair to another based on the two elements.</p>
+     * Formats this pair using the given format string.
+     * <p>
+     * Use {@code %1$s} for the left element and {@code %2$s} for the right element.
+     * The default format used by {@code toString()} is {@code (%1$s,%2$s)}.
      *
-     * @param obj the object to compare to, null returns false
-     * @return true if the elements of the pair are equal
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null) return false;
-
-        if (obj instanceof Map.Entry<?, ?> other)
-            return this.getKey().equals(other.getKey()) && this.getValue().equals(other.getValue());
-
-        return false;
-    }
-
-    /**
-     * <p>Returns a suitable hash code.
-     * The hash code follows the definition in {@code Map.Entry}.</p>
-     *
-     * @return the hash code
-     */
-    @Override
-    public int hashCode() {
-        // see Map.Entry API specification
-        return (getKey() == null ? 0 : getKey().hashCode()) ^
-            (getValue() == null ? 0 : getValue().hashCode());
-    }
-
-    /**
-     * <p>Returns a String representation of this pair using the format {@code ($left,$right)}.</p>
-     *
-     * @return a string describing this object, not null
-     */
-    @Override
-    public @NotNull String toString() {
-        return this.toString("(%s,%s)");
-    }
-
-    /**
-     * <p>Formats the receiver using the given format.</p>
-     *
-     * <p>This uses {@link java.util.Formattable} to perform the formatting. Two variables may
-     * be used to embed the left and right elements. Use {@code {0}} for the left
-     * element (key) and {@code {1}} for the right element (value).
-     * The default format used by {@code toString()} is {@code ({0},{1})}.</p>
-     *
-     * @param format the format string, optionally containing {@code %1$s} and {@code %2$s}, not null
+     * @param format the format string, not null
      * @return the formatted string, not null
      */
-    public @NotNull String toString(String format) {
+    default @NotNull String toString(@NotNull String format) {
         return String.format(format, getLeft(), getRight());
     }
 

@@ -17,193 +17,189 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * A container object which may or may not contain a non-{@code null} value.
- * If a value is present, {@code isPresent()} returns {@code true}. If no
- * value is present, the object is considered <i>empty</i> and
- * {@code isPresent()} returns {@code false}.
- *
- * <p>Additional methods that depend on the presence or absence of a contained
- * value are provided, such as {@link #orElse(Pair) orElse()}
- * (returns a default value if no value is present) and
- * {@link #ifPresent(Consumer) ifPresent()} (performs an
- * action if a value is present).
- *
- * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * A container object which may or may not contain a non-{@code null} {@link Pair} value.
+ * If a value is present, {@link #isPresent()} returns {@code true}. If no value is present,
+ * the object is considered <i>empty</i> and {@link #isPresent()} returns {@code false}.
+ * <p>
+ * Additional methods that depend on the presence or absence of a contained value are provided,
+ * such as {@link #orElse(Pair) orElse()} (returns a default value if no value is present) and
+ * {@link #ifPresent(Consumer) ifPresent()} (performs an action if a value is present).
  *
  * @apiNote
- * {@code PairOptional} is primarily intended for use as a method return type where
- * there is a clear need to represent "no result," and where using {@code null}
- * is likely to cause errors. A variable whose type is {@code PairOptional} should
- * never itself be {@code null}; it should always point to an {@code PairOptional}
- * instance.
+ * {@code PairOptional} is primarily intended for use as a method return type where there is a
+ * clear need to represent "no result", and where using {@code null} is likely to cause errors.
+ * A variable whose type is {@code PairOptional} should never itself be {@code null}; it should
+ * always point to a {@code PairOptional} instance.
  *
  * @param <L> the type of the left value
  * @param <R> the type of the right value
- * @since 1.8
  */
 public final class PairOptional<L, R> {
 
-    /**
-     * Common instance for {@code empty()}.
-     */
-    private static final PairOptional<?, ?> EMPTY = new PairOptional<>(null);
+    /** Common instance for {@link #empty()}. */
+    private static final PairOptional<?, ?> EMPTY = new PairOptional<>((Pair<?, ?>) null);
+
+    /** The wrapped pair; {@code null} indicates no value is present. */
+    private final @Nullable Pair<L, R> value;
+
+    private PairOptional(@Nullable Pair<L, R> value) {
+        this.value = value;
+    }
+
+    // Create
 
     /**
-     * If non-null, the value; if null, indicates no value is present
-     */
-    private final Pair<L, R> value;
-
-    /**
-     * Returns an empty {@code PairOptional} instance.  No value is present for this
-     * {@code PairOptional}.
+     * Returns an empty {@code PairOptional} instance. No value is present.
      *
      * @apiNote
-     * Though it may be tempting to do so, avoid testing if an object is empty
-     * by comparing with {@code ==} or {@code !=} against instances returned by
-     * {@code PairOptional.empty()}.  There is no guarantee that it is a singleton.
-     * Instead, use {@link #isEmpty()} or {@link #isPresent()}.
+     * Avoid testing emptiness by comparing with {@code ==} against instances returned by
+     * {@code PairOptional.empty()}. There is no guarantee it is a singleton.
+     * Use {@link #isEmpty()} or {@link #isPresent()} instead.
      *
-     * @param <L> The left type of the non-existent value
-     * @param <R> The left type of the non-existent value
+     * @param <L> the left type of the non-existent value
+     * @param <R> the right type of the non-existent value
      * @return an empty {@code PairOptional}
      */
     @SuppressWarnings("unchecked")
-    public static <L, R> PairOptional<L, R> empty() {
+    public static <L, R> @NotNull PairOptional<L, R> empty() {
         return (PairOptional<L, R>) EMPTY;
     }
 
     /**
-     * Constructs an instance with the described value.
+     * Returns a {@code PairOptional} describing the given key-value pair.
+     * The left value must be non-{@code null}; the right value may be {@code null}.
      *
-     * @param pair the pair value to describe.
+     * @param left  the left value to describe, must be non-{@code null}
+     * @param right the right value to describe, may be {@code null}
+     * @param <L>   the type of the left value
+     * @param <R>   the type of the right value
+     * @return a {@code PairOptional} with the pair present
+     * @throws NullPointerException if {@code left} is {@code null}
      */
-    private PairOptional(@Nullable Map.Entry<? extends L, ? extends R> pair) {
-        this.value = Pair.from(pair);
+    public static <L, R> @NotNull PairOptional<L, R> of(@NotNull L left, @Nullable R right) {
+        return new PairOptional<>(Pair.of(left, right));
     }
 
     /**
-     * Constructs an instance with the described value.
+     * Returns a {@code PairOptional} describing the given {@link Map.Entry}.
+     * If {@code pair} is {@code null}, returns an empty {@code PairOptional}.
      *
-     * @param left the left value to describe.
-     * @param right the right value to describe.
+     * @param pair the entry to describe, may be {@code null}
+     * @param <L>  the type of the left value
+     * @param <R>  the type of the right value
+     * @return a {@code PairOptional} with the pair present if {@code pair} is non-null,
+     *         otherwise an empty {@code PairOptional}
      */
-    private PairOptional(@NotNull L left, @Nullable R right) {
-        this.value = Pair.of(left, right);
+    public static <L, R> @NotNull PairOptional<L, R> of(@Nullable Map.Entry<? extends L, ? extends R> pair) {
+        return pair != null ? new PairOptional<>(Pair.from(pair)) : empty();
     }
 
     /**
-     * Returns an {@code PairOptional} describing the given non-{@code null}
-     * value.
+     * Returns a {@code PairOptional} describing the entry contained in the given
+     * {@link Optional}, or an empty {@code PairOptional} if the {@code Optional} is empty.
      *
-     * @param left the left value to describe, which must be non-{@code null}
-     * @param right the right value to describe, which can be {@code null}
-     * @param <L> the type of the left value
-     * @param <R> the type of the right value
-     * @return an {@code PairOptional} with the value present
-     * @throws NullPointerException if value is {@code null}
+     * @param pair a non-null {@code Optional} that may or may not contain a {@link Map.Entry}
+     * @param <L>  the type of the left value
+     * @param <R>  the type of the right value
+     * @return a {@code PairOptional} with the pair present if the {@code Optional} contains a
+     *         value, otherwise an empty {@code PairOptional}
      */
-    public static <L, R> PairOptional<L, R> of(@NotNull L left, @Nullable R right) {
-        return new PairOptional<>(left, right);
+    public static <L, R> @NotNull PairOptional<L, R> of(@NotNull Optional<? extends Map.Entry<L, R>> pair) {
+        return pair.map(lrEntry -> new PairOptional<>(Pair.from(lrEntry))).orElseGet(PairOptional::empty);
     }
 
     /**
-     * Returns an {@code PairOptional} describing the given {@code null}
-     * value.
+     * Returns a {@code PairOptional} describing the given left and right values, or an empty
+     * {@code PairOptional} if {@code left} is {@code null}.
      *
-     * @param pair the pair to describe, which can be {@code null}
-     * @param <L> the type of the left value
-     * @param <R> the type of the right value
-     * @return an {@code PairOptional} with the value present
-     * @throws NullPointerException if value is {@code null}
-     */
-    public static <L, R> PairOptional<L, R> of(@Nullable Map.Entry<? extends L, ? extends R> pair) {
-        return new PairOptional<>(pair);
-    }
-
-    /**
-     * Returns an {@code PairOptional} describing the given non-{@code null}
-     * value.
-     *
-     * @param pair the pair to describe, which must be non-{@code null}
-     * @param <L> the type of the left value
-     * @param <R> the type of the right value
-     * @return an {@code PairOptional} with the value present
-     * @throws NullPointerException if value is {@code null}
-     */
-    public static <L, R> PairOptional<L, R> of(@NotNull Optional<? extends Map.Entry<L, R>> pair) {
-        return pair.map(PairOptional::new).orElse(empty());
-    }
-
-    /**
-     * Returns an {@code PairOptional} describing the given value, if
-     * non-{@code null}, otherwise returns an empty {@code PairOptional}.
-     *
-     * @param left the possibly-{@code null} left value to describe
+     * @param left  the possibly-{@code null} left value to describe
      * @param right the possibly-{@code null} right value to describe
-     * @param <L> the type of the left value
-     * @param <R> the type of the right value
-     * @return an {@code PairOptional} with a present value if the specified value
-     *         is non-{@code null}, otherwise an empty {@code PairOptional}
+     * @param <L>   the type of the left value
+     * @param <R>   the type of the right value
+     * @return a {@code PairOptional} with a present pair if {@code left} is non-{@code null},
+     *         otherwise an empty {@code PairOptional}
      */
-    @SuppressWarnings("unchecked")
-    public static <L, R> PairOptional<L, R> ofNullable(@Nullable L left, @Nullable R right) {
-        return left == null ? (PairOptional<L, R>) EMPTY : new PairOptional<>(left, right);
+    public static <L, R> @NotNull PairOptional<L, R> ofNullable(@Nullable L left, @Nullable R right) {
+        return left == null ? empty() : new PairOptional<>(Pair.of(left, right));
     }
 
     /**
-     * Returns an {@code PairOptional} describing the given value, if
-     * non-{@code null}, otherwise returns an empty {@code PairOptional}.
+     * Returns a {@code PairOptional} describing the given pair, or an empty {@code PairOptional}
+     * if {@code pair} is {@code null} or its left element is {@code null}.
      *
      * @param pair the possibly-{@code null} pair to describe
-     * @param <L> the type of the left value
-     * @param <R> the type of the right value
-     * @return an {@code PairOptional} with a present value if the specified value
-     *         is non-{@code null}, otherwise an empty {@code PairOptional}
+     * @param <L>  the type of the left value
+     * @param <R>  the type of the right value
+     * @return a {@code PairOptional} with a present pair if {@code pair} is non-{@code null}
+     *         and its left element is non-{@code null}, otherwise an empty {@code PairOptional}
      */
-    @SuppressWarnings("unchecked")
-    public static <L, R> PairOptional<L, R> ofNullable(@Nullable Pair<L, R> pair) {
-        return pair == null || pair.getLeft() == null ? (PairOptional<L, R>) EMPTY : new PairOptional<>(pair);
+    public static <L, R> @NotNull PairOptional<L, R> ofNullable(@Nullable Pair<L, R> pair) {
+        return pair == null || pair.getLeft() == null ? empty() : new PairOptional<>(pair);
     }
 
+    // Get
+
     /**
-     * If a value is present, returns the value, otherwise throws
-     * {@code NoSuchElementException}.
+     * If a value is present, returns the pair, otherwise throws {@link NoSuchElementException}.
      *
-     * @apiNote
-     * The preferred alternative to this method is {@link #orElseThrow()}.
-     *
-     * @return the non-{@code null} value described by this {@code PairOptional}
+     * @return the non-{@code null} pair described by this {@code PairOptional}
      * @throws NoSuchElementException if no value is present
      */
-    public Pair<L, R> get() {
+    public @NotNull Pair<L, R> get() {
         if (this.value == null)
             throw new NoSuchElementException("No value present");
 
         return this.value;
     }
 
-    public @NotNull L getKey() {
+    /**
+     * If a value is present, returns the left element (key) of the pair,
+     * otherwise throws {@link NoSuchElementException}.
+     *
+     * @return the left element of the present pair, may be null
+     * @throws NoSuchElementException if no value is present
+     */
+    public @Nullable L getKey() {
         return this.get().getLeft();
     }
 
-    public @NotNull L getLeft() {
+    /**
+     * If a value is present, returns the left element of the pair,
+     * otherwise throws {@link NoSuchElementException}.
+     *
+     * @return the left element of the present pair, may be null
+     * @throws NoSuchElementException if no value is present
+     */
+    public @Nullable L getLeft() {
         return this.get().getLeft();
     }
 
+    /**
+     * If a value is present, returns the right element of the pair,
+     * otherwise throws {@link NoSuchElementException}.
+     *
+     * @return the right element of the present pair, may be null
+     * @throws NoSuchElementException if no value is present
+     */
     public @Nullable R getRight() {
         return this.get().getRight();
     }
 
+    /**
+     * If a value is present, returns the right element (value) of the pair,
+     * otherwise throws {@link NoSuchElementException}.
+     *
+     * @return the right element of the present pair, may be null
+     * @throws NoSuchElementException if no value is present
+     */
     public @Nullable R getValue() {
         return this.get().getRight();
     }
 
+    // Present / Empty
+
     /**
-     * If a value is present, returns {@code true}, otherwise {@code false}.
+     * Returns {@code true} if a value is present, otherwise {@code false}.
      *
      * @return {@code true} if a value is present, otherwise {@code false}
      */
@@ -212,44 +208,46 @@ public final class PairOptional<L, R> {
     }
 
     /**
-     * If a value is  not present, returns {@code true}, otherwise
-     * {@code false}.
+     * Returns {@code true} if no value is present, otherwise {@code false}.
      *
-     * @return  {@code true} if a value is not present, otherwise {@code false}
+     * @return {@code true} if no value is present, otherwise {@code false}
      */
     public boolean isEmpty() {
         return this.value == null;
     }
 
+    // IfPresent
+
     /**
-     * If a value is present, performs the given action with the value,
+     * If a value is present, performs the given action with the pair,
      * otherwise does nothing.
      *
-     * @param action the action to be performed, if a value is present
+     * @param action the action to be performed if a value is present
      */
     public void ifPresent(@NotNull Consumer<? super Pair<L, R>> action) {
         if (this.value != null)
             action.accept(this.value);
     }
 
+    /**
+     * If a value is present, performs the given action with the left and right elements
+     * supplied separately, otherwise does nothing.
+     *
+     * @param action a {@link BiConsumer} receiving the left and right elements
+     */
     public void ifPresent(@NotNull BiConsumer<? super L, ? super R> action) {
         if (this.value != null)
             action.accept(this.value.getLeft(), this.value.getRight());
     }
 
     /**
-     * If a value is present, performs the given action with the value,
-     * otherwise performs the given empty-based action.
+     * If a value is present, performs the given action with the pair, otherwise performs
+     * the given empty-based action.
      *
-     * @param action the action to be performed, if a value is present
-     * @param emptyAction the empty-based action to be performed, if no value is
-     *        present
-     * @throws NullPointerException if a value is present and the given action
-     *         is {@code null}, or no value is present and the given empty-based
-     *         action is {@code null}.
-     * @since 9
+     * @param action      the action to be performed if a value is present
+     * @param emptyAction the action to be performed if no value is present
      */
-    public void ifPresentOrElse(Consumer<? super Pair<L, R>> action, @NotNull Runnable emptyAction) {
+    public void ifPresentOrElse(@NotNull Consumer<? super Pair<L, R>> action, @NotNull Runnable emptyAction) {
         if (this.value != null)
             action.accept(this.value);
         else
@@ -257,16 +255,11 @@ public final class PairOptional<L, R> {
     }
 
     /**
-     * If a value is present, performs the given action with the value,
-     * otherwise performs the given empty-based action.
+     * If a value is present, performs the given action with the left and right elements
+     * supplied separately, otherwise performs the given empty-based action.
      *
-     * @param action the action to be performed, if a value is present
-     * @param emptyAction the empty-based action to be performed, if no value is
-     *        present
-     * @throws NullPointerException if a value is present and the given action
-     *         is {@code null}, or no value is present and the given empty-based
-     *         action is {@code null}.
-     * @since 9
+     * @param action      a {@link BiConsumer} receiving the left and right elements
+     * @param emptyAction the action to be performed if no value is present
      */
     public void ifPresentOrElse(@NotNull BiConsumer<? super L, ? super R> action, @NotNull Runnable emptyAction) {
         if (this.value != null)
@@ -275,107 +268,135 @@ public final class PairOptional<L, R> {
             emptyAction.run();
     }
 
+    // Filter
+
     /**
-     * If a value is present, and the value matches the given predicate,
-     * returns an {@code PairOptional} describing the value, otherwise returns an
-     * empty {@code PairOptional}.
+     * If a value is present and the pair matches the given predicate, returns this
+     * {@code PairOptional}, otherwise returns an empty {@code PairOptional}.
      *
-     * @param predicate the predicate to apply to a value, if present
-     * @return an {@code PairOptional} describing the value of this
-     *         {@code PairOptional}, if a value is present and the value matches the
-     *         given predicate, otherwise an empty {@code PairOptional}
-     * @throws NullPointerException if the predicate is {@code null}
+     * @param predicate the predicate to apply to the pair, if present
+     * @return this {@code PairOptional} if a value is present and matches, otherwise empty
      */
     public @NotNull PairOptional<L, R> filter(@NotNull Predicate<? super Pair<L, R>> predicate) {
         return this.isPresent() ? (predicate.test(this.value) ? this : empty()) : this;
     }
 
+    /**
+     * If a value is present and the left and right elements match the given predicate,
+     * returns this {@code PairOptional}, otherwise returns an empty {@code PairOptional}.
+     *
+     * @param predicate a {@link BiPredicate} receiving the left and right elements
+     * @return this {@code PairOptional} if a value is present and matches, otherwise empty
+     */
     public @NotNull PairOptional<L, R> filter(@NotNull BiPredicate<? super L, ? super R> predicate) {
         return this.isPresent() ? (predicate.test(this.value.getLeft(), this.value.getRight()) ? this : empty()) : this;
     }
 
+    /**
+     * If a value is present and the left element matches the given predicate, returns this
+     * {@code PairOptional}, otherwise returns an empty {@code PairOptional}.
+     *
+     * @param predicate a predicate to test the left element
+     * @return this {@code PairOptional} if a value is present and the left element matches,
+     *         otherwise empty
+     */
     public @NotNull PairOptional<L, R> filterKey(@NotNull Predicate<? super L> predicate) {
         return this.isPresent() ? (predicate.test(this.value.getLeft()) ? this : empty()) : this;
     }
 
+    /**
+     * If a value is present and the right element matches the given predicate, returns this
+     * {@code PairOptional}, otherwise returns an empty {@code PairOptional}.
+     *
+     * @param predicate a predicate to test the right element
+     * @return this {@code PairOptional} if a value is present and the right element matches,
+     *         otherwise empty
+     */
     public @NotNull PairOptional<L, R> filterValue(@NotNull Predicate<? super R> predicate) {
         return this.isPresent() ? (predicate.test(this.value.getRight()) ? this : empty()) : this;
     }
 
+    // Map
+
     /**
-     * If a value is present, returns an {@code PairOptional} describing (as if by
-     * {@link #ofNullable}) the result of applying the given mapping function to
-     * the value, otherwise returns an empty {@code PairOptional}.
+     * If a value is present, applies the given mapping function to the pair and returns an
+     * {@link Optional} describing the result, otherwise returns an empty {@link Optional}.
+     * If the mapping function returns {@code null}, returns an empty {@link Optional}.
      *
-     * <p>If the mapping function returns a {@code null} result then this method
-     * returns an empty {@code PairOptional}.
-     *
-     * @apiNote
-     * This method supports post-processing on {@code PairOptional} values, without
-     * the need to explicitly check for a return status.  For example, the
-     * following code traverses a stream of URIs, selects one that has not
-     * yet been processed, and creates a path from that URI, returning
-     * an {@code PairOptional<Path>}:
-     *
-     * <pre>{@code
-     *     Optional<Path> p =
-     *         uris.stream().filter(uri -> !isProcessedYet(uri))
-     *                       .findFirst()
-     *                       .map(Paths::get);
-     * }</pre>
-     *
-     * Here, {@code findFirst} returns an {@code PairOptional<URI>}, and then
-     * {@code map} returns an {@code PairOptional<Path>} for the desired
-     * URI if one exists.
-     *
-     * @param mapper the mapping function to apply to a value, if present
-     * @param <U> The type of the value returned from the mapping function
-     * @return an {@code PairOptional} describing the result of applying a mapping
-     *         function to the value of this {@code PairOptional}, if a value is
-     *         present, otherwise an empty {@code PairOptional}
-     * @throws NullPointerException if the mapping function is {@code null}
+     * @param mapper the mapping function to apply to the pair, if present
+     * @param <U>    the type of the value returned from the mapping function
+     * @return an {@link Optional} describing the mapped result, or empty if not present
      */
     public <U> @NotNull Optional<U> map(@NotNull Function<? super Pair<L, R>, ? extends U> mapper) {
         return this.isPresent() ? Optional.ofNullable(mapper.apply(this.value)) : Optional.empty();
     }
 
+    /**
+     * If a value is present, applies the given mapping function to the left and right elements
+     * and returns an {@link Optional} describing the result, otherwise returns an empty
+     * {@link Optional}. If the mapping function returns {@code null}, returns empty.
+     *
+     * @param mapper a function receiving the left and right elements, returning the mapped result
+     * @param <U>    the type of the value returned from the mapping function
+     * @return an {@link Optional} describing the mapped result, or empty if not present
+     */
     public <U> @NotNull Optional<U> map(@NotNull BiFunction<? super L, ? super R, ? extends U> mapper) {
         return this.isPresent() ? Optional.ofNullable(mapper.apply(this.value.getLeft(), this.value.getRight())) : Optional.empty();
     }
 
+    /**
+     * If a value is present, applies the given mapping function to the left and right elements
+     * and returns a {@code PairOptional} describing the resulting pair. If the mapped pair is
+     * {@code null} or has a {@code null} left element, returns an empty {@code PairOptional}.
+     *
+     * @param mapper a function receiving the left and right elements, returning a new {@link Pair}
+     * @param <U>    the left type of the resulting pair
+     * @param <V>    the right type of the resulting pair
+     * @return a {@code PairOptional} describing the mapped pair, or empty if not present
+     */
     public <U, V> @NotNull PairOptional<U, V> mapPair(@NotNull BiFunction<? super L, ? super R, ? extends Pair<U, V>> mapper) {
         return this.isPresent() ? PairOptional.ofNullable(mapper.apply(this.value.getLeft(), this.value.getRight())) : empty();
     }
 
+    /**
+     * If a value is present, applies the given mapping function to the left element and returns
+     * a {@code PairOptional} with the mapped key and the original right element. If the mapped
+     * key is {@code null}, returns an empty {@code PairOptional}.
+     *
+     * @param mapper a function to apply to the left element
+     * @param <U>    the new left element type
+     * @return a {@code PairOptional} with the mapped key, or empty if not present or key is null
+     */
     public <U> @NotNull PairOptional<U, R> mapKey(@NotNull Function<? super L, ? extends U> mapper) {
         return this.isPresent() ? PairOptional.ofNullable(mapper.apply(this.value.getLeft()), this.value.getRight()) : empty();
     }
 
+    /**
+     * If a value is present, applies the given mapping function to the right element and returns
+     * a {@code PairOptional} with the original left element and the mapped value.
+     * If the original left element is {@code null}, returns an empty {@code PairOptional}.
+     *
+     * @param mapper a function to apply to the right element
+     * @param <U>    the new right element type
+     * @return a {@code PairOptional} with the mapped value, or empty if not present
+     */
     public <U> @NotNull PairOptional<L, U> mapValue(@NotNull Function<? super R, ? extends U> mapper) {
         return this.isPresent() ? PairOptional.ofNullable(this.value.getLeft(), mapper.apply(this.value.getRight())) : empty();
     }
 
+    // FlatMap
 
     /**
-     * If a value is present, returns the result of applying the given
-     * {@code PairOptional}-bearing mapping function to the value, otherwise returns
-     * an empty {@code PairOptional}.
+     * If a value is present, applies the given {@code PairOptional}-bearing mapping function to
+     * the pair and returns the result, otherwise returns an empty {@link Optional}.
+     * <p>
+     * Unlike {@link #map(Function)}, the mapping function already returns an {@link Optional},
+     * so {@code flatMap} does not wrap it in an additional layer.
      *
-     * <p>This method is similar to {@link #map(Function)}, but the mapping
-     * function is one whose result is already an {@code PairOptional}, and if
-     * invoked, {@code flatMap} does not wrap it within an additional
-     * {@code PairOptional}.
-     *
-     * @param <UL> The left type of value of the {@code Pair} returned by the
-     *            mapping function
-     * @param <UR> The right type of value of the {@code Pair} returned by the
-     *            mapping function
-     * @param mapper the mapping function to apply to a value, if present
-     * @return the result of applying an {@code PairOptional}-bearing mapping
-     *         function to the value of this {@code PairOptional}, if a value is
-     *         present, otherwise an empty {@code PairOptional}
-     * @throws NullPointerException if the mapping function is {@code null} or
-     *         returns a {@code null} result
+     * @param mapper  the mapping function to apply to the pair, if present
+     * @param <UL>    the left type of the pair returned by the mapping function
+     * @param <UR>    the right type of the pair returned by the mapping function
+     * @return the result of applying the mapping function, or an empty {@link Optional}
      */
     @SuppressWarnings("unchecked")
     public <UL, UR> @NotNull Optional<Pair<UL, UR>> flatMap(@NotNull Function<? super Pair<L, R>, ? extends Optional<? extends Pair<UL, UR>>> mapper) {
@@ -385,22 +406,28 @@ public final class PairOptional<L, R> {
         return (Optional<Pair<UL, UR>>) mapper.apply(this.value);
     }
 
+    /**
+     * If a value is present, applies the given {@code PairOptional}-bearing mapping function to
+     * the left and right elements and returns the result, otherwise returns an empty
+     * {@code PairOptional}.
+     *
+     * @param mapper  a function receiving the left and right elements, returning a {@code PairOptional}
+     * @param <UL>    the left type of the resulting {@code PairOptional}
+     * @param <UR>    the right type of the resulting {@code PairOptional}
+     * @return the result of applying the mapping function, or an empty {@code PairOptional}
+     */
     public <UL, UR> @NotNull PairOptional<UL, UR> flatMap(@NotNull BiFunction<? super L, ? super R, ? extends PairOptional<UL, UR>> mapper) {
-        if (!isPresent())
-            return empty();
-
-        return mapper.apply(this.value.getLeft(), this.value.getRight());
+        return this.isPresent() ? mapper.apply(this.value.getLeft(), this.value.getRight()) : empty();
     }
 
+    // Or
+
     /**
-     * If a value is present, returns an {@code PairOptional} describing the value,
-     * otherwise returns an {@code PairOptional} produced by the supplying function.
+     * If a value is present, returns this {@code PairOptional}, otherwise returns the
+     * {@code PairOptional} produced by the supplying function.
      *
-     * @param supplier the supplying function that produces an {@code PairOptional}
-     *        to be returned
-     * @return returns an {@code PairOptional} describing the value of this
-     *         {@code PairOptional}, if a value is present, otherwise an
-     *         {@code PairOptional} produced by the supplying function.
+     * @param supplier a function that produces a fallback {@code PairOptional}
+     * @return this {@code PairOptional} if present, otherwise the result of {@code supplier}
      */
     @SuppressWarnings("unchecked")
     public @NotNull PairOptional<L, R> or(@NotNull Supplier<? extends PairOptional<? extends L, ? extends R>> supplier) {
@@ -408,14 +435,11 @@ public final class PairOptional<L, R> {
     }
 
     /**
-     * If a value is present, returns an {@code PairOptional} describing the value,
-     * otherwise returns an {@code PairOptional} produced by the supplying function.
+     * If a value is present, returns an {@link Optional} describing the left element,
+     * otherwise returns the {@link Optional} produced by the supplying function.
      *
-     * @param supplier the supplying function that produces an {@code PairOptional}
-     *        to be returned
-     * @return returns an {@code PairOptional} describing the value of this
-     *         {@code PairOptional}, if a value is present, otherwise an
-     *         {@code PairOptional} produced by the supplying function.
+     * @param supplier a function that produces a fallback {@link Optional} for the left element
+     * @return an {@link Optional} of the left element if present, otherwise the result of {@code supplier}
      */
     @SuppressWarnings("unchecked")
     public @NotNull Optional<L> orKey(@NotNull Supplier<? extends Optional<? extends L>> supplier) {
@@ -423,181 +447,145 @@ public final class PairOptional<L, R> {
     }
 
     /**
-     * If a value is present, returns an {@code PairOptional} describing the value,
-     * otherwise returns an {@code PairOptional} produced by the supplying function.
+     * If a value is present, returns an {@link Optional} describing the right element,
+     * otherwise returns the {@link Optional} produced by the supplying function.
      *
-     * @param supplier the supplying function that produces an {@code PairOptional}
-     *        to be returned
-     * @return returns an {@code PairOptional} describing the value of this
-     *         {@code PairOptional}, if a value is present, otherwise an
-     *         {@code PairOptional} produced by the supplying function.
+     * @param supplier a function that produces a fallback {@link Optional} for the right element
+     * @return an {@link Optional} of the right element if present, otherwise the result of {@code supplier}
      */
     @SuppressWarnings("unchecked")
     public @NotNull Optional<R> orValue(@NotNull Supplier<? extends Optional<? extends R>> supplier) {
         return this.isPresent() ? Optional.ofNullable(this.value.getRight()) : (Optional<R>) supplier.get();
     }
 
+    // OrElse
+
     /**
-     * If a value is present, returns the value, otherwise returns
-     * {@code other}.
+     * If a value is present, returns the pair, otherwise returns {@code other}.
      *
-     * @param other the value to be returned, if no value is present.
-     *        May be {@code null}.
-     * @return the value, if present, otherwise {@code other}
+     * @param other the value to be returned if no value is present, may be {@code null}
+     * @return the pair if present, otherwise {@code other}
      */
     public @Nullable Pair<L, R> orElse(@Nullable Pair<L, R> other) {
         return this.value != null ? this.value : other;
     }
 
     /**
-     * If a key is present, returns the key, otherwise returns
-     * {@code other}.
+     * If a value is present, returns the left element (key), otherwise returns {@code other}.
      *
-     * @param other the value to be returned, if no value is present.
-     *        May be {@code null}.
-     * @return the value, if present, otherwise {@code other}
+     * @param other the value to be returned if no value is present, may be {@code null}
+     * @return the left element if present, otherwise {@code other}
      */
     public @Nullable L orElseKey(@Nullable L other) {
         return this.value != null ? this.value.getKey() : other;
     }
 
     /**
-     * If a value is present, returns the value, otherwise returns
-     * {@code other}.
+     * If a value is present, returns the right element (value), otherwise returns {@code other}.
      *
-     * @param other the value to be returned, if no value is present.
-     *        May be {@code null}.
-     * @return the value, if present, otherwise {@code other}
+     * @param other the value to be returned if no value is present, may be {@code null}
+     * @return the right element if present, otherwise {@code other}
      */
     public @Nullable R orElseValue(@Nullable R other) {
         return this.value != null ? this.value.getValue() : other;
     }
 
     /**
-     * If a value is present, returns the value, otherwise returns the result
-     * produced by the supplying function.
+     * If a value is present, returns the pair, otherwise returns the result produced by
+     * the supplying function.
      *
-     * @param supplier the supplying function that produces a value to be returned
-     * @return the value, if present, otherwise the result produced by the
-     *         supplying function
-     * @throws NullPointerException if no value is present and the supplying
-     *         function is {@code null}
+     * @param supplier the supplying function that produces a fallback pair
+     * @return the pair if present, otherwise the result of {@code supplier}
      */
-    public Pair<L, R> orElseGet(@NotNull Supplier<? extends Pair<L, R>> supplier) {
+    public @Nullable Pair<L, R> orElseGet(@NotNull Supplier<? extends Pair<L, R>> supplier) {
         return this.value != null ? this.value : supplier.get();
     }
 
     /**
-     * If a value is present, returns the value, otherwise returns the result
+     * If a value is present, returns the left element (key), otherwise returns the result
      * produced by the supplying function.
      *
-     * @param supplier the supplying function that produces a value to be returned
-     * @return the value, if present, otherwise the result produced by the
-     *         supplying function
-     * @throws NullPointerException if no value is present and the supplying
-     *         function is {@code null}
+     * @param supplier the supplying function that produces a fallback left value
+     * @return the left element if present, otherwise the result of {@code supplier}
      */
-    public L orElseGetKey(@NotNull Supplier<? extends L> supplier) {
+    public @Nullable L orElseGetKey(@NotNull Supplier<? extends L> supplier) {
         return this.value != null ? this.value.getKey() : supplier.get();
     }
 
     /**
-     * If a value is present, returns the value, otherwise returns the result
+     * If a value is present, returns the right element (value), otherwise returns the result
      * produced by the supplying function.
      *
-     * @param supplier the supplying function that produces a value to be returned
-     * @return the value, if present, otherwise the result produced by the
-     *         supplying function
-     * @throws NullPointerException if no value is present and the supplying
-     *         function is {@code null}
+     * @param supplier the supplying function that produces a fallback right value
+     * @return the right element if present, otherwise the result of {@code supplier}
      */
-    public R orElseGetValue(@NotNull Supplier<? extends R> supplier) {
+    public @Nullable R orElseGetValue(@NotNull Supplier<? extends R> supplier) {
         return this.value != null ? this.value.getValue() : supplier.get();
     }
 
     /**
-     * If a value is present, returns the value, otherwise throws
-     * {@code NoSuchElementException}.
+     * If a value is present, returns the pair, otherwise throws {@link NoSuchElementException}.
      *
-     * @return the non-{@code null} value described by this {@code PairOptional}
+     * @return the non-{@code null} pair described by this {@code PairOptional}
      * @throws NoSuchElementException if no value is present
-     * @since 10
      */
-    public Pair<L, R> orElseThrow() {
+    public @NotNull Pair<L, R> orElseThrow() {
         return this.get();
     }
 
     /**
-     * If a value is present, returns the value, otherwise throws an exception
-     * produced by the exception supplying function.
+     * If a value is present, returns the pair, otherwise throws an exception produced by
+     * the exception supplying function.
      *
      * @apiNote
-     * A method reference to the exception constructor with an empty argument
-     * list can be used as the supplier. For example,
-     * {@code IllegalStateException::new}
+     * A method reference to the exception constructor with an empty argument list can be used
+     * as the supplier. For example, {@code IllegalStateException::new}.
      *
-     * @param <X> Type of the exception to be thrown
-     * @param exceptionSupplier the supplying function that produces an
-     *        exception to be thrown
-     * @return the value, if present
+     * @param <X>               the type of the exception to be thrown
+     * @param exceptionSupplier the supplying function that produces an exception to be thrown
+     * @return the pair, if present
      * @throws X if no value is present
      */
-    public <X extends Throwable> Pair<L, R> orElseThrow(@NotNull Supplier<? extends X> exceptionSupplier) throws X {
-        if (this.value != null) {
-            return this.value;
-        } else {
+    public <X extends Throwable> @NotNull Pair<L, R> orElseThrow(@NotNull Supplier<? extends X> exceptionSupplier) throws X {
+        if (this.value == null)
             throw exceptionSupplier.get();
-        }
+
+        return this.value;
     }
 
+    // Stream
+
     /**
-     * If a value is present, returns a sequential {@link Stream} containing
-     * only that value, otherwise returns an empty {@code Stream}.
+     * If a value is present, returns a {@link PairStream} containing only that pair,
+     * otherwise returns an empty {@link PairStream}.
      *
-     * @apiNote
-     * This method can be used to transform a {@code Stream} of optional
-     * elements to a {@code Stream} of present value elements:
-     * <pre>{@code
-     *     Stream<Optional<T>> os = ..
-     *     Stream<T> s = os.flatMap(Optional::stream)
-     * }</pre>
-     *
-     * @return the optional value as a {@code Stream}
-     * @since 9
+     * @return a {@code PairStream} containing the pair if present, otherwise empty
      */
-    public PairStream<L, R> stream() {
-        return this.isPresent() ? PairStream.of(Stream.of(this.value)) : PairStream.empty();
+    public @NotNull PairStream<L, R> stream() {
+        return this.isPresent() ? PairStream.of(Stream.<Map.Entry<L, R>>of(this.value)) : PairStream.empty();
     }
 
+    // Object
+
     /**
-     * Indicates whether some other object is "equal to" this {@code PairOptional}.
-     * The other object is considered equal if:
-     * <ul>
-     * <li>it is also an {@code PairOptional} and;
-     * <li>both instances have no value present or;
-     * <li>the present values are "equal to" each other via {@code equals()}.
-     * </ul>
+     * Returns {@code true} if the other object is a {@code PairOptional} with an equal value.
      *
      * @param obj an object to be tested for equality
-     * @return {@code true} if the other object is "equal to" this object
-     *         otherwise {@code false}
+     * @return {@code true} if the other object is equal to this {@code PairOptional}
      */
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
+        if (this == obj)
             return true;
-        }
 
         return obj instanceof PairOptional<?, ?> other
-                && Objects.equals(value, other.value);
+            && Objects.equals(value, other.value);
     }
 
     /**
-     * Returns the hash code of the value, if present, otherwise {@code 0}
-     * (zero) if no value is present.
+     * Returns the hash code of the pair if present, otherwise {@code 0}.
      *
-     * @return hash code value of the present value or {@code 0} if no value is
-     *         present
+     * @return the hash code of the present pair, or {@code 0} if empty
      */
     @Override
     public int hashCode() {
@@ -605,21 +593,15 @@ public final class PairOptional<L, R> {
     }
 
     /**
-     * Returns a non-empty string representation of this {@code PairOptional}
-     * suitable for debugging.  The exact presentation format is unspecified and
-     * may vary between implementations and versions.
+     * Returns a string representation of this {@code PairOptional} suitable for debugging.
      *
-     * @implSpec
-     * If a value is present the result must include its string representation
-     * in the result.  Empty and present {@code PairOptional}s must be unambiguously
-     * differentiable.
-     *
-     * @return the string representation of this instance
+     * @return a non-empty string representation of this instance
      */
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return value != null
             ? String.format("PairOptional%s", value)
             : "PairOptional.empty";
     }
+
 }
