@@ -67,7 +67,7 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
      *
      * @return the left element, may be null
      */
-    @Nullable L getLeft();
+    L getLeft();
 
     /**
      * Gets the right element from this pair.
@@ -76,7 +76,7 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
      *
      * @return the right element, may be null
      */
-    @Nullable R getRight();
+    R getRight();
 
     /**
      * Gets the key from this pair, implementing {@link Map.Entry#getKey()}.

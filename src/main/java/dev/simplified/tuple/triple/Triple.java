@@ -41,21 +41,21 @@ public interface Triple<L, M, R> extends Comparable<Triple<L, M, R>> {
      *
      * @return the left element, may be null
      */
-    @Nullable L getLeft();
+    L getLeft();
 
     /**
      * Gets the middle element from this triple.
      *
      * @return the middle element, may be null
      */
-    @Nullable M getMiddle();
+    M getMiddle();
 
     /**
      * Gets the right element from this triple.
      *
      * @return the right element, may be null
      */
-    @Nullable R getRight();
+    R getRight();
 
     /**
      * Compares this triple to another in natural order, first by the left element,
