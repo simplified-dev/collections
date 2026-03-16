@@ -37,7 +37,7 @@ public class ConcurrentList<E> extends AtomicList<E, ArrayList<E>> {
 	 */
 	@SafeVarargs
 	public ConcurrentList(@NotNull E... array) {
-		this(Arrays.asList(array));
+		this(array == null ? null : Arrays.asList(array));
 	}
 
 	/**
