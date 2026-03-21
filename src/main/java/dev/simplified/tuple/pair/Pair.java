@@ -86,7 +86,7 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
      * @return the left element as the key, may be null
      */
     @Override
-    default @Nullable L getKey() {
+    default L getKey() {
         return getLeft();
     }
 
@@ -98,7 +98,7 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
      * @return the right element as the value, may be null
      */
     @Override
-    default @Nullable R getValue() {
+    default R getValue() {
         return getRight();
     }
 
