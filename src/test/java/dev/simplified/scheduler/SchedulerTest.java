@@ -19,7 +19,7 @@ class SchedulerTest {
 
     @BeforeEach
     void setup() {
-        scheduler = new Scheduler(2);
+        scheduler = new Scheduler();
     }
 
     @AfterEach
@@ -50,7 +50,7 @@ class SchedulerTest {
         @Test
         void schedule_returnedTask_isDoneAfterExecution() throws Exception {
             CountDownLatch latch = new CountDownLatch(1);
-            ScheduledTask task = scheduler.schedule(() -> latch.countDown(), 50);
+            ScheduledTask task = scheduler.schedule(latch::countDown, 50);
             latch.await(2, TimeUnit.SECONDS);
             // Allow state propagation
             Thread.sleep(50);
@@ -72,7 +72,7 @@ class SchedulerTest {
         @Test
         void repeat_executesMultipleTimes() throws Exception {
             AtomicInteger count = new AtomicInteger(0);
-            scheduler.schedule(() -> count.incrementAndGet(), 0, 50);
+            scheduler.schedule(count::incrementAndGet, 0, 50);
             Thread.sleep(300);
             assertTrue(count.get() >= 4, "Expected at least 4 executions, got " + count.get());
         }
@@ -86,7 +86,7 @@ class SchedulerTest {
         @Test
         void repeatAsync_executesMultipleTimes() throws Exception {
             AtomicInteger count = new AtomicInteger(0);
-            scheduler.scheduleAsync(() -> count.incrementAndGet(), 0, 50);
+            scheduler.scheduleAsync(count::incrementAndGet, 0, 50);
             Thread.sleep(300);
             assertTrue(count.get() >= 4, "Expected at least 4 executions, got " + count.get());
         }
@@ -114,7 +114,7 @@ class SchedulerTest {
         @Test
         void cancel_stopsRepeatingTask() throws Exception {
             AtomicInteger count = new AtomicInteger(0);
-            ScheduledTask task = scheduler.schedule(() -> count.incrementAndGet(), 0, 50);
+            ScheduledTask task = scheduler.schedule(count::incrementAndGet, 0, 50);
             Thread.sleep(200);
             task.cancel();
             int afterCancel = count.get();
