@@ -1,5 +1,6 @@
 package dev.sbs.api.collection.concurrent;
 
+import lombok.Cleanup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -101,7 +102,6 @@ class ConcurrentMapTest {
     class ConstructFromEntries {
 
         @Test
-        @SuppressWarnings("unchecked")
         void fromEntries() {
             ConcurrentMap<String, Integer> m = Concurrent.newMap(
                 Map.entry("x", 10),
@@ -167,7 +167,7 @@ class ConcurrentMapTest {
         void concurrent_puts_noLostEntries() throws Exception {
             int threadCount = 8;
             int opsPerThread = 1000;
-            ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+            @Cleanup ExecutorService pool = Executors.newFixedThreadPool(threadCount);
             CountDownLatch latch = new CountDownLatch(threadCount);
 
             for (int t = 0; t < threadCount; t++) {
@@ -189,7 +189,7 @@ class ConcurrentMapTest {
         @Test
         void concurrent_putAndGet_noException() throws Exception {
             int threadCount = 8;
-            ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+            @Cleanup ExecutorService pool = Executors.newFixedThreadPool(threadCount);
             AtomicInteger errors = new AtomicInteger(0);
             CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -221,7 +221,7 @@ class ConcurrentMapTest {
             for (int i = 0; i < 100; i++) map.put("k" + i, i);
 
             int threadCount = 4;
-            ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+            @Cleanup ExecutorService pool = Executors.newFixedThreadPool(threadCount);
             AtomicInteger errors = new AtomicInteger(0);
             CountDownLatch latch = new CountDownLatch(threadCount);
 

@@ -142,7 +142,7 @@ class SchedulerTest {
         }
 
         @Test
-        void cancel_repeatingTask_clearsRepeatingFlag() throws Exception {
+        void cancel_repeatingTask_clearsRepeatingFlag() {
             ScheduledTask task = scheduler.schedule(() -> {}, 0, 100);
             assertTrue(task.isRepeating());
             task.cancel();
