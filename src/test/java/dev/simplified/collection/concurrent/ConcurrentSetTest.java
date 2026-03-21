@@ -1,5 +1,6 @@
 package dev.sbs.api.collection.concurrent;
 
+import lombok.Cleanup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -96,7 +97,7 @@ class ConcurrentSetTest {
         void toUnmodifiableSet_rejectsClear() {
             set.add("a");
             ConcurrentSet<String> unmod = set.toUnmodifiableSet();
-            assertThrows(UnsupportedOperationException.class, () -> unmod.clear());
+            assertThrows(UnsupportedOperationException.class, unmod::clear);
         }
     }
 
@@ -107,7 +108,7 @@ class ConcurrentSetTest {
         void concurrent_adds_uniqueKeysPreserved() throws Exception {
             int threadCount = 8;
             int opsPerThread = 500;
-            ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+            @Cleanup ExecutorService pool = Executors.newFixedThreadPool(threadCount);
             CountDownLatch latch = new CountDownLatch(threadCount);
 
             for (int t = 0; t < threadCount; t++) {
@@ -129,7 +130,7 @@ class ConcurrentSetTest {
         void concurrent_addAndIterate_noException() throws Exception {
             set.addAll(List.of("a", "b", "c"));
             int threadCount = 4;
-            ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+            @Cleanup ExecutorService pool = Executors.newFixedThreadPool(threadCount);
             AtomicInteger errors = new AtomicInteger(0);
             CountDownLatch latch = new CountDownLatch(threadCount);
 
