@@ -3,6 +3,7 @@ package dev.sbs.api.scheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -62,6 +63,13 @@ class SchedulerTest {
         void scheduleAsync_executesOnAsyncExecutor() throws Exception {
             CountDownLatch latch = new CountDownLatch(1);
             scheduler.scheduleAsync(latch::countDown);
+            assertTrue(latch.await(2, TimeUnit.SECONDS));
+        }
+
+        @Test
+        void execute_delegatesToAsyncExecutor() throws Exception {
+            CountDownLatch latch = new CountDownLatch(1);
+            scheduler.execute(latch::countDown);
             assertTrue(latch.await(2, TimeUnit.SECONDS));
         }
     }
@@ -213,6 +221,7 @@ class SchedulerTest {
         }
     }
 
+    @Tag("slow")
     @Nested
     class Shutdown {
 
@@ -231,11 +240,61 @@ class SchedulerTest {
         }
 
         @Test
-        void execute_delegatesToAsyncExecutor() throws Exception {
-            CountDownLatch latch = new CountDownLatch(1);
-            scheduler.execute(latch::countDown);
-            assertTrue(latch.await(2, TimeUnit.SECONDS));
+        void shutdown_terminatesWithinTimeout() throws Exception {
+            // Schedule repeating tasks on both executors
+            scheduler.schedule(() -> {}, 0, 50);
+            scheduler.scheduleAsync(() -> {}, 0, 50);
+            Thread.sleep(200); // Let them run a few cycles
+
+            scheduler.shutdown();
+
+            // Must terminate within 5 seconds — if this hangs, shutdown is broken
+            long start = System.currentTimeMillis();
+            while (!scheduler.isTerminated() && System.currentTimeMillis() - start < 5_000)
+                Thread.sleep(50);
+
+            assertTrue(scheduler.isTerminated(),
+                "Scheduler did not terminate within 5 seconds after shutdown()");
         }
+
+        @Test
+        void shutdown_terminatesWithActiveSyncTask() throws Exception {
+            CountDownLatch running = new CountDownLatch(1);
+            scheduler.schedule(() -> {
+                running.countDown();
+                Scheduler.sleep(10_000); // Simulate long-running sync task
+            });
+            assertTrue(running.await(2, TimeUnit.SECONDS));
+
+            scheduler.shutdown();
+
+            long start = System.currentTimeMillis();
+            while (!scheduler.isTerminated() && System.currentTimeMillis() - start < 5_000)
+                Thread.sleep(50);
+
+            assertTrue(scheduler.isTerminated(),
+                "Scheduler did not terminate with an active sync task");
+        }
+
+        @Test
+        void shutdown_terminatesWithActiveAsyncTask() throws Exception {
+            CountDownLatch running = new CountDownLatch(1);
+            scheduler.scheduleAsync(() -> {
+                running.countDown();
+                Scheduler.sleep(10_000); // Simulate long-running async task
+            });
+            assertTrue(running.await(2, TimeUnit.SECONDS));
+
+            scheduler.shutdown();
+
+            long start = System.currentTimeMillis();
+            while (!scheduler.isTerminated() && System.currentTimeMillis() - start < 5_000)
+                Thread.sleep(50);
+
+            assertTrue(scheduler.isTerminated(),
+                "Scheduler did not terminate with an active async task");
+        }
+
     }
 
     @Nested
