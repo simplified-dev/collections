@@ -291,9 +291,10 @@ public final class Scheduler implements Executor {
      * @see #isTerminated()
      */
     public void shutdown() {
-        this.cleanerTask.cancel();
-        this.syncExecutor.shutdown();
-        this.virtualExecutor.shutdown();
+        this.cleanerTask.cancel(true);
+        this.tasks.forEach(task -> task.cancel(true));
+        this.syncExecutor.shutdownNow();
+        this.virtualExecutor.shutdownNow();
     }
 
     /**
