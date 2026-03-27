@@ -270,6 +270,19 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     }
 
     /**
+     * Returns a {@link SingleStream} by replacing each entry with the contents of the
+     * {@link Collection} returned by {@code mapper}, avoiding a manual
+     * {@code .flatMap(c -> c.stream())} call.
+     *
+     * @param <R>    the element type of the resulting stream
+     * @param mapper a function receiving the key and value, returning a collection of results
+     * @return a flat-mapped {@link SingleStream}
+     */
+    default <R> @NotNull SingleStream<R> flatMapMany(@NotNull BiFunction<? super K, ? super V, ? extends Collection<? extends R>> mapper) {
+        return SingleStream.of(this.underlying().flatMap(entry -> mapper.apply(entry.getKey(), entry.getValue()).stream()));
+    }
+
+    /**
      * Returns a {@code PairStream} by replacing each entry with the contents of a
      * {@code PairStream} produced by {@code mapper}, which receives the key and value separately.
      *
@@ -723,19 +736,6 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      */
     default <R> @NotNull SingleStream<R> collapseToSingle(@NotNull BiFunction<? super K, ? super V, ? extends R> mapper) {
         return SingleStream.of(this.underlying().map(entry -> mapper.apply(entry.getKey(), entry.getValue())));
-    }
-
-    /**
-     * Returns a {@link SingleStream} by replacing each entry with the contents of the
-     * {@link Collection} returned by {@code mapper}, avoiding a manual
-     * {@code .flatMap(c -> c.stream())} call.
-     *
-     * @param <R>    the element type of the resulting stream
-     * @param mapper a function receiving the key and value, returning a collection of results
-     * @return a flat-mapped {@link SingleStream}
-     */
-    default <R> @NotNull SingleStream<R> flatMapCollection(@NotNull BiFunction<? super K, ? super V, ? extends Collection<? extends R>> mapper) {
-        return SingleStream.of(this.underlying().flatMap(entry -> mapper.apply(entry.getKey(), entry.getValue()).stream()));
     }
 
     // Expand
