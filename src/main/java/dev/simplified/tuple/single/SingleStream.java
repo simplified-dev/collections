@@ -4,6 +4,7 @@ import dev.sbs.api.tuple.pair.Pair;
 import dev.sbs.api.tuple.pair.PairStream;
 import dev.sbs.api.tuple.triple.Triple;
 import dev.sbs.api.tuple.triple.TripleStream;
+import dev.sbs.api.util.StreamUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -175,7 +176,7 @@ public interface SingleStream<E> extends Stream<E> {
      * @param mapper a function returning a collection of new values for each element
      * @return a flat-mapped {@code SingleStream}
      */
-    default <R> @NotNull SingleStream<R> flatMapCollection(@NotNull Function<? super E, ? extends Collection<? extends R>> mapper) {
+    default <R> @NotNull SingleStream<R> flatMapMany(@NotNull Function<? super E, ? extends Collection<? extends R>> mapper) {
         return of(this.underlying().flatMap(e -> mapper.apply(e).stream()));
     }
 
@@ -439,6 +440,16 @@ public interface SingleStream<E> extends Stream<E> {
      */
     default <L, M, R> @NotNull TripleStream<L, M, R> expandToTriple(@NotNull Function<? super E, ? extends L> leftMapper, @NotNull Function<? super E, ? extends M> middleMapper, @NotNull Function<? super E, ? extends R> rightMapper) {
         return TripleStream.of(this.underlying().map(e -> Triple.of(leftMapper.apply(e), middleMapper.apply(e), rightMapper.apply(e))));
+    }
+
+    /**
+     * Zips the current stream with its indices, producing a {@link TripleStream} of
+     * {@code (element, index, size)}.
+     *
+     * @return a triple stream where each triple contains the element, its zero-based index, and the estimated size
+     */
+    default @NotNull TripleStream<E, Long, Long> indexed() {
+        return StreamUtil.zipWithIndex(this);
     }
 
 }
