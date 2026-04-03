@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -147,7 +148,7 @@ public final class Concurrent {
 	 * @param <E>        the element type
 	 * @return a new concurrent list containing the source elements
 	 */
-	public static <E> @NotNull ConcurrentList<E> newList(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentList<E> newList(@Nullable Collection<? extends E> collection) {
 		return new ConcurrentList<>(collection);
 	}
 
@@ -238,7 +239,7 @@ public final class Concurrent {
 	 * @param <E>        the element type
 	 * @return a new concurrent set containing the source elements
 	 */
-	public static <E> @NotNull ConcurrentSet<E> newSet(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentSet<E> newSet(@Nullable Collection<? extends E> collection) {
 		return new ConcurrentSet<>(collection);
 	}
 
@@ -452,7 +453,7 @@ public final class Concurrent {
 	 * @param <E>        the element type
 	 * @return a new unmodifiable concurrent list containing the source elements
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@Nullable Collection<? extends E> collection) {
 		return new ConcurrentUnmodifiableList<>(collection);
 	}
 
