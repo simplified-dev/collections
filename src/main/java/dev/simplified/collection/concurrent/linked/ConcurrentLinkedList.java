@@ -1,9 +1,9 @@
 package dev.sbs.api.collection.concurrent.linked;
 
 import dev.sbs.api.collection.concurrent.Concurrent;
+import dev.sbs.api.collection.concurrent.ConcurrentList;
 import dev.sbs.api.collection.concurrent.atomic.AtomicList;
 import dev.sbs.api.collection.query.SortOrder;
-import dev.sbs.api.collection.query.Sortable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -21,7 +22,7 @@ import java.util.function.Function;
  * @param <E> the type of elements in this list
  */
 @SuppressWarnings("all")
-public class ConcurrentLinkedList<E> extends AtomicList<E, LinkedList<E>> implements Sortable<E> {
+public class ConcurrentLinkedList<E> extends ConcurrentList<E> {
 
 	/**
 	 * Create a new concurrent list.
@@ -51,7 +52,7 @@ public class ConcurrentLinkedList<E> extends AtomicList<E, LinkedList<E>> implem
 	 * @return a new empty {@link ConcurrentLinkedList}
 	 */
 	@Override
-	protected @NotNull AtomicList<E, LinkedList<E>> createEmpty() {
+	protected @NotNull AtomicList<E, List<E>> createEmpty() {
 		return Concurrent.newLinkedList();
 	}
 

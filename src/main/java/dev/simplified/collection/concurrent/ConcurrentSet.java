@@ -5,6 +5,7 @@ import dev.sbs.api.collection.concurrent.atomic.AtomicSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -16,7 +17,7 @@ import java.util.HashSet;
  *
  * @param <E> the type of elements in this set
  */
-public class ConcurrentSet<E> extends AtomicSet<E, HashSet<E>> {
+public class ConcurrentSet<E> extends AtomicSet<E, AbstractSet<E>> {
 
 	/**
 	 * Create a new concurrent set.
@@ -41,12 +42,21 @@ public class ConcurrentSet<E> extends AtomicSet<E, HashSet<E>> {
 	}
 
 	/**
+	 * Create a new concurrent set with the given backing set.
+	 *
+	 * @param backingSet the backing set implementation
+	 */
+	protected ConcurrentSet(@NotNull AbstractSet<E> backingSet) {
+		super(backingSet);
+	}
+
+	/**
 	 * Creates a new empty {@code ConcurrentSet} instance, used internally for copy operations.
 	 *
 	 * @return a new empty {@link ConcurrentSet}
 	 */
 	@Override
-	protected final @NotNull AtomicCollection<E, HashSet<E>> createEmpty() {
+	protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
 		return Concurrent.newSet();
 	}
 

@@ -1,13 +1,8 @@
 package dev.sbs.api.collection.concurrent.linked;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.collection.concurrent.ConcurrentList;
-import dev.sbs.api.collection.concurrent.ConcurrentSet;
-import dev.sbs.api.collection.concurrent.atomic.AtomicMap;
-import org.jetbrains.annotations.NotNull;
+import dev.sbs.api.collection.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -18,13 +13,13 @@ import java.util.Map;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-public class ConcurrentLinkedMap<K, V> extends AtomicMap<K, V, MaxSizeLinkedMap<K, V>> {
+public class ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 
 	/**
 	 * Create a new concurrent map.
 	 */
 	public ConcurrentLinkedMap() {
-		super(new MaxSizeLinkedMap<>(), (HashMap<K, V>) null);
+		super(new MaxSizeLinkedMap<>(), (Map<K, V>) null);
 	}
 
 	/**
@@ -33,7 +28,7 @@ public class ConcurrentLinkedMap<K, V> extends AtomicMap<K, V, MaxSizeLinkedMap<
 	 * @param maxSize The maximum number of entries allowed in the map.
 	 */
 	public ConcurrentLinkedMap(int maxSize) {
-		super(new MaxSizeLinkedMap<>(maxSize), (HashMap<K, V>) null);
+		super(new MaxSizeLinkedMap<>(maxSize), (Map<K, V>) null);
 	}
 
 	/**
@@ -53,36 +48,6 @@ public class ConcurrentLinkedMap<K, V> extends AtomicMap<K, V, MaxSizeLinkedMap<
 	 */
 	public ConcurrentLinkedMap(@Nullable Map<? extends K, ? extends V> map, int maxSize) {
 		super(new MaxSizeLinkedMap<>(maxSize), map);
-	}
-
-	/**
-	 * Creates a new empty {@code ConcurrentSet} for holding map entries, used internally by entry set operations.
-	 *
-	 * @return a new empty {@link ConcurrentSet} of entries
-	 */
-	@Override
-	protected final @NotNull ConcurrentSet<Entry<K, V>> createEmptyEntrySet() {
-		return Concurrent.newSet();
-	}
-
-	/**
-	 * Creates a new empty {@code ConcurrentSet} for holding map keys, used internally by key set operations.
-	 *
-	 * @return a new empty {@link ConcurrentSet} of keys
-	 */
-	@Override
-	protected final @NotNull ConcurrentSet<K> createEmptyKeySet() {
-		return Concurrent.newSet();
-	}
-
-	/**
-	 * Creates a new empty {@code ConcurrentList} for holding map values, used internally by values operations.
-	 *
-	 * @return a new empty {@link ConcurrentList} of values
-	 */
-	@Override
-	protected final @NotNull ConcurrentList<V> createEmptyValueList() {
-		return Concurrent.newList();
 	}
 
 }

@@ -1,11 +1,12 @@
 package dev.sbs.api.collection.concurrent.linked;
 
 import dev.sbs.api.collection.concurrent.Concurrent;
+import dev.sbs.api.collection.concurrent.ConcurrentSet;
 import dev.sbs.api.collection.concurrent.atomic.AtomicCollection;
-import dev.sbs.api.collection.concurrent.atomic.AtomicSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -17,7 +18,7 @@ import java.util.LinkedHashSet;
  *
  * @param <E> the type of elements in this set
  */
-public class ConcurrentLinkedSet<E> extends AtomicSet<E, LinkedHashSet<E>> {
+public class ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 
 	/**
 	 * Create a new concurrent set.
@@ -47,7 +48,7 @@ public class ConcurrentLinkedSet<E> extends AtomicSet<E, LinkedHashSet<E>> {
 	 * @return a new empty {@link ConcurrentLinkedSet}
 	 */
 	@Override
-	protected @NotNull AtomicCollection<E, LinkedHashSet<E>> createEmpty() {
+	protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
 		return Concurrent.newLinkedSet();
 	}
 

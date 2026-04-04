@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -19,7 +20,7 @@ import java.util.function.Function;
  * @param <E> the type of elements in this list
  */
 @SuppressWarnings("all")
-public class ConcurrentList<E> extends AtomicList<E, ArrayList<E>> {
+public class ConcurrentList<E> extends AtomicList<E, List<E>> {
 
 	/**
 	 * Create a new concurrent list.
@@ -33,7 +34,7 @@ public class ConcurrentList<E> extends AtomicList<E, ArrayList<E>> {
 	 */
 	@SafeVarargs
 	public ConcurrentList(@NotNull E... array) {
-		this(array == null ? null : Arrays.asList(array));
+		super(new ArrayList<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -44,12 +45,21 @@ public class ConcurrentList<E> extends AtomicList<E, ArrayList<E>> {
 	}
 
 	/**
+	 * Create a new concurrent list with the given backing list.
+	 *
+	 * @param backingList the backing list implementation
+	 */
+	protected ConcurrentList(@NotNull List<E> backingList) {
+		super(backingList);
+	}
+
+	/**
 	 * Creates a new empty {@code ConcurrentList} instance, used internally for copy and sort operations.
 	 *
 	 * @return a new empty {@link ConcurrentList}
 	 */
 	@Override
-	protected final @NotNull AtomicList<E, ArrayList<E>> createEmpty() {
+	protected @NotNull AtomicList<E, List<E>> createEmpty() {
 		return Concurrent.newList();
 	}
 

@@ -41,6 +41,27 @@ public class ConcurrentMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> {
     }
 
     /**
+     * Create a new concurrent map with the given backing map.
+     *
+     * @param backingMap the backing map implementation
+     * @param map the source map to copy from, or {@code null} for an empty map
+     */
+    protected ConcurrentMap(@NotNull AbstractMap<K, V> backingMap, @Nullable Map<? extends K, ? extends V> map) {
+        super(backingMap, map);
+    }
+
+    /**
+     * Create a new concurrent map with the given backing map and fill it with the given pairs.
+     *
+     * @param backingMap the backing map implementation
+     * @param pairs the entries to include
+     */
+    @SafeVarargs
+    protected ConcurrentMap(@NotNull AbstractMap<K, V> backingMap, @Nullable Map.Entry<K, V>... pairs) {
+        super(backingMap, pairs);
+    }
+
+    /**
      * Creates a new empty {@code ConcurrentSet} for holding map entries, used internally by entry set operations.
      *
      * @return a new empty {@link ConcurrentSet} of entries
