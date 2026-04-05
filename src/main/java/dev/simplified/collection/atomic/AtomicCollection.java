@@ -1,6 +1,5 @@
 package dev.simplified.collection.atomic;
 
-import dev.simplified.collection.iterator.ConcurrentIterator;
 import dev.simplified.collection.query.Searchable;
 import dev.simplified.collection.tuple.single.SingleStream;
 import dev.simplified.collection.tuple.triple.TripleStream;
@@ -398,7 +397,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	/**
 	 * A concurrent version of {@link CopyOnWriteArrayList.COWIterator}.
 	 */
-	protected class ConcurrentCollectionIterator extends ConcurrentIterator<E> {
+	protected class ConcurrentCollectionIterator extends AtomicIterator<E> {
 
 		protected ConcurrentCollectionIterator(Object[] snapshot, int index) {
 			super(snapshot, index);

@@ -1,6 +1,5 @@
 package dev.simplified.collection.atomic;
 
-import dev.simplified.collection.iterator.ConcurrentIterator;
 import dev.simplified.collection.query.SortOrder;
 import dev.simplified.collection.query.Sortable;
 import org.jetbrains.annotations.NotNull;
@@ -444,7 +443,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	}
 
 	/**
-	 * A concurrent list version of {@link ConcurrentIterator}.
+	 * A concurrent list version of {@link AtomicIterator}.
 	 */
 	private final class ConcurrentListIterator extends ConcurrentCollectionIterator implements ListIterator<E> {
 

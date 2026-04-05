@@ -1,4 +1,4 @@
-package dev.simplified.collection.iterator;
+package dev.simplified.collection.atomic;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -12,9 +12,12 @@ import java.util.function.Consumer;
  * thread-safe iteration for concurrent collections.
  *
  * @param <E> the type of elements returned by this iterator
+ *
+ * @apiNote This is a low-level building block for custom concurrent implementations.
+ * Most callers should use the corresponding {@code Concurrent*} type instead.
  */
 @SuppressWarnings("unchecked")
-public abstract class ConcurrentIterator<E> implements Iterator<E> {
+abstract class AtomicIterator<E> implements Iterator<E> {
 
 	/** Snapshot of the array. */
 	protected Object[] snapshot;
@@ -31,7 +34,7 @@ public abstract class ConcurrentIterator<E> implements Iterator<E> {
 	 * @param snapshot the array snapshot to iterate over
 	 * @param index the starting index
 	 */
-	protected ConcurrentIterator(Object[] snapshot, int index) {
+	protected AtomicIterator(Object[] snapshot, int index) {
 		this.cursor = index;
 		this.snapshot = snapshot;
 	}
