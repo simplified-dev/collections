@@ -1,6 +1,5 @@
 package dev.simplified.collection.atomic;
 
-import dev.simplified.collection.iterator.ConcurrentIterator;
 import dev.simplified.collection.query.Searchable;
 import dev.simplified.collection.tuple.pair.PairStream;
 import dev.simplified.collection.StreamUtil;
@@ -480,7 +479,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	/**
 	 * A concurrent iterator over map entries backed by a snapshot of the entry set.
 	 */
-	protected class ConcurrentMapIterator extends ConcurrentIterator<Entry<K, V>> {
+	protected class ConcurrentMapIterator extends AtomicIterator<Entry<K, V>> {
 
 		protected ConcurrentMapIterator(Object[] snapshot, int index) {
 			super(snapshot, index);
