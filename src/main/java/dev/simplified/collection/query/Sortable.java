@@ -1,7 +1,7 @@
-package dev.sbs.api.collection.query;
+package dev.simplified.collection.query;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.tuple.pair.Pair;
+import dev.simplified.collection.concurrent.Concurrent;
+import dev.simplified.tuple.pair.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

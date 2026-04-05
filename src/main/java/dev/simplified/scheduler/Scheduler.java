@@ -1,8 +1,8 @@
-package dev.sbs.api.scheduler;
+package dev.simplified.scheduler;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.collection.concurrent.ConcurrentList;
-import dev.sbs.api.collection.concurrent.ConcurrentSet;
+import dev.simplified.collection.concurrent.Concurrent;
+import dev.simplified.collection.concurrent.ConcurrentList;
+import dev.simplified.collection.concurrent.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 

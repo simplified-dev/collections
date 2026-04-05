@@ -1,4 +1,4 @@
-package dev.sbs.api.collection.concurrent;
+package dev.simplified.collection.concurrent;
 
 import org.openjdk.jmh.annotations.*;
 

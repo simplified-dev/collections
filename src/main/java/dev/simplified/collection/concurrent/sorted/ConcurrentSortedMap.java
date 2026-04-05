@@ -1,6 +1,6 @@
-package dev.sbs.api.collection.concurrent.sorted;
+package dev.simplified.collection.concurrent.sorted;
 
-import dev.sbs.api.collection.concurrent.ConcurrentMap;
+import dev.simplified.collection.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

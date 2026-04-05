@@ -1,10 +1,10 @@
-package dev.sbs.api.collection.concurrent.atomic;
+package dev.simplified.collection.concurrent.atomic;
 
-import dev.sbs.api.collection.concurrent.iterator.ConcurrentIterator;
-import dev.sbs.api.collection.query.Searchable;
-import dev.sbs.api.tuple.single.SingleStream;
-import dev.sbs.api.tuple.triple.TripleStream;
-import dev.sbs.api.util.StreamUtil;
+import dev.simplified.collection.concurrent.iterator.ConcurrentIterator;
+import dev.simplified.collection.query.Searchable;
+import dev.simplified.tuple.single.SingleStream;
+import dev.simplified.tuple.triple.TripleStream;
+import dev.simplified.util.StreamUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;

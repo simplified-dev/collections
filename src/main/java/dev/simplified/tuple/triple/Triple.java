@@ -1,4 +1,4 @@
-package dev.sbs.api.tuple.triple;
+package dev.simplified.tuple.triple;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

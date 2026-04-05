@@ -1,6 +1,6 @@
-package dev.sbs.api.collection.concurrent.linked;
+package dev.simplified.collection.concurrent.linked;
 
-import dev.sbs.api.collection.concurrent.ConcurrentMap;
+import dev.simplified.collection.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;

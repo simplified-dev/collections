@@ -1,4 +1,4 @@
-package dev.sbs.api.collection.query;
+package dev.simplified.collection.query;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

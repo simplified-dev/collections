@@ -1,4 +1,4 @@
-package dev.sbs.api.function;
+package dev.simplified.function;
 
 import org.jetbrains.annotations.NotNull;
 

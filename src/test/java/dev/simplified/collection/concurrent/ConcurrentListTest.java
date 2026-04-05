@@ -1,4 +1,4 @@
-package dev.sbs.api.collection.concurrent;
+package dev.simplified.collection.concurrent;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

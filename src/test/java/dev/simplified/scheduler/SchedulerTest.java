@@ -1,4 +1,4 @@
-package dev.sbs.api.scheduler;
+package dev.simplified.scheduler;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

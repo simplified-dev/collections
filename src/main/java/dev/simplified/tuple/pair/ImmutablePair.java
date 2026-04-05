@@ -1,4 +1,4 @@
-package dev.sbs.api.tuple.pair;
+package dev.simplified.tuple.pair;
 
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;

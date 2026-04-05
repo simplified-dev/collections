@@ -1,4 +1,4 @@
-package dev.sbs.api.function;
+package dev.simplified.function;
 
 import java.util.Objects;
 import java.util.function.Predicate;

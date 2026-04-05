@@ -1,11 +1,11 @@
-package dev.sbs.api.tuple.triple;
+package dev.simplified.tuple.triple;
 
-import dev.sbs.api.function.TriConsumer;
-import dev.sbs.api.function.TriFunction;
-import dev.sbs.api.function.TriPredicate;
-import dev.sbs.api.tuple.pair.Pair;
-import dev.sbs.api.tuple.pair.PairStream;
-import dev.sbs.api.tuple.single.SingleStream;
+import dev.simplified.function.TriConsumer;
+import dev.simplified.function.TriFunction;
+import dev.simplified.function.TriPredicate;
+import dev.simplified.tuple.pair.Pair;
+import dev.simplified.tuple.pair.PairStream;
+import dev.simplified.tuple.single.SingleStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;

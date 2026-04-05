@@ -1,4 +1,4 @@
-package dev.sbs.api.tuple.triple;
+package dev.simplified.tuple.triple;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

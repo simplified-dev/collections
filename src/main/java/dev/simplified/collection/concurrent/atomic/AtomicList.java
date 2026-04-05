@@ -1,8 +1,8 @@
-package dev.sbs.api.collection.concurrent.atomic;
+package dev.simplified.collection.concurrent.atomic;
 
-import dev.sbs.api.collection.concurrent.iterator.ConcurrentIterator;
-import dev.sbs.api.collection.query.SortOrder;
-import dev.sbs.api.collection.query.Sortable;
+import dev.simplified.collection.concurrent.iterator.ConcurrentIterator;
+import dev.simplified.collection.query.SortOrder;
+import dev.simplified.collection.query.Sortable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;

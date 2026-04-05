@@ -1,12 +1,12 @@
-package dev.sbs.api.tuple.single;
+package dev.simplified.tuple.single;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.collection.concurrent.ConcurrentList;
-import dev.sbs.api.tuple.pair.Pair;
-import dev.sbs.api.tuple.pair.PairStream;
-import dev.sbs.api.tuple.triple.Triple;
-import dev.sbs.api.tuple.triple.TripleStream;
-import dev.sbs.api.util.StreamUtil;
+import dev.simplified.collection.concurrent.Concurrent;
+import dev.simplified.collection.concurrent.ConcurrentList;
+import dev.simplified.tuple.pair.Pair;
+import dev.simplified.tuple.pair.PairStream;
+import dev.simplified.tuple.triple.Triple;
+import dev.simplified.tuple.triple.TripleStream;
+import dev.simplified.util.StreamUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;

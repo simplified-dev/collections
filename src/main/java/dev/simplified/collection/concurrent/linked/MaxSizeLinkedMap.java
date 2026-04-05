@@ -1,4 +1,4 @@
-package dev.sbs.api.collection.concurrent.linked;
+package dev.simplified.collection.concurrent.linked;
 
 import org.jetbrains.annotations.NotNull;
 

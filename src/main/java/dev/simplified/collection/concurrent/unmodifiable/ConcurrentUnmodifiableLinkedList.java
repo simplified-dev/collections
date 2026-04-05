@@ -1,8 +1,8 @@
-package dev.sbs.api.collection.concurrent.unmodifiable;
+package dev.simplified.collection.concurrent.unmodifiable;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.collection.concurrent.linked.ConcurrentLinkedList;
-import dev.sbs.api.collection.query.SortOrder;
+import dev.simplified.collection.concurrent.Concurrent;
+import dev.simplified.collection.concurrent.linked.ConcurrentLinkedList;
+import dev.simplified.collection.query.SortOrder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

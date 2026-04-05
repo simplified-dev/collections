@@ -1,4 +1,4 @@
-package dev.sbs.api.scheduler;
+package dev.simplified.scheduler;
 
 import lombok.AccessLevel;
 import lombok.Getter;

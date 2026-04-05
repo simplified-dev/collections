@@ -1,9 +1,9 @@
-package dev.sbs.api.collection.query;
+package dev.simplified.collection.query;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.function.TriPredicate;
-import dev.sbs.api.tuple.pair.Pair;
-import dev.sbs.api.tuple.single.SingleStream;
+import dev.simplified.collection.concurrent.Concurrent;
+import dev.simplified.function.TriPredicate;
+import dev.simplified.tuple.pair.Pair;
+import dev.simplified.tuple.single.SingleStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -36,7 +36,7 @@ public interface Searchable<E> {
      * @param predicates the field-extractor/value pairs to compare against
      * @param <S>        the type of the compared value
      * @return a filtered stream of matching elements
-     * @throws dev.sbs.api.persistence.exception.JpaException if an invalid match type is provided
+     * @throws dev.simplified.persistence.exception.JpaException if an invalid match type is provided
      */
     default <S> @NotNull SingleStream<E> compare(@NotNull SearchFunction.Match match, @NotNull TriPredicate<Function<E, S>, E, S> compare, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
         SingleStream<E> itemsCopy = this.stream();
@@ -69,7 +69,7 @@ public interface Searchable<E> {
      * @param predicates the list-field-extractor/value pairs to check containment against
      * @param <S>        the element type within the list field
      * @return a filtered stream of matching elements
-     * @throws dev.sbs.api.persistence.exception.JpaException if an invalid match type is provided
+     * @throws dev.simplified.persistence.exception.JpaException if an invalid match type is provided
      */
     default <S> @NotNull SingleStream<E> contains(@NotNull SearchFunction.Match match, @NotNull TriPredicate<Function<E, List<S>>, E, S> compare, @NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
         SingleStream<E> itemsCopy = this.stream();

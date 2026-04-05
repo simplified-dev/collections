@@ -1,15 +1,15 @@
-package dev.sbs.api.collection.concurrent;
+package dev.simplified.collection.concurrent;
 
-import dev.sbs.api.collection.concurrent.linked.ConcurrentLinkedList;
-import dev.sbs.api.collection.concurrent.linked.ConcurrentLinkedMap;
-import dev.sbs.api.collection.concurrent.linked.ConcurrentLinkedSet;
-import dev.sbs.api.collection.concurrent.sorted.ConcurrentSortedMap;
-import dev.sbs.api.collection.concurrent.sorted.ConcurrentSortedSet;
-import dev.sbs.api.collection.concurrent.unmodifiable.ConcurrentUnmodifiableCollection;
-import dev.sbs.api.collection.concurrent.unmodifiable.ConcurrentUnmodifiableLinkedList;
-import dev.sbs.api.collection.concurrent.unmodifiable.ConcurrentUnmodifiableList;
-import dev.sbs.api.collection.concurrent.unmodifiable.ConcurrentUnmodifiableMap;
-import dev.sbs.api.collection.concurrent.unmodifiable.ConcurrentUnmodifiableSet;
+import dev.simplified.collection.concurrent.linked.ConcurrentLinkedList;
+import dev.simplified.collection.concurrent.linked.ConcurrentLinkedMap;
+import dev.simplified.collection.concurrent.linked.ConcurrentLinkedSet;
+import dev.simplified.collection.concurrent.sorted.ConcurrentSortedMap;
+import dev.simplified.collection.concurrent.sorted.ConcurrentSortedSet;
+import dev.simplified.collection.concurrent.unmodifiable.ConcurrentUnmodifiableCollection;
+import dev.simplified.collection.concurrent.unmodifiable.ConcurrentUnmodifiableLinkedList;
+import dev.simplified.collection.concurrent.unmodifiable.ConcurrentUnmodifiableList;
+import dev.simplified.collection.concurrent.unmodifiable.ConcurrentUnmodifiableMap;
+import dev.simplified.collection.concurrent.unmodifiable.ConcurrentUnmodifiableSet;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

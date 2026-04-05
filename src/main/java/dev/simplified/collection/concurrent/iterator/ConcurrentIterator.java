@@ -1,4 +1,4 @@
-package dev.sbs.api.collection.concurrent.iterator;
+package dev.simplified.collection.concurrent.iterator;
 
 import org.jetbrains.annotations.NotNull;
 

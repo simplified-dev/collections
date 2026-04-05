@@ -1,7 +1,7 @@
-package dev.sbs.api.collection.concurrent;
+package dev.simplified.collection.concurrent;
 
-import dev.sbs.api.collection.concurrent.atomic.AtomicDeque;
-import dev.sbs.api.collection.concurrent.linked.ConcurrentLinkedList;
+import dev.simplified.collection.concurrent.atomic.AtomicDeque;
+import dev.simplified.collection.concurrent.linked.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

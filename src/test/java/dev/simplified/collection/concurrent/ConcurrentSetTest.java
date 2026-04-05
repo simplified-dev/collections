@@ -1,4 +1,4 @@
-package dev.sbs.api.collection.concurrent;
+package dev.simplified.collection.concurrent;
 
 import lombok.Cleanup;
 import org.junit.jupiter.api.BeforeEach;

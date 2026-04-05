@@ -1,6 +1,6 @@
-package dev.sbs.api.collection.concurrent.unmodifiable;
+package dev.simplified.collection.concurrent.unmodifiable;
 
-import dev.sbs.api.collection.concurrent.ConcurrentSet;
+import dev.simplified.collection.concurrent.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

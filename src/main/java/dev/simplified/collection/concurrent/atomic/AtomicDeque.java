@@ -1,4 +1,4 @@
-package dev.sbs.api.collection.concurrent.atomic;
+package dev.simplified.collection.concurrent.atomic;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

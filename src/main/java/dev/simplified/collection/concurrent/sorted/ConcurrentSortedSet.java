@@ -1,8 +1,8 @@
-package dev.sbs.api.collection.concurrent.sorted;
+package dev.simplified.collection.concurrent.sorted;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.collection.concurrent.ConcurrentSet;
-import dev.sbs.api.collection.concurrent.atomic.AtomicCollection;
+import dev.simplified.collection.concurrent.Concurrent;
+import dev.simplified.collection.concurrent.ConcurrentSet;
+import dev.simplified.collection.concurrent.atomic.AtomicCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

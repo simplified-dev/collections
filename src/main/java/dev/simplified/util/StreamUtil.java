@@ -1,10 +1,10 @@
-package dev.sbs.api.util;
+package dev.simplified.util;
 
-import dev.sbs.api.collection.concurrent.Concurrent;
-import dev.sbs.api.collection.concurrent.ConcurrentSet;
-import dev.sbs.api.function.TriFunction;
-import dev.sbs.api.tuple.triple.Triple;
-import dev.sbs.api.tuple.triple.TripleStream;
+import dev.simplified.collection.concurrent.Concurrent;
+import dev.simplified.collection.concurrent.ConcurrentSet;
+import dev.simplified.function.TriFunction;
+import dev.simplified.tuple.triple.Triple;
+import dev.simplified.tuple.triple.TripleStream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.UtilityClass;
