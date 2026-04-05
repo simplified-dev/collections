@@ -1,9 +1,9 @@
 package dev.simplified.collection.query;
 
-import dev.simplified.collection.concurrent.Concurrent;
-import dev.simplified.function.TriPredicate;
-import dev.simplified.tuple.pair.Pair;
-import dev.simplified.tuple.single.SingleStream;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.function.TriPredicate;
+import dev.simplified.collection.tuple.pair.Pair;
+import dev.simplified.collection.tuple.single.SingleStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
