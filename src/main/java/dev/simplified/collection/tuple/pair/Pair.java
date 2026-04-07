@@ -61,33 +61,33 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
     }
 
     /** The left element of this pair. When treated as a key-value pair, this is the key. */
-    L getLeft();
+    L left();
 
     /** The right element of this pair. When treated as a key-value pair, this is the value. */
-    R getRight();
+    R right();
 
     /**
      * Gets the key from this pair, implementing {@link Map.Entry#getKey()}.
      * <p>
-     * Returns the same value as {@link #getLeft()}.
+     * Returns the same value as {@link #left()}.
      *
      * @return the left element as the key, may be null
      */
     @Override
     default L getKey() {
-        return getLeft();
+        return left();
     }
 
     /**
      * Gets the value from this pair, implementing {@link Map.Entry#getValue()}.
      * <p>
-     * Returns the same value as {@link #getRight()}.
+     * Returns the same value as {@link #right()}.
      *
      * @return the right element as the value, may be null
      */
     @Override
     default R getValue() {
-        return getRight();
+        return right();
     }
 
     /**
@@ -96,7 +96,7 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
      * @return {@code true} if both elements are null, {@code false} otherwise
      */
     default boolean isEmpty() {
-        return getLeft() == null && getRight() == null;
+        return left() == null && right() == null;
     }
 
     /**
@@ -110,9 +110,9 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
     default int compareTo(@NotNull Pair<L, R> other) {
         @SuppressWarnings("unchecked")
         Comparator<Object> nullSafeComparator = (Comparator<Object>) (Comparator<?>) Comparator.nullsFirst(Comparator.naturalOrder());
-        int result = nullSafeComparator.compare(getLeft(), other.getLeft());
+        int result = nullSafeComparator.compare(left(), other.left());
         if (result != 0) return result;
-        return nullSafeComparator.compare(getRight(), other.getRight());
+        return nullSafeComparator.compare(right(), other.right());
     }
 
     /**
@@ -125,7 +125,7 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
      * @return the formatted string, not null
      */
     default @NotNull String toString(@NotNull String format) {
-        return String.format(format, getLeft(), getRight());
+        return String.format(format, left(), right());
     }
 
 }

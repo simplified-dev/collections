@@ -46,13 +46,13 @@ public interface Searchable<E> {
                 boolean matches = false;
 
                 for (Pair<Function<E, S>, S> predicate : predicates)
-                    matches |= compare.test(predicate.getLeft(), it, predicate.getValue());
+                    matches |= compare.test(predicate.left(), it, predicate.getValue());
 
                 return matches;
             });
         } else if (match == SearchFunction.Match.ALL) {
             for (Pair<Function<E, S>, S> predicate : predicates)
-                itemsCopy = itemsCopy.filter(it -> compare.test(predicate.getLeft(), it, predicate.getRight()));
+                itemsCopy = itemsCopy.filter(it -> compare.test(predicate.left(), it, predicate.right()));
         } else
             throw new IllegalArgumentException(String.format("Invalid match type '%s'", match));
 
@@ -79,13 +79,13 @@ public interface Searchable<E> {
                 boolean matches = false;
 
                 for (Pair<Function<E, List<S>>, S> predicate : predicates)
-                    matches |= compare.test(predicate.getLeft(), it, predicate.getValue());
+                    matches |= compare.test(predicate.left(), it, predicate.getValue());
 
                 return matches;
             });
         } else if (match == SearchFunction.Match.ALL) {
             for (Pair<Function<E, List<S>>, S> predicate : predicates)
-                itemsCopy = itemsCopy.filter(it -> compare.test(predicate.getLeft(), it, predicate.getRight()));
+                itemsCopy = itemsCopy.filter(it -> compare.test(predicate.left(), it, predicate.right()));
         } else
             throw new IllegalArgumentException(String.format("Invalid match type '%s'", match));
 

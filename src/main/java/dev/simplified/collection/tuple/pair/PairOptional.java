@@ -40,10 +40,10 @@ public final class PairOptional<L, R> {
     private static final PairOptional<?, ?> EMPTY = new PairOptional<>((Pair<?, ?>) null);
 
     /** The wrapped pair; {@code null} indicates no value is present. */
-    private final @Nullable Pair<L, R> value;
+    private final @Nullable Pair<L, R> pair;
 
-    private PairOptional(@Nullable Pair<L, R> value) {
-        this.value = value;
+    private PairOptional(@Nullable Pair<L, R> pair) {
+        this.pair = pair;
     }
 
     // Create
@@ -134,7 +134,7 @@ public final class PairOptional<L, R> {
      *         and its left element is non-{@code null}, otherwise an empty {@code PairOptional}
      */
     public static <L, R> @NotNull PairOptional<L, R> ofNullable(@Nullable Pair<L, R> pair) {
-        return pair == null || pair.getLeft() == null ? empty() : new PairOptional<>(pair);
+        return pair == null || pair.left() == null ? empty() : new PairOptional<>(pair);
     }
 
     // Get
@@ -146,10 +146,10 @@ public final class PairOptional<L, R> {
      * @throws NoSuchElementException if no value is present
      */
     public @NotNull Pair<L, R> get() {
-        if (this.value == null)
+        if (this.pair == null)
             throw new NoSuchElementException("No value present");
 
-        return this.value;
+        return this.pair;
     }
 
     /**
@@ -160,7 +160,7 @@ public final class PairOptional<L, R> {
      * @throws NoSuchElementException if no value is present
      */
     public @Nullable L getKey() {
-        return this.get().getLeft();
+        return this.get().left();
     }
 
     /**
@@ -170,8 +170,8 @@ public final class PairOptional<L, R> {
      * @return the left element of the present pair, may be null
      * @throws NoSuchElementException if no value is present
      */
-    public @Nullable L getLeft() {
-        return this.get().getLeft();
+    public @Nullable L left() {
+        return this.get().left();
     }
 
     /**
@@ -181,8 +181,8 @@ public final class PairOptional<L, R> {
      * @return the right element of the present pair, may be null
      * @throws NoSuchElementException if no value is present
      */
-    public @Nullable R getRight() {
-        return this.get().getRight();
+    public @Nullable R right() {
+        return this.get().right();
     }
 
     /**
@@ -193,7 +193,7 @@ public final class PairOptional<L, R> {
      * @throws NoSuchElementException if no value is present
      */
     public @Nullable R getValue() {
-        return this.get().getRight();
+        return this.get().right();
     }
 
     // Present / Empty
@@ -204,7 +204,7 @@ public final class PairOptional<L, R> {
      * @return {@code true} if a value is present, otherwise {@code false}
      */
     public boolean isPresent() {
-        return this.value != null;
+        return this.pair != null;
     }
 
     /**
@@ -213,7 +213,7 @@ public final class PairOptional<L, R> {
      * @return {@code true} if no value is present, otherwise {@code false}
      */
     public boolean isEmpty() {
-        return this.value == null;
+        return this.pair == null;
     }
 
     // IfPresent
@@ -225,8 +225,8 @@ public final class PairOptional<L, R> {
      * @param action the action to be performed if a value is present
      */
     public void ifPresent(@NotNull Consumer<? super Pair<L, R>> action) {
-        if (this.value != null)
-            action.accept(this.value);
+        if (this.pair != null)
+            action.accept(this.pair);
     }
 
     /**
@@ -236,8 +236,8 @@ public final class PairOptional<L, R> {
      * @param action a {@link BiConsumer} receiving the left and right elements
      */
     public void ifPresent(@NotNull BiConsumer<? super L, ? super R> action) {
-        if (this.value != null)
-            action.accept(this.value.getLeft(), this.value.getRight());
+        if (this.pair != null)
+            action.accept(this.pair.left(), this.pair.right());
     }
 
     /**
@@ -248,8 +248,8 @@ public final class PairOptional<L, R> {
      * @param emptyAction the action to be performed if no value is present
      */
     public void ifPresentOrElse(@NotNull Consumer<? super Pair<L, R>> action, @NotNull Runnable emptyAction) {
-        if (this.value != null)
-            action.accept(this.value);
+        if (this.pair != null)
+            action.accept(this.pair);
         else
             emptyAction.run();
     }
@@ -262,8 +262,8 @@ public final class PairOptional<L, R> {
      * @param emptyAction the action to be performed if no value is present
      */
     public void ifPresentOrElse(@NotNull BiConsumer<? super L, ? super R> action, @NotNull Runnable emptyAction) {
-        if (this.value != null)
-            action.accept(this.value.getLeft(), this.value.getRight());
+        if (this.pair != null)
+            action.accept(this.pair.left(), this.pair.right());
         else
             emptyAction.run();
     }
@@ -278,7 +278,7 @@ public final class PairOptional<L, R> {
      * @return this {@code PairOptional} if a value is present and matches, otherwise empty
      */
     public @NotNull PairOptional<L, R> filter(@NotNull Predicate<? super Pair<L, R>> predicate) {
-        return this.isPresent() ? (predicate.test(this.value) ? this : empty()) : this;
+        return this.isPresent() ? (predicate.test(this.pair) ? this : empty()) : this;
     }
 
     /**
@@ -289,7 +289,7 @@ public final class PairOptional<L, R> {
      * @return this {@code PairOptional} if a value is present and matches, otherwise empty
      */
     public @NotNull PairOptional<L, R> filter(@NotNull BiPredicate<? super L, ? super R> predicate) {
-        return this.isPresent() ? (predicate.test(this.value.getLeft(), this.value.getRight()) ? this : empty()) : this;
+        return this.isPresent() ? (predicate.test(this.pair.left(), this.pair.right()) ? this : empty()) : this;
     }
 
     /**
@@ -301,7 +301,7 @@ public final class PairOptional<L, R> {
      *         otherwise empty
      */
     public @NotNull PairOptional<L, R> filterKey(@NotNull Predicate<? super L> predicate) {
-        return this.isPresent() ? (predicate.test(this.value.getLeft()) ? this : empty()) : this;
+        return this.isPresent() ? (predicate.test(this.pair.left()) ? this : empty()) : this;
     }
 
     /**
@@ -313,7 +313,7 @@ public final class PairOptional<L, R> {
      *         otherwise empty
      */
     public @NotNull PairOptional<L, R> filterValue(@NotNull Predicate<? super R> predicate) {
-        return this.isPresent() ? (predicate.test(this.value.getRight()) ? this : empty()) : this;
+        return this.isPresent() ? (predicate.test(this.pair.right()) ? this : empty()) : this;
     }
 
     // Map
@@ -328,7 +328,7 @@ public final class PairOptional<L, R> {
      * @return an {@link Optional} describing the mapped result, or empty if not present
      */
     public <U> @NotNull Optional<U> map(@NotNull Function<? super Pair<L, R>, ? extends U> mapper) {
-        return this.isPresent() ? Optional.ofNullable(mapper.apply(this.value)) : Optional.empty();
+        return this.isPresent() ? Optional.ofNullable(mapper.apply(this.pair)) : Optional.empty();
     }
 
     /**
@@ -341,7 +341,7 @@ public final class PairOptional<L, R> {
      * @return an {@link Optional} describing the mapped result, or empty if not present
      */
     public <U> @NotNull Optional<U> map(@NotNull BiFunction<? super L, ? super R, ? extends U> mapper) {
-        return this.isPresent() ? Optional.ofNullable(mapper.apply(this.value.getLeft(), this.value.getRight())) : Optional.empty();
+        return this.isPresent() ? Optional.ofNullable(mapper.apply(this.pair.left(), this.pair.right())) : Optional.empty();
     }
 
     /**
@@ -355,7 +355,7 @@ public final class PairOptional<L, R> {
      * @return a {@code PairOptional} describing the mapped pair, or empty if not present
      */
     public <U, V> @NotNull PairOptional<U, V> mapPair(@NotNull BiFunction<? super L, ? super R, ? extends Pair<U, V>> mapper) {
-        return this.isPresent() ? PairOptional.ofNullable(mapper.apply(this.value.getLeft(), this.value.getRight())) : empty();
+        return this.isPresent() ? PairOptional.ofNullable(mapper.apply(this.pair.left(), this.pair.right())) : empty();
     }
 
     /**
@@ -368,7 +368,7 @@ public final class PairOptional<L, R> {
      * @return a {@code PairOptional} with the mapped key, or empty if not present or key is null
      */
     public <U> @NotNull PairOptional<U, R> mapKey(@NotNull Function<? super L, ? extends U> mapper) {
-        return this.isPresent() ? PairOptional.ofNullable(mapper.apply(this.value.getLeft()), this.value.getRight()) : empty();
+        return this.isPresent() ? PairOptional.ofNullable(mapper.apply(this.pair.left()), this.pair.right()) : empty();
     }
 
     /**
@@ -381,7 +381,7 @@ public final class PairOptional<L, R> {
      * @return a {@code PairOptional} with the mapped value, or empty if not present
      */
     public <U> @NotNull PairOptional<L, U> mapValue(@NotNull Function<? super R, ? extends U> mapper) {
-        return this.isPresent() ? PairOptional.ofNullable(this.value.getLeft(), mapper.apply(this.value.getRight())) : empty();
+        return this.isPresent() ? PairOptional.ofNullable(this.pair.left(), mapper.apply(this.pair.right())) : empty();
     }
 
     // FlatMap
@@ -403,7 +403,7 @@ public final class PairOptional<L, R> {
         if (!isPresent())
             return Optional.empty();
 
-        return (Optional<Pair<UL, UR>>) mapper.apply(this.value);
+        return (Optional<Pair<UL, UR>>) mapper.apply(this.pair);
     }
 
     /**
@@ -417,7 +417,7 @@ public final class PairOptional<L, R> {
      * @return the result of applying the mapping function, or an empty {@code PairOptional}
      */
     public <UL, UR> @NotNull PairOptional<UL, UR> flatMap(@NotNull BiFunction<? super L, ? super R, ? extends PairOptional<UL, UR>> mapper) {
-        return this.isPresent() ? mapper.apply(this.value.getLeft(), this.value.getRight()) : empty();
+        return this.isPresent() ? mapper.apply(this.pair.left(), this.pair.right()) : empty();
     }
 
     // Or
@@ -443,7 +443,7 @@ public final class PairOptional<L, R> {
      */
     @SuppressWarnings("unchecked")
     public @NotNull Optional<L> orKey(@NotNull Supplier<? extends Optional<? extends L>> supplier) {
-        return this.isPresent() ? Optional.ofNullable(this.value.getKey()) : (Optional<L>) supplier.get();
+        return this.isPresent() ? Optional.ofNullable(this.pair.left()) : (Optional<L>) supplier.get();
     }
 
     /**
@@ -455,7 +455,7 @@ public final class PairOptional<L, R> {
      */
     @SuppressWarnings("unchecked")
     public @NotNull Optional<R> orValue(@NotNull Supplier<? extends Optional<? extends R>> supplier) {
-        return this.isPresent() ? Optional.ofNullable(this.value.getRight()) : (Optional<R>) supplier.get();
+        return this.isPresent() ? Optional.ofNullable(this.pair.right()) : (Optional<R>) supplier.get();
     }
 
     // OrElse
@@ -467,7 +467,7 @@ public final class PairOptional<L, R> {
      * @return the pair if present, otherwise {@code other}
      */
     public @Nullable Pair<L, R> orElse(@Nullable Pair<L, R> other) {
-        return this.value != null ? this.value : other;
+        return this.pair != null ? this.pair : other;
     }
 
     /**
@@ -477,7 +477,7 @@ public final class PairOptional<L, R> {
      * @return the left element if present, otherwise {@code other}
      */
     public @Nullable L orElseKey(@Nullable L other) {
-        return this.value != null ? this.value.getKey() : other;
+        return this.pair != null ? this.pair.left() : other;
     }
 
     /**
@@ -487,7 +487,7 @@ public final class PairOptional<L, R> {
      * @return the right element if present, otherwise {@code other}
      */
     public @Nullable R orElseValue(@Nullable R other) {
-        return this.value != null ? this.value.getValue() : other;
+        return this.pair != null ? this.pair.right() : other;
     }
 
     /**
@@ -498,7 +498,7 @@ public final class PairOptional<L, R> {
      * @return the pair if present, otherwise the result of {@code supplier}
      */
     public @Nullable Pair<L, R> orElseGet(@NotNull Supplier<? extends Pair<L, R>> supplier) {
-        return this.value != null ? this.value : supplier.get();
+        return this.pair != null ? this.pair : supplier.get();
     }
 
     /**
@@ -509,7 +509,7 @@ public final class PairOptional<L, R> {
      * @return the left element if present, otherwise the result of {@code supplier}
      */
     public @Nullable L orElseGetKey(@NotNull Supplier<? extends L> supplier) {
-        return this.value != null ? this.value.getKey() : supplier.get();
+        return this.pair != null ? this.pair.left() : supplier.get();
     }
 
     /**
@@ -520,7 +520,7 @@ public final class PairOptional<L, R> {
      * @return the right element if present, otherwise the result of {@code supplier}
      */
     public @Nullable R orElseGetValue(@NotNull Supplier<? extends R> supplier) {
-        return this.value != null ? this.value.getValue() : supplier.get();
+        return this.pair != null ? this.pair.right() : supplier.get();
     }
 
     /**
@@ -547,10 +547,10 @@ public final class PairOptional<L, R> {
      * @throws X if no value is present
      */
     public <X extends Throwable> @NotNull Pair<L, R> orElseThrow(@NotNull Supplier<? extends X> exceptionSupplier) throws X {
-        if (this.value == null)
+        if (this.pair == null)
             throw exceptionSupplier.get();
 
-        return this.value;
+        return this.pair;
     }
 
     // Stream
@@ -562,7 +562,7 @@ public final class PairOptional<L, R> {
      * @return a {@code PairStream} containing the pair if present, otherwise empty
      */
     public @NotNull PairStream<L, R> stream() {
-        return this.isPresent() ? PairStream.of(Stream.<Map.Entry<L, R>>of(this.value)) : PairStream.empty();
+        return this.isPresent() ? PairStream.of(Stream.<Map.Entry<L, R>>of(this.pair)) : PairStream.empty();
     }
 
     // Object
@@ -579,7 +579,7 @@ public final class PairOptional<L, R> {
             return true;
 
         return obj instanceof PairOptional<?, ?> other
-            && Objects.equals(value, other.value);
+            && Objects.equals(pair, other.pair);
     }
 
     /**
@@ -589,7 +589,7 @@ public final class PairOptional<L, R> {
      */
     @Override
     public int hashCode() {
-        return Objects.hashCode(value);
+        return Objects.hashCode(pair);
     }
 
     /**
@@ -599,8 +599,8 @@ public final class PairOptional<L, R> {
      */
     @Override
     public @NotNull String toString() {
-        return value != null
-            ? String.format("PairOptional%s", value)
+        return pair != null
+            ? String.format("PairOptional%s", pair)
             : "PairOptional.empty";
     }
 

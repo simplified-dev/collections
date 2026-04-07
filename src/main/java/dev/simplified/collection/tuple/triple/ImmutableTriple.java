@@ -1,8 +1,5 @@
 package dev.simplified.collection.tuple.triple;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,18 +15,11 @@ import org.jetbrains.annotations.Nullable;
  * @param <L> the left element type
  * @param <M> the middle element type
  * @param <R> the right element type
+ * @param left the left value, may be null
+ * @param middle the middle value, may be null
+ * @param right the right value, may be null
  */
-@Getter
-@EqualsAndHashCode
-@RequiredArgsConstructor
-public final class ImmutableTriple<L, M, R> implements Triple<L, M, R> {
-
-    /** Left object, may be null. */
-    public final @Nullable L left;
-    /** Middle object, may be null. */
-    public final @Nullable M middle;
-    /** Right object, may be null. */
-    public final @Nullable R right;
+public record ImmutableTriple<L, M, R>(@Nullable L left, @Nullable M middle, @Nullable R right) implements Triple<L, M, R> {
 
     /**
      * Returns an immutable triple of three objects, inferring the generic types.
@@ -44,16 +34,6 @@ public final class ImmutableTriple<L, M, R> implements Triple<L, M, R> {
      */
     public static <L, M, R> @NotNull ImmutableTriple<L, M, R> of(@Nullable L left, @Nullable M middle, @Nullable R right) {
         return new ImmutableTriple<>(left, middle, right);
-    }
-
-    /**
-     * Returns a string representation of this triple in the format {@code (left,middle,right)}.
-     *
-     * @return a string describing this triple, not null
-     */
-    @Override
-    public @NotNull String toString() {
-        return String.format("(%s,%s,%s)", left, middle, right);
     }
 
 }

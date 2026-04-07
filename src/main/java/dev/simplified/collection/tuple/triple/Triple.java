@@ -38,13 +38,13 @@ public interface Triple<L, M, R> extends Comparable<Triple<L, M, R>> {
     }
 
     /** The left element of this triple. */
-    L getLeft();
+    L left();
 
     /** The middle element of this triple. */
-    M getMiddle();
+    M middle();
 
     /** The right element of this triple. */
-    R getRight();
+    R right();
 
     /**
      * Compares this triple to another in natural order, first by the left element,
@@ -58,11 +58,11 @@ public interface Triple<L, M, R> extends Comparable<Triple<L, M, R>> {
     default int compareTo(@NotNull Triple<L, M, R> other) {
         @SuppressWarnings("unchecked")
         Comparator<Object> nullSafeComparator = (Comparator<Object>) (Comparator<?>) Comparator.nullsFirst(Comparator.naturalOrder());
-        int result = nullSafeComparator.compare(getLeft(), other.getLeft());
+        int result = nullSafeComparator.compare(left(), other.left());
         if (result != 0) return result;
-        result = nullSafeComparator.compare(getMiddle(), other.getMiddle());
+        result = nullSafeComparator.compare(middle(), other.middle());
         if (result != 0) return result;
-        return nullSafeComparator.compare(getRight(), other.getRight());
+        return nullSafeComparator.compare(right(), other.right());
     }
 
     /**
@@ -76,7 +76,7 @@ public interface Triple<L, M, R> extends Comparable<Triple<L, M, R>> {
      * @return the formatted string, not null
      */
     default @NotNull String toString(@NotNull String format) {
-        return String.format(format, getLeft(), getMiddle(), getRight());
+        return String.format(format, left(), middle(), right());
     }
 
 }

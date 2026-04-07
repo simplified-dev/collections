@@ -1,13 +1,9 @@
 package dev.simplified.collection.tuple.pair;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * A mutable pair consisting of two {@code Object} elements.
@@ -17,15 +13,16 @@ import java.util.Objects;
  * @param <L> the left element type
  * @param <R> the right element type
  */
-@Getter
-@Setter
-@NoArgsConstructor
 public final class MutablePair<L, R> implements Pair<L, R> {
 
-    /** Left object, may be null. */
-    public @Nullable L left;
-    /** Right object, may be null. */
-    public @Nullable R right;
+    private @Nullable L left;
+    private @Nullable R right;
+
+    /**
+     * Creates a new mutable pair with both elements set to {@code null}.
+     */
+    public MutablePair() {
+    }
 
     /**
      * Creates a new mutable pair with the specified values.
@@ -51,6 +48,38 @@ public final class MutablePair<L, R> implements Pair<L, R> {
         return new MutablePair<>(left, right);
     }
 
+    @Override
+    public @Nullable L left() {
+        return this.left;
+    }
+
+    /**
+     * Sets the left element and returns this pair for chaining.
+     *
+     * @param left the new left value, may be null
+     * @return this pair
+     */
+    public @NotNull MutablePair<L, R> left(@Nullable L left) {
+        this.left = left;
+        return this;
+    }
+
+    @Override
+    public @Nullable R right() {
+        return this.right;
+    }
+
+    /**
+     * Sets the right element and returns this pair for chaining.
+     *
+     * @param right the new right value, may be null
+     * @return this pair
+     */
+    public @NotNull MutablePair<L, R> right(@Nullable R right) {
+        this.right = right;
+        return this;
+    }
+
     /**
      * Sets the right element (value) and returns the previous value, implementing
      * {@link Map.Entry#setValue(Object)}.
@@ -60,43 +89,9 @@ public final class MutablePair<L, R> implements Pair<L, R> {
      */
     @Override
     public @Nullable R setValue(@Nullable R value) {
-        R previous = getRight();
-        setRight(value);
+        R previous = this.right;
+        this.right = value;
         return previous;
-    }
-
-    /**
-     * Compares this pair to another based on the two elements, satisfying the
-     * {@link Map.Entry} equality contract.
-     *
-     * @param obj the object to compare to, null returns false
-     * @return {@code true} if the other object is a {@link Map.Entry} with equal key and value
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof Map.Entry<?, ?> other)) return false;
-        return Objects.equals(getKey(), other.getKey()) && Objects.equals(getValue(), other.getValue());
-    }
-
-    /**
-     * Returns a hash code following the {@link Map.Entry} specification.
-     *
-     * @return the hash code
-     */
-    @Override
-    public int hashCode() {
-        return (left == null ? 0 : left.hashCode()) ^ (right == null ? 0 : right.hashCode());
-    }
-
-    /**
-     * Returns a string representation of this pair in the format {@code (left,right)}.
-     *
-     * @return a string describing this pair, not null
-     */
-    @Override
-    public @NotNull String toString() {
-        return String.format("(%s,%s)", left, right);
     }
 
 }
