@@ -1,10 +1,5 @@
 package dev.simplified.collection.tuple.triple;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,19 +12,30 @@ import org.jetbrains.annotations.Nullable;
  * @param <M> the middle element type
  * @param <R> the right element type
  */
-@Getter
-@Setter
-@EqualsAndHashCode
-@NoArgsConstructor
-@AllArgsConstructor
 public final class MutableTriple<L, M, R> implements Triple<L, M, R> {
 
-    /** Left object, may be null. */
-    public @Nullable L left;
-    /** Middle object, may be null. */
-    public @Nullable M middle;
-    /** Right object, may be null. */
-    public @Nullable R right;
+    private @Nullable L left;
+    private @Nullable M middle;
+    private @Nullable R right;
+
+    /**
+     * Creates a new mutable triple with all three elements set to {@code null}.
+     */
+    public MutableTriple() {
+    }
+
+    /**
+     * Creates a new mutable triple with the specified values.
+     *
+     * @param left the left value, may be null
+     * @param middle the middle value, may be null
+     * @param right the right value, may be null
+     */
+    public MutableTriple(@Nullable L left, @Nullable M middle, @Nullable R right) {
+        this.left = left;
+        this.middle = middle;
+        this.right = right;
+    }
 
     /**
      * Returns a mutable triple of three objects, inferring the generic types.
@@ -46,14 +52,52 @@ public final class MutableTriple<L, M, R> implements Triple<L, M, R> {
         return new MutableTriple<>(left, middle, right);
     }
 
-    /**
-     * Returns a string representation of this triple in the format {@code (left,middle,right)}.
-     *
-     * @return a string describing this triple, not null
-     */
     @Override
-    public @NotNull String toString() {
-        return String.format("(%s,%s,%s)", left, middle, right);
+    public @Nullable L left() {
+        return this.left;
+    }
+
+    /**
+     * Sets the left element and returns this triple for chaining.
+     *
+     * @param left the new left value, may be null
+     * @return this triple
+     */
+    public @NotNull MutableTriple<L, M, R> left(@Nullable L left) {
+        this.left = left;
+        return this;
+    }
+
+    @Override
+    public @Nullable M middle() {
+        return this.middle;
+    }
+
+    /**
+     * Sets the middle element and returns this triple for chaining.
+     *
+     * @param middle the new middle value, may be null
+     * @return this triple
+     */
+    public @NotNull MutableTriple<L, M, R> middle(@Nullable M middle) {
+        this.middle = middle;
+        return this;
+    }
+
+    @Override
+    public @Nullable R right() {
+        return this.right;
+    }
+
+    /**
+     * Sets the right element and returns this triple for chaining.
+     *
+     * @param right the new right value, may be null
+     * @return this triple
+     */
+    public @NotNull MutableTriple<L, M, R> right(@Nullable R right) {
+        this.right = right;
+        return this;
     }
 
 }
