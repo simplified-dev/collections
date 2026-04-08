@@ -183,7 +183,7 @@ public interface Searchable<E> {
      * @param <S>      the type of the compared value
      * @return a stream of elements whose field equals the value
      */
-    default <S> @NotNull Stream<E> findAll(@NotNull Function<E, S> function, S value) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull Function<E, S> function, S value) {
         return this.findAll(SearchFunction.Match.ALL, function, value);
     }
 
@@ -194,7 +194,7 @@ public interface Searchable<E> {
      * @param <S>        the type of the compared value
      * @return a stream of elements matching all predicates
      */
-    default <S> @NotNull Stream<E> findAll(@NotNull Pair<Function<E, S>, S>... predicates) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull Pair<Function<E, S>, S>... predicates) {
         return this.findAll(Concurrent.newList(predicates));
     }
 
@@ -205,7 +205,7 @@ public interface Searchable<E> {
      * @param <S>        the type of the compared value
      * @return a stream of elements matching all predicates
      */
-    default <S> @NotNull Stream<E> findAll(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
         return this.findAll(SearchFunction.Match.ALL, predicates);
     }
 
@@ -218,7 +218,7 @@ public interface Searchable<E> {
      * @param <S>      the type of the compared value
      * @return a stream of elements whose field equals the value
      */
-    default <S> @NotNull Stream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) {
         return this.findAll(match, Concurrent.newList(Pair.of(function, value)));
     }
 
@@ -230,7 +230,7 @@ public interface Searchable<E> {
      * @param <S>        the type of the compared value
      * @return a stream of elements matching the predicates
      */
-    default <S> @NotNull Stream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
         return this.findAll(match, Concurrent.newList(predicates));
     }
 
@@ -243,7 +243,7 @@ public interface Searchable<E> {
      * @param <S>        the type of the compared value
      * @return a stream of elements matching the predicates
      */
-    default <S> @NotNull Stream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
         return this.compare(
             match,
             (predicate, it, value) -> Objects.equals(predicate.apply(it), value),
@@ -259,7 +259,7 @@ public interface Searchable<E> {
      * @param predicates the predicates to test against each element
      * @return a stream of elements satisfying all predicates
      */
-    default @NotNull Stream<E> matchAll(@NotNull Predicate<E>... predicates) {
+    default @NotNull SingleStream<E> matchAll(@NotNull Predicate<E>... predicates) {
         return this.matchAll(Concurrent.newList(predicates));
     }
 
@@ -269,7 +269,7 @@ public interface Searchable<E> {
      * @param predicates the predicates to test against each element
      * @return a stream of elements satisfying all predicates
      */
-    default @NotNull Stream<E> matchAll(@NotNull Iterable<Predicate<E>> predicates) {
+    default @NotNull SingleStream<E> matchAll(@NotNull Iterable<Predicate<E>> predicates) {
         return this.matchAll(SearchFunction.Match.ALL, predicates);
     }
 
@@ -280,7 +280,7 @@ public interface Searchable<E> {
      * @param predicates the predicates to test against each element
      * @return a stream of elements satisfying the predicates
      */
-    default @NotNull Stream<E> matchAll(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) {
+    default @NotNull SingleStream<E> matchAll(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) {
         return this.matchAll(match, Concurrent.newList(predicates));
     }
 
@@ -292,7 +292,7 @@ public interface Searchable<E> {
      * @param predicates the predicates to test against each element
      * @return a stream of elements satisfying the predicates
      */
-    default @NotNull Stream<E> matchAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) {
+    default @NotNull SingleStream<E> matchAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) {
         return this.compare(
             match,
             (predicate, it, value) -> Objects.nonNull(it) && predicate.apply(it),
