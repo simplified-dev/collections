@@ -112,7 +112,9 @@ public interface SingleStream<E> extends Stream<E> {
     /** {@inheritDoc} */
     @Override
     default long count() {
-        return this.underlying().count();
+        try (Stream<E> s = this.underlying()) {
+            return s.count();
+        }
     }
 
     /** {@inheritDoc} */
@@ -152,13 +154,17 @@ public interface SingleStream<E> extends Stream<E> {
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<E> findAny() {
-        return this.underlying().findAny();
+        try (Stream<E> s = this.underlying()) {
+            return s.findAny();
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<E> findFirst() {
-        return this.underlying().findFirst();
+        try (Stream<E> s = this.underlying()) {
+            return s.findFirst();
+        }
     }
 
     // Flatmapping
@@ -205,13 +211,17 @@ public interface SingleStream<E> extends Stream<E> {
     /** {@inheritDoc} */
     @Override
     default void forEach(@NotNull Consumer<? super E> action) {
-        this.underlying().forEach(action);
+        try (Stream<E> s = this.underlying()) {
+            s.forEach(action);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default void forEachOrdered(@NotNull Consumer<? super E> action) {
-        this.underlying().forEachOrdered(action);
+        try (Stream<E> s = this.underlying()) {
+            s.forEachOrdered(action);
+        }
     }
 
     // Iterator
@@ -259,19 +269,25 @@ public interface SingleStream<E> extends Stream<E> {
     /** {@inheritDoc} */
     @Override
     default boolean allMatch(@NotNull Predicate<? super E> predicate) {
-        return this.underlying().allMatch(predicate);
+        try (Stream<E> s = this.underlying()) {
+            return s.allMatch(predicate);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default boolean anyMatch(@NotNull Predicate<? super E> predicate) {
-        return this.underlying().anyMatch(predicate);
+        try (Stream<E> s = this.underlying()) {
+            return s.anyMatch(predicate);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default boolean noneMatch(@NotNull Predicate<? super E> predicate) {
-        return this.underlying().noneMatch(predicate);
+        try (Stream<E> s = this.underlying()) {
+            return s.noneMatch(predicate);
+        }
     }
 
     // Minmax
@@ -279,13 +295,17 @@ public interface SingleStream<E> extends Stream<E> {
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<E> max(@NotNull Comparator<? super E> comparator) {
-        return this.underlying().max(comparator);
+        try (Stream<E> s = this.underlying()) {
+            return s.max(comparator);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<E> min(@NotNull Comparator<? super E> comparator) {
-        return this.underlying().min(comparator);
+        try (Stream<E> s = this.underlying()) {
+            return s.min(comparator);
+        }
     }
 
     // Order
@@ -319,19 +339,25 @@ public interface SingleStream<E> extends Stream<E> {
     /** {@inheritDoc} */
     @Override
     default @NotNull E reduce(@NotNull E identity, @NotNull BinaryOperator<E> accumulator) {
-        return this.underlying().reduce(identity, accumulator);
+        try (Stream<E> s = this.underlying()) {
+            return s.reduce(identity, accumulator);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<E> reduce(@NotNull BinaryOperator<E> accumulator) {
-        return this.underlying().reduce(accumulator);
+        try (Stream<E> s = this.underlying()) {
+            return s.reduce(accumulator);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default <U> @NotNull U reduce(@NotNull U identity, @NotNull BiFunction<U, ? super E, U> accumulator, @NotNull BinaryOperator<U> combiner) {
-        return this.underlying().reduce(identity, accumulator, combiner);
+        try (Stream<E> s = this.underlying()) {
+            return s.reduce(identity, accumulator, combiner);
+        }
     }
 
     // Sorting
@@ -353,25 +379,33 @@ public interface SingleStream<E> extends Stream<E> {
     /** {@inheritDoc} */
     @Override
     default <R, A> R collect(@NotNull Collector<? super E, A, R> collector) {
-        return this.underlying().collect(collector);
+        try (Stream<E> s = this.underlying()) {
+            return s.collect(collector);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default <R> R collect(@NotNull Supplier<R> supplier, @NotNull BiConsumer<R, ? super E> accumulator, @NotNull BiConsumer<R, R> combiner) {
-        return this.underlying().collect(supplier, accumulator, combiner);
+        try (Stream<E> s = this.underlying()) {
+            return s.collect(supplier, accumulator, combiner);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Object @NotNull [] toArray() {
-        return this.underlying().toArray();
+        try (Stream<E> s = this.underlying()) {
+            return s.toArray();
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default <A> @NotNull A @NotNull [] toArray(@NotNull IntFunction<A[]> generator) {
-        return this.underlying().toArray(generator);
+        try (Stream<E> s = this.underlying()) {
+            return s.toArray(generator);
+        }
     }
 
     /**
