@@ -5,6 +5,7 @@ import dev.simplified.collection.linked.ConcurrentLinkedMap;
 import dev.simplified.collection.linked.ConcurrentLinkedSet;
 import dev.simplified.collection.sorted.ConcurrentSortedMap;
 import dev.simplified.collection.sorted.ConcurrentSortedSet;
+import dev.simplified.collection.sorted.ConcurrentUnmodifiableSortedMap;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedList;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList;
@@ -593,6 +594,31 @@ public final class Concurrent {
 	}
 
 	/**
+	 * Creates a new {@link ConcurrentUnmodifiableSortedMap} containing the given map entries.
+	 *
+	 * @param entries the entries to include
+	 * @param <K>     the key type
+	 * @param <V>     the value type
+	 * @return a new unmodifiable concurrent map containing the specified entries
+	 */
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentUnmodifiableSortedMap<K, V> newUnmodifiableSortedMap(@NotNull Map.Entry<K, V>... entries) {
+		return new ConcurrentUnmodifiableSortedMap<>(entries);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentUnmodifiableMap} containing all entries from the given map.
+	 *
+	 * @param map the source map to copy from
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new unmodifiable concurrent map containing the source entries
+	 */
+	public static <K, V> @NotNull ConcurrentUnmodifiableSortedMap<K, V> newUnmodifiableSortedMap(@NotNull Map<? extends K, ? extends V> map) {
+		return new ConcurrentUnmodifiableSortedMap<>(map);
+	}
+
+	/**
 	 * Creates a new empty {@link ConcurrentUnmodifiableSet}.
 	 *
 	 * @param <E> the element type
@@ -1047,14 +1073,51 @@ public final class Concurrent {
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap} ordered by {@code comparator}
+	 * @return a collector producing a {@link ConcurrentUnmodifiableSortedMap} ordered by {@code comparator}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
-		return toUnmodifiableMap(
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableSortedMap<K, V>> toUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
+		return toUnmodifiableSortedMap(
 			Map.Entry::getKey,
 			Map.Entry::getValue,
 			throwingMerger(),
 			() -> Concurrent.newSortedMap(comparator)
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentUnmodifiableMap},
+	 * using the given key mapper, value mapper, merge function, and map supplier.
+	 * This is the most general {@code toUnmodifiableMap} overload.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param mapSupplier the supplier providing a new empty mutable map used during accumulation
+	 * @param <K>           the key type
+	 * @param <V>           the value type
+	 * @param <T>           the stream element type
+	 * @param <A>           the intermediate map type (extends {@link ConcurrentMap})
+	 * @return a collector producing a {@link ConcurrentUnmodifiableMap}
+	 */
+	public static <K, V, T, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableSortedMap<K, V>> toUnmodifiableSortedMap(
+		@NotNull Function<? super T, ? extends K> keyMapper,
+		@NotNull Function<? super T, ? extends V> valueMapper,
+		@NotNull BinaryOperator<V> mergeFunction,
+		@NotNull Supplier<A> mapSupplier
+	) {
+		return new StreamCollector<>(
+			mapSupplier,
+			(map, element) -> map.merge(
+				keyMapper.apply(element),
+				valueMapper.apply(element),
+				mergeFunction
+			),
+			(m1, m2) -> {
+				m2.forEach((key, value) -> m1.merge(key, value, mergeFunction));
+				return m1;
+			},
+			Concurrent::newUnmodifiableSortedMap,
+			UNORDERED_CHARACTERISTICS
 		);
 	}
 
