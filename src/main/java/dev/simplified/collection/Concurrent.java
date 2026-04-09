@@ -1033,6 +1033,32 @@ public final class Concurrent {
 	}
 
 	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@link ConcurrentUnmodifiableMap} backed by a {@link ConcurrentSortedMap} ordered by the
+	 * given comparator. Throws on duplicate keys.
+	 * <p>
+	 * Delegates to the general
+	 * {@link #toUnmodifiableMap(Function, Function, BinaryOperator, Supplier) toUnmodifiableMap}
+	 * form with a supplier that creates a comparator-backed sorted map, so the resulting
+	 * unmodifiable view preserves the comparator's key-ordering and equivalence semantics
+	 * (e.g. {@link String#CASE_INSENSITIVE_ORDER} yields a case-insensitive string-keyed map).
+	 *
+	 * @param comparator the comparator used to order and compare the keys
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentUnmodifiableMap} ordered by {@code comparator}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
+		return toUnmodifiableMap(
+			Map.Entry::getKey,
+			Map.Entry::getValue,
+			throwingMerger(),
+			() -> Concurrent.newSortedMap(comparator)
+		);
+	}
+
+	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentSet}.
 	 *
 	 * @param <E> the element type
