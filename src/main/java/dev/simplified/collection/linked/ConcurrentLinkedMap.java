@@ -1,6 +1,9 @@
 package dev.simplified.collection.linked;
 
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import dev.simplified.collection.ConcurrentMap;
+import dev.simplified.collection.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,6 +53,40 @@ public class ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	 */
 	public ConcurrentLinkedMap(@Nullable Map<? extends K, ? extends V> map, int maxSize) {
 		super(new MaxSizeLinkedMap<>(maxSize), map);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Backed by a {@link ConcurrentLinkedSet} so the copied entries iterate in the same
+	 * insertion order as the underlying {@link LinkedHashMap}. Without this override,
+	 * {@link dev.simplified.collection.atomic.AtomicMap#entrySet()} would funnel entries through
+	 * a {@link java.util.HashSet}-backed {@code ConcurrentSet} and silently drop the order, which
+	 * also breaks the default {@link java.util.Map#forEach(java.util.function.BiConsumer)}.
+	 */
+	@Override
+	protected @NotNull ConcurrentSet<Map.Entry<K, V>> createEmptyEntrySet() {
+		return Concurrent.newLinkedSet();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Backed by a {@link ConcurrentLinkedSet} so the copied keys iterate in insertion order.
+	 */
+	@Override
+	protected @NotNull ConcurrentSet<K> createEmptyKeySet() {
+		return Concurrent.newLinkedSet();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Backed by a {@link ConcurrentLinkedList} so the copied values iterate in insertion order.
+	 */
+	@Override
+	protected @NotNull ConcurrentList<V> createEmptyValueList() {
+		return Concurrent.newLinkedList();
 	}
 
 	/**
