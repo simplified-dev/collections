@@ -1,13 +1,14 @@
-package dev.simplified.collection;
+package dev.simplified.collection.linked;
 
-import dev.simplified.collection.linked.ConcurrentLinkedSet;
+import dev.simplified.collection.Concurrent;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class ConcurrentLinkedSetTest {
 

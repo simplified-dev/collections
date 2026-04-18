@@ -1,6 +1,6 @@
-package dev.simplified.collection;
+package dev.simplified.collection.tree;
 
-import dev.simplified.collection.sorted.ConcurrentSortedMap;
+import dev.simplified.collection.Concurrent;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -9,16 +9,16 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ConcurrentSortedMapTest {
+class ConcurrentTreeMapTest {
 
 	@Nested
 	class BasicOps {
 
 		@Test
 		void put_and_get() {
-			ConcurrentSortedMap<String, Integer> m = Concurrent.newSortedMap();
+			ConcurrentTreeMap<String, Integer> m = Concurrent.newSortedMap();
 			m.put("b", 2);
 			m.put("a", 1);
 			assertEquals(1, m.get("a"));
@@ -27,7 +27,7 @@ class ConcurrentSortedMapTest {
 
 		@Test
 		void naturalOrder_iteratesSortedInEntrySet() {
-			ConcurrentSortedMap<String, Integer> m = Concurrent.newSortedMap();
+			ConcurrentTreeMap<String, Integer> m = Concurrent.newSortedMap();
 			m.put("c", 3);
 			m.put("a", 1);
 			m.put("b", 2);
@@ -39,7 +39,7 @@ class ConcurrentSortedMapTest {
 
 		@Test
 		void customComparator_ordersAccordingly() {
-			ConcurrentSortedMap<String, Integer> m = new ConcurrentSortedMap<>(Comparator.reverseOrder());
+			ConcurrentTreeMap<String, Integer> m = new ConcurrentTreeMap<>(Comparator.reverseOrder());
 			m.put("a", 1);
 			m.put("c", 3);
 			m.put("b", 2);
@@ -50,7 +50,7 @@ class ConcurrentSortedMapTest {
 
 		@Test
 		void firstEntry_inIteration() {
-			ConcurrentSortedMap<String, Integer> m = Concurrent.newSortedMap();
+			ConcurrentTreeMap<String, Integer> m = Concurrent.newSortedMap();
 			m.put("c", 3);
 			m.put("a", 1);
 			m.put("b", 2);

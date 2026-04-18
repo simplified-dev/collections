@@ -1,7 +1,9 @@
-package dev.simplified.collection;
+package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.linked.ConcurrentLinkedMap;
-import dev.simplified.collection.sorted.ConcurrentSortedMap;
+import dev.simplified.collection.tree.ConcurrentTreeMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -156,7 +158,7 @@ class ConcurrentUnmodifiableMapTest {
 
 		@Test
 		void wrapsSortedMap_preservesComparatorOrder() {
-			ConcurrentSortedMap<String, Integer> src = Concurrent.newSortedMap();
+			ConcurrentTreeMap<String, Integer> src = Concurrent.newSortedMap();
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);

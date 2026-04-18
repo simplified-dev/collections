@@ -1,7 +1,9 @@
-package dev.simplified.collection;
+package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentSet;
 import dev.simplified.collection.linked.ConcurrentLinkedSet;
-import dev.simplified.collection.sorted.ConcurrentSortedSet;
+import dev.simplified.collection.tree.ConcurrentTreeSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -71,7 +73,7 @@ class ConcurrentUnmodifiableSetTest {
 
 		@Test
 		void wrapsSortedSet_preservesComparatorOrder() {
-			ConcurrentSortedSet<String> src = Concurrent.newSortedSet();
+			ConcurrentTreeSet<String> src = Concurrent.newSortedSet();
 			src.add("c");
 			src.add("a");
 			src.add("b");

@@ -1,6 +1,6 @@
-package dev.simplified.collection;
+package dev.simplified.collection.linked;
 
-import dev.simplified.collection.linked.ConcurrentLinkedMap;
+import dev.simplified.collection.Concurrent;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
