@@ -18,7 +18,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -56,6 +58,45 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		try {
 			this.lock.writeLock().lock();
 			this.ref.clear();
+		} finally {
+			this.lock.writeLock().unlock();
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public @Nullable V compute(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+		try {
+			this.lock.writeLock().lock();
+			return this.ref.compute(key, remappingFunction);
+		} finally {
+			this.lock.writeLock().unlock();
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public V computeIfAbsent(K key, @NotNull Function<? super K, ? extends V> mappingFunction) {
+		try {
+			this.lock.writeLock().lock();
+			return this.ref.computeIfAbsent(key, mappingFunction);
+		} finally {
+			this.lock.writeLock().unlock();
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public @Nullable V computeIfPresent(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+		try {
+			this.lock.writeLock().lock();
+			return this.ref.computeIfPresent(key, remappingFunction);
 		} finally {
 			this.lock.writeLock().unlock();
 		}
