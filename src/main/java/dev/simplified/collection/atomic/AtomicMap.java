@@ -900,6 +900,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			return new LiveEntry(snap.getKey(), snap.getValue());
 		}
 
+		/**
+		 * {@inheritDoc}
+		 * <p>
+		 * If the entry was concurrently removed before this call, the operation is a
+		 * silent no-op - no {@link java.util.ConcurrentModificationException} is thrown.
+		 */
 		@Override
 		@SuppressWarnings("unchecked")
 		public void remove() {
@@ -922,6 +928,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			super(snapshot, 0);
 		}
 
+		/**
+		 * {@inheritDoc}
+		 * <p>
+		 * If the key was concurrently removed before this call, the operation is a
+		 * silent no-op - no {@link java.util.ConcurrentModificationException} is thrown.
+		 */
 		@Override
 		public void remove() {
 			if (this.last < 0)
@@ -944,6 +956,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			super(snapshot, 0);
 		}
 
+		/**
+		 * {@inheritDoc}
+		 * <p>
+		 * If no entry still maps to this value by the time the call runs, the operation
+		 * is a silent no-op - no {@link java.util.ConcurrentModificationException} is thrown.
+		 */
 		@Override
 		@SuppressWarnings("SuspiciousMethodCalls")
 		public void remove() {

@@ -1,7 +1,6 @@
 package dev.simplified.collection.linked;
 
 import dev.simplified.collection.ConcurrentMap;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -53,13 +52,15 @@ public class ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	}
 
 	/**
-	 * Maximum size linked HashMap for cached data. Evicts the eldest entry when the
-	 * map exceeds the configured size.
+	 * A {@link LinkedHashMap} that evicts the eldest entry once its size exceeds a fixed
+	 * cap, or never evicts when the cap is {@code -1}. Final + private: the class cannot
+	 * be subclassed and the containing map is the sole caller, so {@link #removeEldestEntry}
+	 * is guaranteed to execute under the enclosing {@link ConcurrentMap}'s write lock.
 	 *
 	 * @param <K> the type of keys
 	 * @param <V> the type of values
 	 */
-	private static class MaxSizeLinkedMap<K, V> extends LinkedHashMap<K, V> {
+	private static final class MaxSizeLinkedMap<K, V> extends LinkedHashMap<K, V> {
 
 		private final int maxSize;
 
@@ -68,15 +69,6 @@ public class ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 		}
 
 		MaxSizeLinkedMap(int maxSize) {
-			this.maxSize = maxSize;
-		}
-
-		MaxSizeLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
-			this(map, -1);
-		}
-
-		MaxSizeLinkedMap(@NotNull Map<? extends K, ? extends V> map, int maxSize) {
-			super(map);
 			this.maxSize = maxSize;
 		}
 
