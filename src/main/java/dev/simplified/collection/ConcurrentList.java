@@ -10,12 +10,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Function;
 
 /**
  * A thread-safe list backed by an {@link ArrayList} with concurrent read and write access
- * via {@link java.util.concurrent.locks.ReadWriteLock}. Supports indexed access, sorting,
- * and snapshot-based iteration.
+ * via {@link ReadWriteLock}. Supports indexed access, sorting, and snapshot-based iteration.
  *
  * @param <E> the type of elements in this list
  */
@@ -62,8 +62,8 @@ public class ConcurrentList<E> extends AtomicList<E, List<E>> {
 
 	/**
 	 * Constructs a {@code ConcurrentList} sharing the given source's {@code ref} and lock.
-	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList} to
-	 * present a live, unmodifiable view over any existing {@link AtomicList}.
+	 * Used by {@link ConcurrentUnmodifiableList} to present a live, unmodifiable view over
+	 * any existing {@link AtomicList}.
 	 *
 	 * @param source the source list whose state is shared
 	 */

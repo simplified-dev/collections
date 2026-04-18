@@ -2,6 +2,7 @@ package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicQueue;
 import dev.simplified.collection.linked.ConcurrentLinkedList;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,8 +42,8 @@ public class ConcurrentQueue<E> extends AtomicQueue<E> {
 
 	/**
 	 * Constructs a {@code ConcurrentQueue} sharing the given source's underlying storage.
-	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableQueue} to
-	 * present a live, unmodifiable view over any existing {@link AtomicQueue}.
+	 * Used by {@link ConcurrentUnmodifiableQueue} to present a live, unmodifiable view
+	 * over any existing {@link AtomicQueue}.
 	 *
 	 * @param source the source queue whose storage is shared
 	 */

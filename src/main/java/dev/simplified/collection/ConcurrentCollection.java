@@ -1,6 +1,7 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicCollection;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,8 +43,8 @@ public class ConcurrentCollection<E> extends AtomicCollection<E, AbstractCollect
 
 	/**
 	 * Constructs a {@code ConcurrentCollection} sharing the given source's {@code ref} and lock.
-	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection} to
-	 * present a live, unmodifiable view over any existing {@link AtomicCollection}.
+	 * Used by {@link ConcurrentUnmodifiableCollection} to present a live, unmodifiable view
+	 * over any existing {@link AtomicCollection}.
 	 *
 	 * @param source the source collection whose state is shared
 	 */

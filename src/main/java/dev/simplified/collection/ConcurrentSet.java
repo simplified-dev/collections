@@ -2,6 +2,7 @@ package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicCollection;
 import dev.simplified.collection.atomic.AtomicSet;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,11 +10,11 @@ import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * A thread-safe set backed by a {@link HashSet} with concurrent read and write access
- * via {@link java.util.concurrent.locks.ReadWriteLock}. Enforces no-duplicate semantics
- * with snapshot-based iteration.
+ * via {@link ReadWriteLock}. Enforces no-duplicate semantics with snapshot-based iteration.
  *
  * @param <E> the type of elements in this set
  */
@@ -52,8 +53,8 @@ public class ConcurrentSet<E> extends AtomicSet<E, AbstractSet<E>> {
 
 	/**
 	 * Constructs a {@code ConcurrentSet} sharing the given source's {@code ref} and lock.
-	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableSet} to
-	 * present a live, unmodifiable view over any existing {@link AtomicSet}.
+	 * Used by {@link ConcurrentUnmodifiableSet} to present a live, unmodifiable view over
+	 * any existing {@link AtomicSet}.
 	 *
 	 * @param source the source set whose state is shared
 	 */
