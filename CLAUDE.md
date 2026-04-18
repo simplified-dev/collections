@@ -6,7 +6,7 @@ Thread-safe concurrent collection library using ReadWriteLock-based atomic opera
 - `dev.simplified.collection` - Concurrent, ConcurrentList/Map/Set/Deque/Queue, StreamUtil
 - `dev.simplified.collection.atomic` - AtomicCollection (base), AtomicList, AtomicMap, AtomicSet, AtomicDeque, AtomicQueue, AtomicIterator
 - `dev.simplified.collection.linked` - ConcurrentLinkedList, ConcurrentLinkedMap, ConcurrentLinkedSet
-- `dev.simplified.collection.sorted` - ConcurrentSortedMap, ConcurrentSortedSet
+- `dev.simplified.collection.tree` - ConcurrentSortedMap, ConcurrentSortedSet
 - `dev.simplified.collection.unmodifiable` - ConcurrentUnmodifiable{Collection,List,Map,Set,LinkedList}
 - `dev.simplified.collection.tuple.pair` - Pair, ImmutablePair, MutablePair, PairOptional, PairStream
 - `dev.simplified.collection.tuple.single` - SingleStream

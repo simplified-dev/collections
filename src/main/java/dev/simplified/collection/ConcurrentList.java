@@ -2,6 +2,7 @@ package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicList;
 import dev.simplified.collection.query.SortOrder;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -9,8 +9,8 @@ import dev.simplified.collection.atomic.AtomicSet;
 import dev.simplified.collection.linked.ConcurrentLinkedList;
 import dev.simplified.collection.linked.ConcurrentLinkedMap;
 import dev.simplified.collection.linked.ConcurrentLinkedSet;
-import dev.simplified.collection.sorted.ConcurrentSortedMap;
-import dev.simplified.collection.sorted.ConcurrentSortedSet;
+import dev.simplified.collection.tree.ConcurrentTreeMap;
+import dev.simplified.collection.tree.ConcurrentTreeSet;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList;
@@ -348,30 +348,30 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentSortedMap} with natural key ordering.
+	 * Creates a new empty {@link ConcurrentTreeMap} with natural key ordering.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @return a new empty concurrent sorted map
 	 */
-	public static <K, V> @NotNull ConcurrentSortedMap<K, V> newSortedMap() {
-		return new ConcurrentSortedMap<>();
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newSortedMap() {
+		return new ConcurrentTreeMap<>();
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentSortedMap} with the specified comparator.
+	 * Creates a new empty {@link ConcurrentTreeMap} with the specified comparator.
 	 *
 	 * @param comparator the comparator used to order the keys
 	 * @param <K>        the key type
 	 * @param <V>        the value type
 	 * @return a new empty concurrent sorted map ordered by the given comparator
 	 */
-	public static <K, V> @NotNull ConcurrentSortedMap<K, V> newSortedMap(@NotNull Comparator<? super K> comparator) {
-		return new ConcurrentSortedMap<>(comparator);
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newSortedMap(@NotNull Comparator<? super K> comparator) {
+		return new ConcurrentTreeMap<>(comparator);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentSortedMap} containing all entries from the given map,
+	 * Creates a new {@link ConcurrentTreeMap} containing all entries from the given map,
 	 * with natural key ordering.
 	 *
 	 * @param map the source map to copy from
@@ -379,12 +379,12 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a new concurrent sorted map containing the source entries
 	 */
-	public static <K, V> @NotNull ConcurrentSortedMap<K, V> newSortedMap(@NotNull Map<? extends K, ? extends V> map) {
-		return new ConcurrentSortedMap<>(map);
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newSortedMap(@NotNull Map<? extends K, ? extends V> map) {
+		return new ConcurrentTreeMap<>(map);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentSortedMap} containing all entries from the given map,
+	 * Creates a new {@link ConcurrentTreeMap} containing all entries from the given map,
 	 * ordered by the specified comparator.
 	 *
 	 * @param comparator the comparator used to order the keys
@@ -393,45 +393,45 @@ public final class Concurrent {
 	 * @param <V>        the value type
 	 * @return a new concurrent sorted map containing the source entries ordered by the given comparator
 	 */
-	public static <K, V> @NotNull ConcurrentSortedMap<K, V> newSortedMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
-		return new ConcurrentSortedMap<>(comparator, map);
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newSortedMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
+		return new ConcurrentTreeMap<>(comparator, map);
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentSortedSet} with natural element ordering.
+	 * Creates a new empty {@link ConcurrentTreeSet} with natural element ordering.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty concurrent sorted set
 	 */
-	public static <E> @NotNull ConcurrentSortedSet<E> newSortedSet() {
-		return new ConcurrentSortedSet<>();
+	public static <E> @NotNull ConcurrentTreeSet<E> newSortedSet() {
+		return new ConcurrentTreeSet<>();
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentSortedSet} with the specified comparator.
+	 * Creates a new empty {@link ConcurrentTreeSet} with the specified comparator.
 	 *
 	 * @param comparator the comparator used to order the elements
 	 * @param <E>        the element type
 	 * @return a new empty concurrent sorted set ordered by the given comparator
 	 */
-	public static <E> @NotNull ConcurrentSortedSet<E> newSortedSet(@NotNull Comparator<? super E> comparator) {
-		return new ConcurrentSortedSet<>(comparator);
+	public static <E> @NotNull ConcurrentTreeSet<E> newSortedSet(@NotNull Comparator<? super E> comparator) {
+		return new ConcurrentTreeSet<>(comparator);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentSortedSet} containing all elements from the given collection,
+	 * Creates a new {@link ConcurrentTreeSet} containing all elements from the given collection,
 	 * with natural element ordering.
 	 *
 	 * @param collection the source collection to copy from
 	 * @param <E>        the element type
 	 * @return a new concurrent sorted set containing the source elements
 	 */
-	public static <E> @NotNull ConcurrentSortedSet<E> newSortedSet(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentSortedSet<>(collection);
+	public static <E> @NotNull ConcurrentTreeSet<E> newSortedSet(@NotNull Collection<? extends E> collection) {
+		return new ConcurrentTreeSet<>(collection);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentSortedSet} containing all elements from the given collection,
+	 * Creates a new {@link ConcurrentTreeSet} containing all elements from the given collection,
 	 * ordered by the specified comparator.
 	 *
 	 * @param comparator the comparator used to order the elements
@@ -439,8 +439,8 @@ public final class Concurrent {
 	 * @param <E>        the element type
 	 * @return a new concurrent sorted set containing the source elements ordered by the given comparator
 	 */
-	public static <E> @NotNull ConcurrentSortedSet<E> newSortedSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
-		return new ConcurrentSortedSet<>(comparator, collection);
+	public static <E> @NotNull ConcurrentTreeSet<E> newSortedSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
+		return new ConcurrentTreeSet<>(comparator, collection);
 	}
 
 	/**
@@ -573,7 +573,7 @@ public final class Concurrent {
 	/**
 	 * Creates an unmodifiable view of the given map. If the source is already an
 	 * {@link AtomicMap}, the wrapper shares its state (live view, preserves iteration
-	 * order for {@link ConcurrentLinkedMap} or {@link ConcurrentSortedMap}); otherwise
+	 * order for {@link ConcurrentLinkedMap} or {@link ConcurrentTreeMap}); otherwise
 	 * the source is copied into a fresh {@link ConcurrentMap}.
 	 *
 	 * @param map the source map
@@ -615,7 +615,7 @@ public final class Concurrent {
 	/**
 	 * Creates an unmodifiable view of the given collection as a set. If the source is
 	 * already an {@link AtomicSet}, the wrapper shares its state (live view, preserves
-	 * ordering for {@link ConcurrentLinkedSet} / {@link ConcurrentSortedSet}); otherwise
+	 * ordering for {@link ConcurrentLinkedSet} / {@link ConcurrentTreeSet}); otherwise
 	 * the source is copied into a fresh {@link ConcurrentSet}.
 	 *
 	 * @param collection the source collection
@@ -1130,7 +1130,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@link ConcurrentUnmodifiableMap} backed by a {@link ConcurrentSortedMap} ordered by the
+	 * {@link ConcurrentUnmodifiableMap} backed by a {@link ConcurrentTreeMap} ordered by the
 	 * given comparator. Throws on duplicate keys.
 	 *
 	 * @param comparator the comparator used to order and compare the keys
@@ -1151,7 +1151,7 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a
 	 * {@link ConcurrentUnmodifiableMap} backed by the supplied map (typically a
-	 * {@link ConcurrentSortedMap}), applying the given key mapper, value mapper, and
+	 * {@link ConcurrentTreeMap}), applying the given key mapper, value mapper, and
 	 * merge function.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements

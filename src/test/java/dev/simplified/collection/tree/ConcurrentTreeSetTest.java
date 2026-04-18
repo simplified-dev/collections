@@ -1,6 +1,6 @@
-package dev.simplified.collection;
+package dev.simplified.collection.tree;
 
-import dev.simplified.collection.sorted.ConcurrentSortedSet;
+import dev.simplified.collection.Concurrent;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -8,16 +8,16 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ConcurrentSortedSetTest {
+class ConcurrentTreeSetTest {
 
 	@Nested
 	class BasicOps {
 
 		@Test
 		void naturalOrder_iteratesSorted() {
-			ConcurrentSortedSet<String> s = Concurrent.newSortedSet();
+			ConcurrentTreeSet<String> s = Concurrent.newSortedSet();
 			s.add("c");
 			s.add("a");
 			s.add("b");
@@ -28,7 +28,7 @@ class ConcurrentSortedSetTest {
 
 		@Test
 		void customComparator_ordersAccordingly() {
-			ConcurrentSortedSet<String> s = new ConcurrentSortedSet<>(Comparator.reverseOrder());
+			ConcurrentTreeSet<String> s = new ConcurrentTreeSet<>(Comparator.reverseOrder());
 			s.add("a");
 			s.add("c");
 			s.add("b");
@@ -39,7 +39,7 @@ class ConcurrentSortedSetTest {
 
 		@Test
 		void firstElement_inIteration() {
-			ConcurrentSortedSet<String> s = Concurrent.newSortedSet();
+			ConcurrentTreeSet<String> s = Concurrent.newSortedSet();
 			s.add("c");
 			s.add("a");
 			s.add("b");

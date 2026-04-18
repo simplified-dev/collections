@@ -1,4 +1,4 @@
-package dev.simplified.collection.sorted;
+package dev.simplified.collection.tree;
 
 import dev.simplified.collection.ConcurrentMap;
 import org.jetbrains.annotations.NotNull;
@@ -16,12 +16,12 @@ import java.util.TreeMap;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-public class ConcurrentSortedMap<K, V> extends ConcurrentMap<K, V> {
+public class ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V> {
 
     /**
      * Create a new concurrent sorted map with natural key ordering.
      */
-    public ConcurrentSortedMap() {
+    public ConcurrentTreeMap() {
         super(new TreeMap<>(), (Map<K, V>) null);
     }
 
@@ -30,7 +30,7 @@ public class ConcurrentSortedMap<K, V> extends ConcurrentMap<K, V> {
      *
      * @param comparator the comparator used to order the keys
      */
-    public ConcurrentSortedMap(@NotNull Comparator<? super K> comparator) {
+    public ConcurrentTreeMap(@NotNull Comparator<? super K> comparator) {
         super(new TreeMap<>(comparator), (Map<K, V>) null);
     }
 
@@ -38,7 +38,7 @@ public class ConcurrentSortedMap<K, V> extends ConcurrentMap<K, V> {
      * Create a new concurrent sorted map with natural key ordering and fill it with the given pairs.
      */
     @SafeVarargs
-    public ConcurrentSortedMap(@Nullable Map.Entry<K, V>... pairs) {
+    public ConcurrentTreeMap(@Nullable Map.Entry<K, V>... pairs) {
         super(new TreeMap<>(), pairs);
     }
 
@@ -49,14 +49,14 @@ public class ConcurrentSortedMap<K, V> extends ConcurrentMap<K, V> {
      * @param pairs the entries to include
      */
     @SafeVarargs
-    public ConcurrentSortedMap(@NotNull Comparator<? super K> comparator, @Nullable Map.Entry<K, V>... pairs) {
+    public ConcurrentTreeMap(@NotNull Comparator<? super K> comparator, @Nullable Map.Entry<K, V>... pairs) {
         super(new TreeMap<>(comparator), pairs);
     }
 
     /**
      * Create a new concurrent sorted map with natural key ordering and fill it with the given map.
      */
-    public ConcurrentSortedMap(@Nullable Map<? extends K, ? extends V> map) {
+    public ConcurrentTreeMap(@Nullable Map<? extends K, ? extends V> map) {
         super(new TreeMap<>(), map);
     }
 
@@ -66,7 +66,7 @@ public class ConcurrentSortedMap<K, V> extends ConcurrentMap<K, V> {
      * @param comparator the comparator used to order the keys
      * @param map the source map to copy from
      */
-    public ConcurrentSortedMap(@NotNull Comparator<? super K> comparator, @Nullable Map<? extends K, ? extends V> map) {
+    public ConcurrentTreeMap(@NotNull Comparator<? super K> comparator, @Nullable Map<? extends K, ? extends V> map) {
         super(new TreeMap<>(comparator), map);
     }
 

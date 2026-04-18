@@ -1,4 +1,4 @@
-package dev.simplified.collection.sorted;
+package dev.simplified.collection.tree;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentSet;
@@ -19,12 +19,12 @@ import java.util.TreeSet;
  *
  * @param <E> the type of elements in this set
  */
-public class ConcurrentSortedSet<E> extends ConcurrentSet<E> {
+public class ConcurrentTreeSet<E> extends ConcurrentSet<E> {
 
 	/**
 	 * Create a new concurrent sorted set with natural element ordering.
 	 */
-	public ConcurrentSortedSet() {
+	public ConcurrentTreeSet() {
 		super(new TreeSet<>());
 	}
 
@@ -33,7 +33,7 @@ public class ConcurrentSortedSet<E> extends ConcurrentSet<E> {
 	 *
 	 * @param comparator the comparator used to order the elements
 	 */
-	public ConcurrentSortedSet(@NotNull Comparator<? super E> comparator) {
+	public ConcurrentTreeSet(@NotNull Comparator<? super E> comparator) {
 		super(new TreeSet<>(comparator));
 	}
 
@@ -41,7 +41,7 @@ public class ConcurrentSortedSet<E> extends ConcurrentSet<E> {
 	 * Create a new concurrent sorted set with natural element ordering and fill it with the given array.
 	 */
 	@SafeVarargs
-	public ConcurrentSortedSet(@NotNull E... array) {
+	public ConcurrentTreeSet(@NotNull E... array) {
 		this(Arrays.asList(array));
 	}
 
@@ -52,14 +52,14 @@ public class ConcurrentSortedSet<E> extends ConcurrentSet<E> {
 	 * @param array the elements to include
 	 */
 	@SafeVarargs
-	public ConcurrentSortedSet(@NotNull Comparator<? super E> comparator, @NotNull E... array) {
+	public ConcurrentTreeSet(@NotNull Comparator<? super E> comparator, @NotNull E... array) {
 		this(comparator, Arrays.asList(array));
 	}
 
 	/**
 	 * Create a new concurrent sorted set with natural element ordering and fill it with the given collection.
 	 */
-	public ConcurrentSortedSet(@Nullable Collection<? extends E> collection) {
+	public ConcurrentTreeSet(@Nullable Collection<? extends E> collection) {
 		super(collection == null ? new TreeSet<>() : new TreeSet<>(collection));
 	}
 
@@ -69,7 +69,7 @@ public class ConcurrentSortedSet<E> extends ConcurrentSet<E> {
 	 * @param comparator the comparator used to order the elements
 	 * @param collection the source collection to copy from
 	 */
-	public ConcurrentSortedSet(@NotNull Comparator<? super E> comparator, @Nullable Collection<? extends E> collection) {
+	public ConcurrentTreeSet(@NotNull Comparator<? super E> comparator, @Nullable Collection<? extends E> collection) {
 		super(newTreeSet(comparator, collection));
 	}
 
@@ -85,7 +85,7 @@ public class ConcurrentSortedSet<E> extends ConcurrentSet<E> {
 	/**
 	 * Creates a new empty {@code ConcurrentSortedSet} instance, used internally for copy operations.
 	 *
-	 * @return a new empty {@link ConcurrentSortedSet}
+	 * @return a new empty {@link ConcurrentTreeSet}
 	 */
 	@Override
 	protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {

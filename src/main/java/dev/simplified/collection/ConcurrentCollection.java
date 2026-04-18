@@ -9,11 +9,11 @@ import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * A thread-safe collection backed by an {@link AbstractCollection} with concurrent read and write access
- * via {@link java.util.concurrent.locks.ReadWriteLock}. Provides the base concrete implementation of
- * {@link AtomicCollection}.
+ * via {@link ReadWriteLock}. Provides the base concrete implementation of {@link AtomicCollection}.
  *
  * @param <E> the type of elements in this collection
  */
