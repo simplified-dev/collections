@@ -88,7 +88,7 @@ class ConcurrentSetTest {
         @Test
         void toUnmodifiableSet_rejectsModification() {
             set.addAll(List.of("a", "b"));
-            ConcurrentSet<String> unmod = set.toUnmodifiableSet();
+            ConcurrentSet<String> unmod = set.toUnmodifiable();
             assertEquals(2, unmod.size());
             assertThrows(UnsupportedOperationException.class, () -> unmod.add("c"));
         }
@@ -96,7 +96,7 @@ class ConcurrentSetTest {
         @Test
         void toUnmodifiableSet_rejectsClear() {
             set.add("a");
-            ConcurrentSet<String> unmod = set.toUnmodifiableSet();
+            ConcurrentSet<String> unmod = set.toUnmodifiable();
             assertThrows(UnsupportedOperationException.class, unmod::clear);
         }
     }

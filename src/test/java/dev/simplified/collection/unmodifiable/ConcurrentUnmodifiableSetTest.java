@@ -21,7 +21,7 @@ class ConcurrentUnmodifiableSetTest {
 		@Test
 		void directWrites_throwUOE() {
 			ConcurrentSet<String> src = Concurrent.newSet("a");
-			ConcurrentSet<String> u = src.toUnmodifiableSet();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.addAll(List.of("c")));
@@ -32,7 +32,7 @@ class ConcurrentUnmodifiableSetTest {
 		@Test
 		void iterator_remove_throwsUOE() {
 			ConcurrentSet<String> src = Concurrent.newSet("a", "b");
-			ConcurrentSet<String> u = src.toUnmodifiableSet();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 
 			Iterator<String> it = u.iterator();
 			it.next();
@@ -46,7 +46,7 @@ class ConcurrentUnmodifiableSetTest {
 		@Test
 		void sourceMutations_visibleThroughWrapper() {
 			ConcurrentSet<String> src = Concurrent.newSet();
-			ConcurrentSet<String> u = src.toUnmodifiableSet();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 
 			assertTrue(u.isEmpty());
 			src.add("a");
@@ -64,7 +64,7 @@ class ConcurrentUnmodifiableSetTest {
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentSet<String> u = src.toUnmodifiableSet();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 
 			List<String> order = new ArrayList<>();
 			for (String s : u) order.add(s);
@@ -77,7 +77,7 @@ class ConcurrentUnmodifiableSetTest {
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentSet<String> u = src.toUnmodifiableSet();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 
 			List<String> order = new ArrayList<>();
 			for (String s : u) order.add(s);
@@ -87,8 +87,8 @@ class ConcurrentUnmodifiableSetTest {
 		@Test
 		void doubleWrap_returnsSameInstance() {
 			ConcurrentSet<String> src = Concurrent.newSet();
-			ConcurrentSet<String> u = src.toUnmodifiableSet();
-			assertSame(u, u.toUnmodifiableSet());
+			ConcurrentSet<String> u = src.toUnmodifiable();
+			assertSame(u, u.toUnmodifiable());
 		}
 	}
 }

@@ -83,7 +83,7 @@ public class ConcurrentUnmodifiableSet<E> extends ConcurrentSet<E> {
 
 	/** {@inheritDoc} */
 	@Override
-	public final @NotNull ConcurrentSet<E> toUnmodifiableSet() {
+	public final @NotNull ConcurrentSet<E> toUnmodifiable() {
 		return this;
 	}
 

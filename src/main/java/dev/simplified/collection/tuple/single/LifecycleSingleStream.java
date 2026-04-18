@@ -46,9 +46,6 @@ public final class LifecycleSingleStream<E> implements SingleStream<E> {
     /** The underlying JDK stream produced by Hibernate's {@code getResultStream()}. */
     private final @NotNull Stream<E> underlying;
 
-    /** The lifecycle resource (typically a Hibernate {@code Session}) closed after the first terminal. */
-    private final @NotNull AutoCloseable lifecycleResource;
-
     /** Guard flag preventing the lifecycle resource from being closed twice. */
     private boolean closed = false;
 
@@ -61,7 +58,6 @@ public final class LifecycleSingleStream<E> implements SingleStream<E> {
      * @param lifecycleResource the resource to close after the first terminal operation
      */
     public LifecycleSingleStream(@NotNull Stream<E> underlying, @NotNull AutoCloseable lifecycleResource) {
-        this.lifecycleResource = lifecycleResource;
         // Register the lifecycle resource close as a JDK onClose handler so derived streams
         // produced by intermediate operations (filter, map, peek, sorted, distinct, limit, skip,
         // flatMap, flatMapMany) inherit it via JDK handler-chaining semantics. Closing any derived

@@ -78,7 +78,7 @@ public class ConcurrentSet<E> extends AtomicSet<E, AbstractSet<E>> {
 	 *
 	 * @return an unmodifiable {@link ConcurrentSet} containing the same elements
 	 */
-	public @NotNull ConcurrentSet<E> toUnmodifiableSet() {
+	public @NotNull ConcurrentSet<E> toUnmodifiable() {
 		return Concurrent.newUnmodifiableSet(this);
 	}
 

@@ -124,7 +124,7 @@ public class ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
 
 	/** {@inheritDoc} */
 	@Override
-	public final @NotNull ConcurrentMap<K, V> toUnmodifiableMap() {
+	public final @NotNull ConcurrentMap<K, V> toUnmodifiable() {
 		return this;
 	}
 

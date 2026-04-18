@@ -261,7 +261,7 @@ class ConcurrentMapTest {
         @Test
         void toUnmodifiableMap_rejectsModification() {
             map.put("a", 1);
-            ConcurrentMap<String, Integer> unmod = map.toUnmodifiableMap();
+            ConcurrentMap<String, Integer> unmod = map.toUnmodifiable();
             assertEquals(1, unmod.get("a"));
             assertThrows(UnsupportedOperationException.class, () -> unmod.put("b", 2));
         }

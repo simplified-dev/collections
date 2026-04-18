@@ -21,7 +21,7 @@ class ConcurrentUnmodifiableListTest {
 		@Test
 		void directWrites_throwUOE() {
 			ConcurrentList<String> src = Concurrent.newList("a", "b");
-			ConcurrentList<String> u = src.toUnmodifiableList();
+			ConcurrentList<String> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.add(0, "c"));
@@ -40,7 +40,7 @@ class ConcurrentUnmodifiableListTest {
 		@Test
 		void iterator_remove_throwsUOE() {
 			ConcurrentList<String> src = Concurrent.newList("a", "b");
-			ConcurrentList<String> u = src.toUnmodifiableList();
+			ConcurrentList<String> u = src.toUnmodifiable();
 
 			Iterator<String> it = u.iterator();
 			it.next();
@@ -50,7 +50,7 @@ class ConcurrentUnmodifiableListTest {
 		@Test
 		void listIterator_writes_throwUOE() {
 			ConcurrentList<String> src = Concurrent.newList("a", "b");
-			ConcurrentList<String> u = src.toUnmodifiableList();
+			ConcurrentList<String> u = src.toUnmodifiable();
 
 			ListIterator<String> it = u.listIterator();
 			it.next();
@@ -66,7 +66,7 @@ class ConcurrentUnmodifiableListTest {
 		@Test
 		void sourceMutations_visibleThroughWrapper() {
 			ConcurrentList<String> src = Concurrent.newList();
-			ConcurrentList<String> u = src.toUnmodifiableList();
+			ConcurrentList<String> u = src.toUnmodifiable();
 
 			assertTrue(u.isEmpty());
 			src.add("a");
@@ -84,7 +84,7 @@ class ConcurrentUnmodifiableListTest {
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentList<String> u = src.toUnmodifiableList();
+			ConcurrentList<String> u = src.toUnmodifiable();
 
 			List<String> order = new ArrayList<>();
 			for (String s : u) order.add(s);
@@ -94,8 +94,8 @@ class ConcurrentUnmodifiableListTest {
 		@Test
 		void doubleWrap_returnsSameInstance() {
 			ConcurrentList<String> src = Concurrent.newList();
-			ConcurrentList<String> u = src.toUnmodifiableList();
-			assertSame(u, u.toUnmodifiableList());
+			ConcurrentList<String> u = src.toUnmodifiable();
+			assertSame(u, u.toUnmodifiable());
 		}
 	}
 }

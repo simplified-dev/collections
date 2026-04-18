@@ -145,7 +145,7 @@ public class ConcurrentUnmodifiableList<E> extends ConcurrentList<E> {
 
 	/** {@inheritDoc} */
 	@Override
-	public final @NotNull ConcurrentList<E> toUnmodifiableList() {
+	public final @NotNull ConcurrentList<E> toUnmodifiable() {
 		return this;
 	}
 

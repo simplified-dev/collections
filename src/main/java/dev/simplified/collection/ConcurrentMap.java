@@ -80,7 +80,7 @@ public class ConcurrentMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> {
      *
      * @return an unmodifiable {@link ConcurrentMap} view over the same state
      */
-    public @NotNull ConcurrentMap<K, V> toUnmodifiableMap() {
+    public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
         return Concurrent.newUnmodifiableMap(this);
     }
 

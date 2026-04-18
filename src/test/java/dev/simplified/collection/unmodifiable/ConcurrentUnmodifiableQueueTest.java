@@ -17,7 +17,7 @@ class ConcurrentUnmodifiableQueueTest {
 		void directWrites_throwUOE() {
 			ConcurrentQueue<String> src = new ConcurrentQueue<>();
 			src.offer("a");
-			ConcurrentQueue<String> u = src.toUnmodifiableQueue();
+			ConcurrentQueue<String> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.addAll(List.of("c")));
@@ -35,7 +35,7 @@ class ConcurrentUnmodifiableQueueTest {
 		@Test
 		void sourceMutations_visibleThroughWrapper() {
 			ConcurrentQueue<String> src = new ConcurrentQueue<>();
-			ConcurrentQueue<String> u = src.toUnmodifiableQueue();
+			ConcurrentQueue<String> u = src.toUnmodifiable();
 
 			assertTrue(u.isEmpty());
 			src.offer("a");
@@ -47,8 +47,8 @@ class ConcurrentUnmodifiableQueueTest {
 		@Test
 		void doubleWrap_returnsSameInstance() {
 			ConcurrentQueue<String> src = new ConcurrentQueue<>();
-			ConcurrentQueue<String> u = src.toUnmodifiableQueue();
-			assertSame(u, u.toUnmodifiableQueue());
+			ConcurrentQueue<String> u = src.toUnmodifiable();
+			assertSame(u, u.toUnmodifiable());
 		}
 	}
 }

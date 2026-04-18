@@ -187,8 +187,8 @@ public class Graph<T> {
                 this.values.stream()
                     .map(Node::new)
                     .collect(Concurrent.toUnmodifiableList()),
-                this.edges.toUnmodifiableList(),
-                this.nodeEdges.toUnmodifiableMap()
+                this.edges.toUnmodifiable(),
+                this.nodeEdges.toUnmodifiable()
             );
         }
 

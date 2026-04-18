@@ -18,7 +18,7 @@ class ConcurrentUnmodifiableCollectionTest {
 		@Test
 		void directWrites_throwUOE() {
 			ConcurrentCollection<String> src = Concurrent.newCollection("a");
-			ConcurrentCollection<String> u = src.toUnmodifiableCollection();
+			ConcurrentCollection<String> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.addAll(List.of("c")));
@@ -29,7 +29,7 @@ class ConcurrentUnmodifiableCollectionTest {
 		@Test
 		void iterator_remove_throwsUOE() {
 			ConcurrentCollection<String> src = Concurrent.newCollection("a", "b");
-			ConcurrentCollection<String> u = src.toUnmodifiableCollection();
+			ConcurrentCollection<String> u = src.toUnmodifiable();
 
 			Iterator<String> it = u.iterator();
 			it.next();
@@ -43,7 +43,7 @@ class ConcurrentUnmodifiableCollectionTest {
 		@Test
 		void sourceMutations_visibleThroughWrapper() {
 			ConcurrentCollection<String> src = Concurrent.newCollection();
-			ConcurrentCollection<String> u = src.toUnmodifiableCollection();
+			ConcurrentCollection<String> u = src.toUnmodifiable();
 
 			assertTrue(u.isEmpty());
 			src.add("a");
@@ -54,8 +54,8 @@ class ConcurrentUnmodifiableCollectionTest {
 		@Test
 		void doubleWrap_returnsSameInstance() {
 			ConcurrentCollection<String> src = Concurrent.newCollection();
-			ConcurrentCollection<String> u = src.toUnmodifiableCollection();
-			assertSame(u, u.toUnmodifiableCollection());
+			ConcurrentCollection<String> u = src.toUnmodifiable();
+			assertSame(u, u.toUnmodifiable());
 		}
 	}
 }

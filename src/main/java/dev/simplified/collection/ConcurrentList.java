@@ -197,7 +197,7 @@ public class ConcurrentList<E> extends AtomicList<E, List<E>> {
 	 *
 	 * @return an unmodifiable {@link ConcurrentList} containing the same elements
 	 */
-	public @NotNull ConcurrentList<E> toUnmodifiableList() {
+	public @NotNull ConcurrentList<E> toUnmodifiable() {
 		return Concurrent.newUnmodifiableList(this);
 	}
 

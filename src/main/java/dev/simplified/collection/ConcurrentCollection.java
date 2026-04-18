@@ -67,7 +67,7 @@ public class ConcurrentCollection<E> extends AtomicCollection<E, AbstractCollect
 	 *
 	 * @return an unmodifiable {@link ConcurrentCollection} view over the same state
 	 */
-	public @NotNull ConcurrentCollection<E> toUnmodifiableCollection() {
+	public @NotNull ConcurrentCollection<E> toUnmodifiable() {
 		return Concurrent.newUnmodifiableCollection(this);
 	}
 

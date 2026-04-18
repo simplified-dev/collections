@@ -184,7 +184,7 @@ class ConcurrentListTest {
         @Test
         void toUnmodifiableList_rejectsModification() {
             list.addAll(List.of("a", "b"));
-            ConcurrentList<String> unmod = list.toUnmodifiableList();
+            ConcurrentList<String> unmod = list.toUnmodifiable();
             assertEquals(2, unmod.size());
             assertThrows(UnsupportedOperationException.class, () -> unmod.add("c"));
         }

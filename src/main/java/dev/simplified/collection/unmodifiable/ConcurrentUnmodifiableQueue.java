@@ -81,7 +81,7 @@ public class ConcurrentUnmodifiableQueue<E> extends ConcurrentQueue<E> {
 
 	/** {@inheritDoc} */
 	@Override
-	public final @NotNull ConcurrentQueue<E> toUnmodifiableQueue() {
+	public final @NotNull ConcurrentQueue<E> toUnmodifiable() {
 		return this;
 	}
 

@@ -17,7 +17,7 @@ class ConcurrentUnmodifiableDequeTest {
 		void directWrites_throwUOE() {
 			ConcurrentDeque<String> src = new ConcurrentDeque<>();
 			src.offer("a");
-			ConcurrentDeque<String> u = src.toUnmodifiableDeque();
+			ConcurrentDeque<String> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.addAll(List.of("c")));
@@ -44,7 +44,7 @@ class ConcurrentUnmodifiableDequeTest {
 		@Test
 		void sourceMutations_visibleThroughWrapper() {
 			ConcurrentDeque<String> src = new ConcurrentDeque<>();
-			ConcurrentDeque<String> u = src.toUnmodifiableDeque();
+			ConcurrentDeque<String> u = src.toUnmodifiable();
 
 			assertTrue(u.isEmpty());
 			src.offerFirst("a");
@@ -57,8 +57,8 @@ class ConcurrentUnmodifiableDequeTest {
 		@Test
 		void doubleWrap_returnsSameInstance() {
 			ConcurrentDeque<String> src = new ConcurrentDeque<>();
-			ConcurrentDeque<String> u = src.toUnmodifiableDeque();
-			assertSame(u, u.toUnmodifiableDeque());
+			ConcurrentDeque<String> u = src.toUnmodifiable();
+			assertSame(u, u.toUnmodifiable());
 		}
 	}
 }

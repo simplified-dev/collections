@@ -29,7 +29,7 @@ class ConcurrentUnmodifiableMapTest {
 		void directWrites_throwUOE() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
 			src.put("a", 1);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.put("b", 2));
 			assertThrows(UnsupportedOperationException.class, () -> u.putAll(Map.of("c", 3)));
@@ -46,7 +46,7 @@ class ConcurrentUnmodifiableMapTest {
 		void entrySet_remove_throwsUOE() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
 			src.put("a", 1);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.entrySet().remove(Map.entry("a", 1)));
 			assertThrows(UnsupportedOperationException.class, () -> u.entrySet().clear());
@@ -56,7 +56,7 @@ class ConcurrentUnmodifiableMapTest {
 		void entrySet_iterator_remove_throwsUOE() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
 			src.put("a", 1);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			Iterator<Map.Entry<String, Integer>> it = u.entrySet().iterator();
 			assertTrue(it.hasNext());
@@ -68,7 +68,7 @@ class ConcurrentUnmodifiableMapTest {
 		void entry_setValue_throwsUOE() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
 			src.put("a", 1);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			Map.Entry<String, Integer> e = u.entrySet().iterator().next();
 			assertThrows(UnsupportedOperationException.class, () -> e.setValue(99));
@@ -78,7 +78,7 @@ class ConcurrentUnmodifiableMapTest {
 		void keySet_remove_throwsUOE() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
 			src.put("a", 1);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.keySet().remove("a"));
 			assertThrows(UnsupportedOperationException.class, () -> u.keySet().clear());
@@ -92,7 +92,7 @@ class ConcurrentUnmodifiableMapTest {
 		void values_remove_throwsUOE() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
 			src.put("a", 1);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.values().remove(1));
 			assertThrows(UnsupportedOperationException.class, () -> u.values().clear());
@@ -109,7 +109,7 @@ class ConcurrentUnmodifiableMapTest {
 		@Test
 		void sourceMutations_visibleThroughWrapper() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			assertTrue(u.isEmpty());
 			src.put("a", 1);
@@ -130,7 +130,7 @@ class ConcurrentUnmodifiableMapTest {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
 			src.put("a", 1);
 			src.put("b", 2);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			List<String> keys = new ArrayList<>();
 			for (Map.Entry<String, Integer> e : u.entrySet()) keys.add(e.getKey());
@@ -149,7 +149,7 @@ class ConcurrentUnmodifiableMapTest {
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			List<String> order = new ArrayList<>();
 			for (Map.Entry<String, Integer> e : u.entrySet()) order.add(e.getKey());
@@ -162,7 +162,7 @@ class ConcurrentUnmodifiableMapTest {
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			List<String> order = new ArrayList<>();
 			for (Map.Entry<String, Integer> e : u.entrySet()) order.add(e.getKey());
@@ -172,8 +172,8 @@ class ConcurrentUnmodifiableMapTest {
 		@Test
 		void doubleWrap_returnsSameInstance() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
-			ConcurrentMap<String, Integer> u = src.toUnmodifiableMap();
-			assertSame(u, u.toUnmodifiableMap());
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
+			assertSame(u, u.toUnmodifiable());
 		}
 	}
 
@@ -185,7 +185,7 @@ class ConcurrentUnmodifiableMapTest {
 		void concurrentReads_whileSourceWrites_noExceptions() throws Exception {
 			ConcurrentMap<Integer, Integer> src = Concurrent.newMap();
 			for (int i = 0; i < 1000; i++) src.put(i, i);
-			ConcurrentMap<Integer, Integer> u = src.toUnmodifiableMap();
+			ConcurrentMap<Integer, Integer> u = src.toUnmodifiable();
 
 			int threadCount = 8;
 			ExecutorService pool = Executors.newFixedThreadPool(threadCount);

@@ -83,7 +83,7 @@ public class ConcurrentUnmodifiableCollection<E> extends ConcurrentCollection<E>
 
 	/** {@inheritDoc} */
 	@Override
-	public final @NotNull ConcurrentCollection<E> toUnmodifiableCollection() {
+	public final @NotNull ConcurrentCollection<E> toUnmodifiable() {
 		return this;
 	}
 

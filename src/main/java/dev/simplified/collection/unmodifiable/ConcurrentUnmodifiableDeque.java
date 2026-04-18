@@ -153,7 +153,7 @@ public class ConcurrentUnmodifiableDeque<E> extends ConcurrentDeque<E> {
 
 	/** {@inheritDoc} */
 	@Override
-	public final @NotNull ConcurrentDeque<E> toUnmodifiableDeque() {
+	public final @NotNull ConcurrentDeque<E> toUnmodifiable() {
 		return this;
 	}
 

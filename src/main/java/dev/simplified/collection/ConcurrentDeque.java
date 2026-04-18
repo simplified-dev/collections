@@ -56,7 +56,7 @@ public class ConcurrentDeque<E> extends AtomicDeque<E> {
 	 *
 	 * @return an unmodifiable {@link ConcurrentDeque} view over the same state
 	 */
-	public @NotNull ConcurrentDeque<E> toUnmodifiableDeque() {
+	public @NotNull ConcurrentDeque<E> toUnmodifiable() {
 		return Concurrent.newUnmodifiableDeque(this);
 	}
 

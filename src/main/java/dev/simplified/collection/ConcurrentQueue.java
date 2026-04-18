@@ -56,7 +56,7 @@ public class ConcurrentQueue<E> extends AtomicQueue<E> {
 	 *
 	 * @return an unmodifiable {@link ConcurrentQueue} view over the same state
 	 */
-	public @NotNull ConcurrentQueue<E> toUnmodifiableQueue() {
+	public @NotNull ConcurrentQueue<E> toUnmodifiable() {
 		return Concurrent.newUnmodifiableQueue(this);
 	}
 
