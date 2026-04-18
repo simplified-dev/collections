@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -1002,7 +1003,7 @@ public final class Concurrent {
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
-		return toUnmodifiableMap(keyMapper, valueMapper, throwingMerger(), ConcurrentMap::new);
+		return toUnmodifiableMap(keyMapper, valueMapper, throwingMerger());
 	}
 
 	/**
@@ -1018,7 +1019,20 @@ public final class Concurrent {
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
-		return toUnmodifiableMap(keyMapper, valueMapper, mergeFunction, ConcurrentMap::new);
+		return new StreamCollector<T, HashMap<K, V>, ConcurrentUnmodifiableMap<K, V>>(
+			HashMap::new,
+			(map, element) -> map.merge(
+				keyMapper.apply(element),
+				valueMapper.apply(element),
+				mergeFunction
+			),
+			(m1, m2) -> {
+				m2.forEach((key, value) -> m1.merge(key, value, mergeFunction));
+				return m1;
+			},
+			Concurrent::newUnmodifiableMap,
+			UNORDERED_CHARACTERISTICS
+		);
 	}
 
 	/**

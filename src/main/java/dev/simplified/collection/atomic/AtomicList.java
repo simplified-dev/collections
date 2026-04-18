@@ -32,6 +32,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			super.ref.add(index, element);
 		} finally {
+			super.snapshotCache = null;
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -45,6 +46,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			super.ref.addFirst(element);
 		} finally {
+			super.snapshotCache = null;
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -58,6 +60,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			super.ref.addLast(element);
 		} finally {
+			super.snapshotCache = null;
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -71,6 +74,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.addAll(index, collection);
 		} finally {
+			super.snapshotCache = null;
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -222,12 +226,23 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public @NotNull ListIterator<E> listIterator(int index) {
-		try {
-			super.lock.readLock().lock();
-			return new ConcurrentListIterator(this.ref.toArray(), index);
-		} finally {
-			super.lock.readLock().unlock();
+		Object[] snapshot = super.snapshotCache;
+
+		if (snapshot == null) {
+			try {
+				super.lock.readLock().lock();
+				snapshot = super.snapshotCache;
+
+				if (snapshot == null) {
+					snapshot = this.ref.toArray();
+					super.snapshotCache = snapshot;
+				}
+			} finally {
+				super.lock.readLock().unlock();
+			}
 		}
+
+		return new ConcurrentListIterator(snapshot, index);
 	}
 
 	/**
@@ -239,6 +254,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.remove(index);
 		} finally {
+			super.snapshotCache = null;
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -252,6 +268,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.removeFirst();
 		} finally {
+			super.snapshotCache = null;
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -265,6 +282,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.removeLast();
 		} finally {
+			super.snapshotCache = null;
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -297,6 +315,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.set(index, element);
 		} finally {
+			super.snapshotCache = null;
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -409,10 +428,19 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 
 	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Sorts the underlying list in place under a single write lock, so the sort is atomic
+	 * with respect to concurrent readers and writers.
 	 */
 	@Override
 	public void sort(Comparator<? super E> comparator) {
-		List.super.sort(comparator);
+		try {
+			super.lock.writeLock().lock();
+			super.ref.sort(comparator);
+		} finally {
+			super.snapshotCache = null;
+			super.lock.writeLock().unlock();
+		}
 	}
 
 	/**
@@ -489,6 +517,11 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 
 		/**
 		 * {@inheritDoc}
+		 * <p>
+		 * Updates the backing list under its write lock. The iterator's snapshot is not
+		 * refreshed, so subsequent calls to {@link #previous()} that re-read the updated
+		 * position will still return the snapshot-time value - typical forward iteration
+		 * is unaffected.
 		 */
 		@Override
 		public void set(E element) {
@@ -497,7 +530,6 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 
 			try {
 				AtomicList.this.set(this.last, element);
-				this.snapshot = AtomicList.this.toArray();
 			} catch (IndexOutOfBoundsException ex) {
 				throw new ConcurrentModificationException();
 			}
@@ -505,13 +537,17 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 
 		/**
 		 * {@inheritDoc}
+		 * <p>
+		 * Inserts into the backing list under its write lock. The iterator's snapshot is
+		 * not refreshed, so the inserted element is invisible to this iterator's remaining
+		 * iteration - {@link #next()} continues returning the snapshot sequence unchanged.
+		 * This is the weakly consistent semantic shared with all other snapshot iterators
+		 * in this package.
 		 */
 		@Override
 		public void add(E element) {
-			this.snapshot = AtomicList.this.toArray();
-
 			try {
-				AtomicList.this.add(this.cursor++, element);
+				AtomicList.this.add(this.cursor, element);
 				this.last = -1;
 			} catch (IndexOutOfBoundsException ex) {
 				throw new ConcurrentModificationException();

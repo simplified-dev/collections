@@ -19,8 +19,8 @@ import java.util.function.Consumer;
 @SuppressWarnings("unchecked")
 abstract class AtomicIterator<E> implements Iterator<E> {
 
-	/** Snapshot of the array. */
-	protected Object[] snapshot;
+	/** Immutable snapshot of the array captured at iterator creation time. */
+	protected final Object[] snapshot;
 
 	/** Index of element to be returned by subsequent call to next. */
 	protected int cursor;
