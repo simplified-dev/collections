@@ -99,6 +99,113 @@ class ConcurrentMapTest {
     }
 
     @Nested
+    class ComputeFamily {
+
+        @Test
+        void compute_insertsWhenAbsent() {
+            Integer result = map.compute("a", (k, v) -> 42);
+            assertEquals(42, result);
+            assertEquals(42, map.get("a"));
+        }
+
+        @Test
+        void compute_replacesWhenPresent() {
+            map.put("a", 10);
+            Integer result = map.compute("a", (k, v) -> v + 1);
+            assertEquals(11, result);
+            assertEquals(11, map.get("a"));
+        }
+
+        @Test
+        void compute_removesWhenFunctionReturnsNull() {
+            map.put("a", 10);
+            Integer result = map.compute("a", (k, v) -> null);
+            assertNull(result);
+            assertFalse(map.containsKey("a"));
+        }
+
+        @Test
+        void computeIfAbsent_insertsAndReturns() {
+            Integer result = map.computeIfAbsent("a", k -> 99);
+            assertEquals(99, result);
+            assertEquals(99, map.get("a"));
+        }
+
+        @Test
+        void computeIfAbsent_doesNotOverwrite() {
+            map.put("a", 1);
+            Integer result = map.computeIfAbsent("a", k -> {
+                throw new AssertionError("mapping function must not run for present key");
+            });
+            assertEquals(1, result);
+        }
+
+        @Test
+        void computeIfAbsent_skipsWhenMappingReturnsNull() {
+            Integer result = map.computeIfAbsent("a", k -> null);
+            assertNull(result);
+            assertFalse(map.containsKey("a"));
+        }
+
+        @Test
+        void computeIfPresent_updatesWhenPresent() {
+            map.put("a", 10);
+            Integer result = map.computeIfPresent("a", (k, v) -> v * 2);
+            assertEquals(20, result);
+            assertEquals(20, map.get("a"));
+        }
+
+        @Test
+        void computeIfPresent_skipsWhenAbsent() {
+            Integer result = map.computeIfPresent("missing", (k, v) -> {
+                throw new AssertionError("remapping function must not run for absent key");
+            });
+            assertNull(result);
+        }
+
+        @Test
+        void computeIfPresent_removesWhenFunctionReturnsNull() {
+            map.put("a", 10);
+            Integer result = map.computeIfPresent("a", (k, v) -> null);
+            assertNull(result);
+            assertFalse(map.containsKey("a"));
+        }
+
+        @Test
+        void computeIfAbsent_runsMappingExactlyOncePerKeyUnderContention() throws Exception {
+            int threadCount = 16;
+            AtomicInteger invocations = new AtomicInteger();
+            @Cleanup ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+            CountDownLatch start = new CountDownLatch(1);
+            CountDownLatch done = new CountDownLatch(threadCount);
+
+            for (int t = 0; t < threadCount; t++) {
+                pool.submit(() -> {
+                    try {
+                        start.await();
+                        map.computeIfAbsent("shared", k -> {
+                            invocations.incrementAndGet();
+                            // Hold the write lock briefly so any non-atomic impl would let
+                            // a sibling thread slip in and double-invoke.
+                            try { Thread.sleep(10); } catch (InterruptedException ignored) {}
+                            return 1;
+                        });
+                    } catch (InterruptedException ignored) {
+                    } finally {
+                        done.countDown();
+                    }
+                });
+            }
+
+            start.countDown();
+            assertTrue(done.await(5, TimeUnit.SECONDS));
+            pool.shutdown();
+            assertEquals(1, invocations.get(), "computeIfAbsent must invoke mapping exactly once per key");
+            assertEquals(1, map.get("shared"));
+        }
+    }
+
+    @Nested
     class ConstructFromEntries {
 
         @Test
