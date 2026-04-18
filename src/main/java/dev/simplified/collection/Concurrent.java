@@ -36,7 +36,6 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -49,10 +48,34 @@ import java.util.stream.Stream;
 @UtilityClass
 public final class Concurrent {
 
-	/** Collector characteristics for ordered, concurrent collectors with identity finish. */
-	public static final ConcurrentSet<Collector.Characteristics> ORDERED_CHARACTERISTICS = Concurrent.newSet(Collector.Characteristics.CONCURRENT, Collector.Characteristics.IDENTITY_FINISH);
-	/** Collector characteristics for unordered, concurrent collectors with identity finish. */
-	public static final ConcurrentSet<Collector.Characteristics> UNORDERED_CHARACTERISTICS = Concurrent.newSet(Collector.Characteristics.CONCURRENT, Collector.Characteristics.IDENTITY_FINISH, Collector.Characteristics.UNORDERED);
+	/**
+	 * Collector characteristics for ordered collectors with identity finish.
+	 * <p>
+	 * {@link Collector.Characteristics#CONCURRENT CONCURRENT} is intentionally omitted: the
+	 * underlying accumulators serialize mutations through a {@code ReadWriteLock} write lock,
+	 * so advertising concurrent accumulation would force parallel-stream workers to queue on
+	 * a single lock instead of combining per-thread partials via the collector's combiner.
+	 */
+	public static final Set<Collector.Characteristics> ORDERED_CHARACTERISTICS = Set.of(Collector.Characteristics.IDENTITY_FINISH);
+	/**
+	 * Collector characteristics for unordered collectors with identity finish.
+	 * <p>
+	 * {@link Collector.Characteristics#CONCURRENT CONCURRENT} is intentionally omitted for the
+	 * same reason as {@link #ORDERED_CHARACTERISTICS}.
+	 */
+	public static final Set<Collector.Characteristics> UNORDERED_CHARACTERISTICS = Set.of(Collector.Characteristics.IDENTITY_FINISH, Collector.Characteristics.UNORDERED);
+	/**
+	 * Collector characteristics for ordered collectors whose finisher transforms the
+	 * accumulator (e.g. wraps it in an unmodifiable view) and must not be elided.
+	 */
+	private static final Set<Collector.Characteristics> ORDERED_FINISHING_CHARACTERISTICS = Set.of();
+	/**
+	 * Collector characteristics for unordered collectors whose finisher transforms the
+	 * accumulator (e.g. wraps it in an unmodifiable view) and must not be elided.
+	 */
+	private static final Set<Collector.Characteristics> UNORDERED_FINISHING_CHARACTERISTICS = Set.of(Collector.Characteristics.UNORDERED);
+
+	private static final @NotNull BinaryOperator<Object> THROWING_MERGER = (key, value) -> { throw new IllegalStateException(String.format("Duplicate key %s", key)); };
 
 	/**
 	 * Returns a merge function that always throws {@link IllegalStateException} on duplicate keys.
@@ -60,8 +83,9 @@ public final class Concurrent {
 	 * @param <T> the type of the values being merged
 	 * @return a merge function that rejects duplicates
 	 */
+	@SuppressWarnings("unchecked")
 	private static <T> @NotNull BinaryOperator<T> throwingMerger() {
-		return (key, value) -> { throw new IllegalStateException(String.format("Duplicate key %s", key)); };
+		return (BinaryOperator<T>) THROWING_MERGER;
 	}
 
 	/**
@@ -742,7 +766,7 @@ public final class Concurrent {
 			ConcurrentLinkedList::addAll,
 			(left, right) -> { left.addAll(right); return left; },
 			ConcurrentUnmodifiableList::new,
-			ORDERED_CHARACTERISTICS
+			ORDERED_FINISHING_CHARACTERISTICS
 		);
 	}
 
@@ -769,8 +793,8 @@ public final class Concurrent {
 			ConcurrentList::new,
 			ConcurrentList::addAll,
 			(left, right) -> { left.addAll(right); return left; },
-			list -> (A) list.toUnmodifiableList(),
-			ORDERED_CHARACTERISTICS
+			list -> (A) list.toUnmodifiable(),
+			ORDERED_FINISHING_CHARACTERISTICS
 		);
 	}
 
@@ -889,16 +913,34 @@ public final class Concurrent {
 	 * @throws IllegalStateException If the stream size is greater than 1.
 	 */
 	public static <T> @NotNull Collector<T, ?, T> toSingleton() {
-		return Collectors.collectingAndThen(
-			toList(),
-			list -> {
-				if (list.isEmpty())
+		return Collector.of(
+			SingletonBox::new,
+			(box, element) -> {
+				if (box.has) {
+					box.overflow = true;
+				} else {
+					box.value = element;
+					box.has = true;
+				}
+			},
+			(left, right) -> {
+				if (left.overflow || right.overflow || (left.has && right.has)) {
+					left.overflow = true;
+					return left;
+				}
+
+				return right.has ? right : left;
+			},
+			box -> {
+				if (!box.has)
 					throw new NoSuchElementException();
 
-				if (list.size() >= 2)
+				if (box.overflow)
 					throw new IllegalStateException();
 
-				return list.getFirst();
+				@SuppressWarnings("unchecked")
+				T result = (T) box.value;
+				return result;
 			}
 		);
 	}
@@ -1087,23 +1129,28 @@ public final class Concurrent {
 				return m1;
 			},
 			Concurrent::newUnmodifiableMap,
-			UNORDERED_CHARACTERISTICS
+			UNORDERED_FINISHING_CHARACTERISTICS
 		);
 	}
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentUnmodifiableMap},
-	 * using the given key mapper, value mapper, merge function, and map supplier.
+	 * using the given key mapper, value mapper, merge function, and final map supplier.
 	 * This is the most general {@code toUnmodifiableMap} overload.
+	 * <p>
+	 * Accumulation uses a plain {@link HashMap} to avoid repeated write-lock traffic on
+	 * lock-backed target maps. The supplied map is populated once during finishing and wrapped
+	 * as the unmodifiable result, so its key-equality and iteration order apply to the final
+	 * view rather than to the accumulation phase.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
 	 * @param valueMapper the function to extract map values from stream elements
 	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param mapSupplier the supplier providing a new empty mutable map used during accumulation
+	 * @param mapSupplier the supplier providing the empty map that will back the unmodifiable result
 	 * @param <K>           the key type
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type
-	 * @param <A>           the intermediate map type (extends {@link ConcurrentMap})
+	 * @param <A>           the final map type (extends {@link ConcurrentMap})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap}
 	 */
 	public static <K, V, T, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableMap(
@@ -1112,8 +1159,8 @@ public final class Concurrent {
 		@NotNull BinaryOperator<V> mergeFunction,
 		@NotNull Supplier<A> mapSupplier
 	) {
-		return new StreamCollector<>(
-			mapSupplier,
+		return new StreamCollector<T, HashMap<K, V>, ConcurrentUnmodifiableMap<K, V>>(
+			HashMap::new,
 			(map, element) -> map.merge(
 				keyMapper.apply(element),
 				valueMapper.apply(element),
@@ -1123,8 +1170,12 @@ public final class Concurrent {
 				m2.forEach((key, value) -> m1.merge(key, value, mergeFunction));
 				return m1;
 			},
-			Concurrent::newUnmodifiableMap,
-			UNORDERED_CHARACTERISTICS
+			accumulated -> {
+				A target = mapSupplier.get();
+				target.putAll(accumulated);
+				return Concurrent.newUnmodifiableMap(target);
+			},
+			UNORDERED_FINISHING_CHARACTERISTICS
 		);
 	}
 
@@ -1182,7 +1233,7 @@ public final class Concurrent {
 				return m1;
 			},
 			Concurrent::newUnmodifiableMap,
-			UNORDERED_CHARACTERISTICS
+			UNORDERED_FINISHING_CHARACTERISTICS
 		);
 	}
 
@@ -1209,8 +1260,8 @@ public final class Concurrent {
 			ConcurrentSet::new,
 			ConcurrentSet::addAll,
 			(left, right) -> { left.addAll(right); return left; },
-			list -> (A) list.toUnmodifiableSet(),
-			UNORDERED_CHARACTERISTICS
+			list -> (A) list.toUnmodifiable(),
+			UNORDERED_FINISHING_CHARACTERISTICS
 		);
 	}
 
@@ -1229,6 +1280,8 @@ public final class Concurrent {
 	@AllArgsConstructor
 	private static class StreamCollector<T, A, R> implements Collector<T, A, R> {
 
+		private static final @NotNull Function<Object, Object> CASTING_IDENTITY = i -> i;
+
 		/**
 		 * Returns a casting identity function, used as the default finisher when no transformation is needed.
 		 *
@@ -1238,7 +1291,7 @@ public final class Concurrent {
 		 */
 		@SuppressWarnings("unchecked")
 		private static <I, R> Function<I, R> castingIdentity() {
-			return i -> (R) i;
+			return (Function<I, R>) CASTING_IDENTITY;
 		}
 
 		private final @NotNull Supplier<A> supplier;
@@ -1247,6 +1300,16 @@ public final class Concurrent {
 		private @NotNull Function<A, R> finisher = castingIdentity();
 		private final @NotNull Set<Characteristics> characteristics;
 
+	}
+
+	/**
+	 * Mutable accumulator for {@link #toSingleton()} tracking the single element, whether one
+	 * has been seen, and whether a second arrival triggered overflow.
+	 */
+	private static final class SingletonBox {
+		@Nullable Object value;
+		boolean has;
+		boolean overflow;
 	}
 
 }

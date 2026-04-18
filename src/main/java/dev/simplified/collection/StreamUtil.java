@@ -1,7 +1,5 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentSet;
 import dev.simplified.collection.function.TriFunction;
 import dev.simplified.collection.tuple.triple.Triple;
 import dev.simplified.collection.tuple.triple.TripleStream;
@@ -12,9 +10,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Objects;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -38,7 +38,7 @@ public final class StreamUtil {
      * @return a predicate that returns {@code true} for elements with unique keys and {@code false} otherwise
      */
     public static <T> @NotNull Predicate<T> distinctByKey(@NotNull Function<? super T, ?> keyExtractor) {
-        ConcurrentSet<Object> seen = Concurrent.newSet();
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
         return t -> seen.add(keyExtractor.apply(t));
     }
 
@@ -52,12 +52,9 @@ public final class StreamUtil {
      * @return a stream containing all the elements from the provided arrays
      */
     public static <T> @NotNull Stream<T> ofArrays(@Nullable T[]... arrays) {
-        Stream<T> stream = Stream.empty();
-
-        for (T[] array : arrays)
-            stream = Stream.concat(stream, (array == null ? Stream.empty() : Arrays.stream(array)));
-
-        return stream;
+        return Arrays.stream(arrays)
+            .filter(Objects::nonNull)
+            .flatMap(Arrays::stream);
     }
 
     /**
@@ -160,14 +157,19 @@ public final class StreamUtil {
         if (!spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
             return StreamSupport.stream(
                 new Spliterators.AbstractSpliterator<>(size, spliterator.characteristics() & (Spliterator.ORDERED | Spliterator.SIZED)) {
-                    private Iterator<T> fromIterator = Spliterators.iterator(spliterator);
                     private long index = 0;
+                    private @Nullable T holder;
+                    private final Consumer<T> capture = t -> this.holder = t;
 
                     @Override
                     public boolean tryAdvance(Consumer<? super R> action) {
-                        if (this.fromIterator.hasNext()) {
-                            action.accept(function.apply(this.fromIterator.next(), this.index++, size));
-                            return true;
+                        if (spliterator.tryAdvance(this.capture)) {
+                            try {
+                                action.accept(function.apply(this.holder, this.index++, size));
+                                return true;
+                            } finally {
+                                this.holder = null;
+                            }
                         }
 
                         return false;
@@ -204,7 +206,7 @@ public final class StreamUtil {
                 }
 
                 @Override
-                Splitr createSplit(Spliterator<T> from, long i) {
+                @NotNull Splitr createSplit(Spliterator<T> from, long i) {
                     return new Splitr(from, i);
                 }
 
@@ -320,8 +322,8 @@ public final class StreamUtil {
     public static <E> @NotNull Collector<E, ?, StringBuilder> toStringBuilder(@NotNull String separator) {
         return Collector.of(
             StringBuilder::new,
-            (builder, element) -> builder.append(element.toString()).append(separator),
-            (left, right) -> left.append(right.toString())
+            (builder, element) -> builder.append(element).append(separator),
+            StringBuilder::append
         );
     }
 
