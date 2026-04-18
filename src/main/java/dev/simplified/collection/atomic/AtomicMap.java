@@ -7,16 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
-import java.util.AbstractCollection;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
@@ -39,7 +30,7 @@ import java.util.function.Supplier;
 public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends AbstractMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>>, Searchable<Map.Entry<K, V>>, Serializable {
 
 	protected final @NotNull M ref;
-	protected final transient ReadWriteLock lock = new ReentrantReadWriteLock();
+	protected final transient @NotNull ReadWriteLock lock;
 
 	/** Lazily initialized live view of the entry set. */
 	private transient volatile @Nullable Set<Entry<K, V>> entrySetView;
@@ -58,11 +49,25 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected AtomicMap(@NotNull M ref, @Nullable Map<? extends K, ? extends V> items) {
 		if (Objects.nonNull(items)) ref.putAll(items);
 		this.ref = ref;
+		this.lock = new ReentrantReadWriteLock();
 	}
 
 	protected AtomicMap(@NotNull M ref, @Nullable Map.Entry<? extends K, ? extends V>... items) {
 		StreamUtil.ofArrays(items).filter(Objects::nonNull).forEach(entry -> ref.put(entry.getKey(), entry.getValue()));
 		this.ref = ref;
+		this.lock = new ReentrantReadWriteLock();
+	}
+
+	/**
+	 * Constructs an {@code AtomicMap} sharing the given source's {@code ref} and lock. Reads
+	 * and writes go through the same state as the source, giving live-view semantics - the
+	 * pattern used by {@code ConcurrentUnmodifiable*} wrappers.
+	 *
+	 * @param source the source map whose state is shared
+	 */
+	protected AtomicMap(@NotNull AtomicMap<K, V, ? extends M> source) {
+		this.ref = source.ref;
+		this.lock = source.lock;
 	}
 
 	/**
@@ -766,16 +771,10 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
-			if (!(o instanceof Entry<?, ?>))
+			if (!(o instanceof Entry<?, ?> entry))
 				return false;
 
-			try {
-				AtomicMap.this.lock.writeLock().lock();
-				return AtomicMap.this.ref.entrySet().remove(o);
-			} finally {
-				AtomicMap.this.invalidateViewSnapshots();
-				AtomicMap.this.lock.writeLock().unlock();
-			}
+			return AtomicMap.this.remove(entry.getKey(), entry.getValue());
 		}
 
 		@Override
@@ -811,13 +810,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		}
 
 		@Override
-		@SuppressWarnings("RedundantCollectionOperation")
 		public boolean remove(Object o) {
 			try {
 				AtomicMap.this.lock.writeLock().lock();
-				return AtomicMap.this.ref.keySet().remove(o);
+
+				if (!AtomicMap.this.ref.containsKey(o))
+					return false;
+
+				AtomicMap.this.remove(o);
+				return true;
 			} finally {
-				AtomicMap.this.invalidateViewSnapshots();
 				AtomicMap.this.lock.writeLock().unlock();
 			}
 		}
@@ -835,9 +837,10 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Live view over the map's values collection. {@link #remove(Object)} delegates to
-	 * {@link java.util.Collection#remove(Object) ref.values().remove(o)}, which removes the
-	 * first entry whose value equals {@code o} (matching the JDK contract).
+	 * Live view over the map's values collection. {@link #remove(Object)} removes the first
+	 * entry whose value equals {@code o} (matching the JDK contract), routed through
+	 * {@link AtomicMap#remove(Object)} so {@code Unmodifiable} subclasses only need to
+	 * override that one public method to reject all mutations.
 	 */
 	private final class ValuesView extends AbstractCollection<V> {
 
@@ -860,9 +863,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		public boolean remove(Object o) {
 			try {
 				AtomicMap.this.lock.writeLock().lock();
-				return AtomicMap.this.ref.values().remove(o);
+
+				for (Entry<K, V> entry : AtomicMap.this.ref.entrySet()) {
+					if (Objects.equals(entry.getValue(), o)) {
+						AtomicMap.this.remove(entry.getKey());
+						return true;
+					}
+				}
+
+				return false;
 			} finally {
-				AtomicMap.this.invalidateViewSnapshots();
 				AtomicMap.this.lock.writeLock().unlock();
 			}
 		}
@@ -947,8 +957,9 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 	/**
 	 * Snapshot-backed iterator over the values view. {@link #remove()} removes the first
-	 * entry whose value equals the just-returned element, matching the JDK
-	 * {@link java.util.Collection#remove(Object) values().remove(Object)} contract.
+	 * entry whose value equals the just-returned element, routed through
+	 * {@link AtomicMap#remove(Object)} so {@code Unmodifiable} subclasses only need to
+	 * override that one public method to reject all mutations.
 	 */
 	private final class ValuesIterator extends AtomicIterator<V> {
 
@@ -963,16 +974,22 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		 * is a silent no-op - no {@link java.util.ConcurrentModificationException} is thrown.
 		 */
 		@Override
-		@SuppressWarnings("SuspiciousMethodCalls")
 		public void remove() {
 			if (this.last < 0)
 				throw new IllegalStateException();
 
+			Object value = this.snapshot[this.last];
+
 			try {
 				AtomicMap.this.lock.writeLock().lock();
-				AtomicMap.this.ref.values().remove(this.snapshot[this.last]);
+
+				for (Entry<K, V> entry : AtomicMap.this.ref.entrySet()) {
+					if (Objects.equals(entry.getValue(), value)) {
+						AtomicMap.this.remove(entry.getKey());
+						break;
+					}
+				}
 			} finally {
-				AtomicMap.this.invalidateViewSnapshots();
 				AtomicMap.this.lock.writeLock().unlock();
 			}
 

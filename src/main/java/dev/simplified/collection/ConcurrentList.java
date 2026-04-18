@@ -61,6 +61,17 @@ public class ConcurrentList<E> extends AtomicList<E, List<E>> {
 	}
 
 	/**
+	 * Constructs a {@code ConcurrentList} sharing the given source's {@code ref} and lock.
+	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList} to
+	 * present a live, unmodifiable view over any existing {@link AtomicList}.
+	 *
+	 * @param source the source list whose state is shared
+	 */
+	protected ConcurrentList(@NotNull AtomicList<E, ? extends List<E>> source) {
+		super(source);
+	}
+
+	/**
 	 * Creates a new empty {@code ConcurrentList} instance, used internally for copy and sort operations.
 	 *
 	 * @return a new empty {@link ConcurrentList}

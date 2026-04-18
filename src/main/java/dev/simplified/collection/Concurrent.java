@@ -1,15 +1,21 @@
 package dev.simplified.collection;
 
+import dev.simplified.collection.atomic.AtomicCollection;
+import dev.simplified.collection.atomic.AtomicDeque;
+import dev.simplified.collection.atomic.AtomicList;
+import dev.simplified.collection.atomic.AtomicMap;
+import dev.simplified.collection.atomic.AtomicQueue;
+import dev.simplified.collection.atomic.AtomicSet;
 import dev.simplified.collection.linked.ConcurrentLinkedList;
 import dev.simplified.collection.linked.ConcurrentLinkedMap;
 import dev.simplified.collection.linked.ConcurrentLinkedSet;
 import dev.simplified.collection.sorted.ConcurrentSortedMap;
 import dev.simplified.collection.sorted.ConcurrentSortedSet;
-import dev.simplified.collection.sorted.ConcurrentUnmodifiableSortedMap;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedList;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableMap;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableQueue;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableSet;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -471,13 +477,14 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableCollection}.
+	 * Creates a new empty {@link ConcurrentUnmodifiableCollection} backed by a fresh
+	 * {@link ConcurrentCollection}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent collection
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection() {
-		return new ConcurrentUnmodifiableCollection<>();
+		return new ConcurrentUnmodifiableCollection<>(new ConcurrentCollection<>());
 	}
 
 	/**
@@ -489,61 +496,35 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection(@NotNull E... array) {
-		return new ConcurrentUnmodifiableCollection<>(array);
+		return new ConcurrentUnmodifiableCollection<>(new ConcurrentCollection<>(array));
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableCollection} containing all elements from the given collection.
+	 * Creates an unmodifiable view of the given collection. If the source is already an
+	 * {@link AtomicCollection}, the returned wrapper shares its state (live view); otherwise
+	 * the source is first copied into a fresh {@link ConcurrentCollection}.
 	 *
-	 * @param collection the source collection to copy from
+	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a new unmodifiable concurrent collection containing the source elements
+	 * @return an unmodifiable {@link ConcurrentCollection} view
 	 */
+	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentUnmodifiableCollection<>(collection);
+		AtomicCollection<E, ? extends java.util.AbstractCollection<E>> source = collection instanceof AtomicCollection
+			? (AtomicCollection<E, ? extends java.util.AbstractCollection<E>>) collection
+			: new ConcurrentCollection<>((Collection<E>) collection);
+		return new ConcurrentUnmodifiableCollection<>(source);
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableLinkedList}.
-	 *
-	 * @param <E> the element type
-	 * @return a new empty unmodifiable concurrent linked list
-	 */
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList() {
-		return new ConcurrentUnmodifiableLinkedList<>();
-	}
-
-	/**
-	 * Creates a new {@link ConcurrentUnmodifiableLinkedList} containing the given elements.
-	 *
-	 * @param array the elements to include
-	 * @param <E>   the element type
-	 * @return a new unmodifiable concurrent linked list containing the specified elements
-	 */
-	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList(@NotNull E... array) {
-		return new ConcurrentUnmodifiableLinkedList<>(array);
-	}
-
-	/**
-	 * Creates a new {@link ConcurrentUnmodifiableLinkedList} containing all elements from the given collection.
-	 *
-	 * @param collection the source collection to copy from
-	 * @param <E>        the element type
-	 * @return a new unmodifiable concurrent linked list containing the source elements
-	 */
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentUnmodifiableLinkedList<>(collection);
-	}
-
-	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableList}.
+	 * Creates a new empty {@link ConcurrentUnmodifiableList} backed by a fresh
+	 * {@link ConcurrentList}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent list
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList() {
-		return new ConcurrentUnmodifiableList<>();
+		return new ConcurrentUnmodifiableList<>(new ConcurrentList<>());
 	}
 
 	/**
@@ -555,18 +536,25 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@NotNull E... array) {
-		return new ConcurrentUnmodifiableList<>(array);
+		return new ConcurrentUnmodifiableList<>(new ConcurrentList<>(array));
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableList} containing all elements from the given collection.
+	 * Creates an unmodifiable view of the given collection as a list. If the source is
+	 * already an {@link AtomicList}, the wrapper shares its state (live view, preserves
+	 * insertion order for {@link ConcurrentLinkedList}); otherwise the source is copied
+	 * into a fresh {@link ConcurrentList}.
 	 *
-	 * @param collection the source collection to copy from
+	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a new unmodifiable concurrent list containing the source elements
+	 * @return an unmodifiable {@link ConcurrentList} view
 	 */
+	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@Nullable Collection<? extends E> collection) {
-		return new ConcurrentUnmodifiableList<>(collection);
+		AtomicList<E, ? extends java.util.List<E>> source = collection instanceof AtomicList
+			? (AtomicList<E, ? extends java.util.List<E>>) collection
+			: new ConcurrentList<>((Collection<E>) collection);
+		return new ConcurrentUnmodifiableList<>(source);
 	}
 
 	/**
@@ -579,54 +567,37 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <K, V> @NotNull ConcurrentUnmodifiableMap<K, V> newUnmodifiableMap(@NotNull Map.Entry<K, V>... entries) {
-		return new ConcurrentUnmodifiableMap<>(entries);
+		return new ConcurrentUnmodifiableMap<>(new ConcurrentMap<>(entries));
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableMap} containing all entries from the given map.
+	 * Creates an unmodifiable view of the given map. If the source is already an
+	 * {@link AtomicMap}, the wrapper shares its state (live view, preserves iteration
+	 * order for {@link ConcurrentLinkedMap} or {@link ConcurrentSortedMap}); otherwise
+	 * the source is copied into a fresh {@link ConcurrentMap}.
 	 *
-	 * @param map the source map to copy from
+	 * @param map the source map
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a new unmodifiable concurrent map containing the source entries
+	 * @return an unmodifiable {@link ConcurrentMap} view
 	 */
+	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentUnmodifiableMap<K, V> newUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
-		return new ConcurrentUnmodifiableMap<>(map);
+		AtomicMap<K, V, ? extends java.util.AbstractMap<K, V>> source = map instanceof AtomicMap
+			? (AtomicMap<K, V, ? extends java.util.AbstractMap<K, V>>) map
+			: new ConcurrentMap<>((Map<K, V>) map);
+		return new ConcurrentUnmodifiableMap<>(source);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableSortedMap} containing the given map entries.
-	 *
-	 * @param entries the entries to include
-	 * @param <K>     the key type
-	 * @param <V>     the value type
-	 * @return a new unmodifiable concurrent map containing the specified entries
-	 */
-	@SafeVarargs
-	public static <K, V> @NotNull ConcurrentUnmodifiableSortedMap<K, V> newUnmodifiableSortedMap(@NotNull Map.Entry<K, V>... entries) {
-		return new ConcurrentUnmodifiableSortedMap<>(entries);
-	}
-
-	/**
-	 * Creates a new {@link ConcurrentUnmodifiableMap} containing all entries from the given map.
-	 *
-	 * @param map the source map to copy from
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a new unmodifiable concurrent map containing the source entries
-	 */
-	public static <K, V> @NotNull ConcurrentUnmodifiableSortedMap<K, V> newUnmodifiableSortedMap(@NotNull Map<? extends K, ? extends V> map) {
-		return new ConcurrentUnmodifiableSortedMap<>(map);
-	}
-
-	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableSet}.
+	 * Creates a new empty {@link ConcurrentUnmodifiableSet} backed by a fresh
+	 * {@link ConcurrentSet}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent set
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet() {
-		return new ConcurrentUnmodifiableSet<>();
+		return new ConcurrentUnmodifiableSet<>(new ConcurrentSet<>());
 	}
 
 	/**
@@ -638,18 +609,103 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet(@NotNull E... array) {
-		return new ConcurrentUnmodifiableSet<>(array);
+		return new ConcurrentUnmodifiableSet<>(new ConcurrentSet<>(array));
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableSet} containing all elements from the given collection.
+	 * Creates an unmodifiable view of the given collection as a set. If the source is
+	 * already an {@link AtomicSet}, the wrapper shares its state (live view, preserves
+	 * ordering for {@link ConcurrentLinkedSet} / {@link ConcurrentSortedSet}); otherwise
+	 * the source is copied into a fresh {@link ConcurrentSet}.
 	 *
-	 * @param collection the source collection to copy from
+	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a new unmodifiable concurrent set containing the source elements
+	 * @return an unmodifiable {@link ConcurrentSet} view
 	 */
+	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentUnmodifiableSet<>(collection);
+		AtomicSet<E, ? extends java.util.AbstractSet<E>> source = collection instanceof AtomicSet
+			? (AtomicSet<E, ? extends java.util.AbstractSet<E>>) collection
+			: new ConcurrentSet<>((Collection<E>) collection);
+		return new ConcurrentUnmodifiableSet<>(source);
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableQueue}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty unmodifiable concurrent queue
+	 */
+	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue() {
+		return new ConcurrentUnmodifiableQueue<>(new ConcurrentQueue<>());
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentUnmodifiableQueue} containing the given elements.
+	 *
+	 * @param array the elements to include
+	 * @param <E>   the element type
+	 * @return a new unmodifiable concurrent queue containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue(@NotNull E... array) {
+		return new ConcurrentUnmodifiableQueue<>(new ConcurrentQueue<>(array));
+	}
+
+	/**
+	 * Creates an unmodifiable view of the given queue. If the source is already an
+	 * {@link AtomicQueue}, the wrapper shares its state (live view); otherwise the source
+	 * is copied into a fresh {@link ConcurrentQueue}.
+	 *
+	 * @param collection the source collection
+	 * @param <E>        the element type
+	 * @return an unmodifiable {@link ConcurrentQueue} view
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue(@NotNull Collection<? extends E> collection) {
+		AtomicQueue<E> source = collection instanceof AtomicQueue
+			? (AtomicQueue<E>) collection
+			: new ConcurrentQueue<>((Collection<E>) collection);
+		return new ConcurrentUnmodifiableQueue<>(source);
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableDeque}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty unmodifiable concurrent deque
+	 */
+	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque() {
+		return new ConcurrentUnmodifiableDeque<>(new ConcurrentDeque<>());
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentUnmodifiableDeque} containing the given elements.
+	 *
+	 * @param array the elements to include
+	 * @param <E>   the element type
+	 * @return a new unmodifiable concurrent deque containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque(@NotNull E... array) {
+		return new ConcurrentUnmodifiableDeque<>(new ConcurrentDeque<>(array));
+	}
+
+	/**
+	 * Creates an unmodifiable view of the given deque. If the source is already an
+	 * {@link AtomicDeque}, the wrapper shares its state (live view); otherwise the source
+	 * is copied into a fresh {@link ConcurrentDeque}.
+	 *
+	 * @param collection the source collection
+	 * @param <E>        the element type
+	 * @return an unmodifiable {@link ConcurrentDeque} view
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque(@NotNull Collection<? extends E> collection) {
+		AtomicDeque<E> source = collection instanceof AtomicDeque
+			? (AtomicDeque<E>) collection
+			: new ConcurrentDeque<>((Collection<E>) collection);
+		return new ConcurrentUnmodifiableDeque<>(source);
 	}
 
 	/**
@@ -673,19 +729,19 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentUnmodifiableLinkedList}.
+	 * Returns a {@link Collector} that accumulates stream elements into a new
+	 * {@link ConcurrentUnmodifiableList} backed by a {@link ConcurrentLinkedList}, so
+	 * iteration of the result preserves insertion order.
 	 *
 	 * @param <E> the element type
-	 * @param <A> the result type (extends {@link ConcurrentLinkedList})
 	 * @return a collector producing an unmodifiable concurrent linked list
 	 */
-	@SuppressWarnings("unchecked")
-	public static <E, A extends ConcurrentLinkedList<E>> @NotNull Collector<E, ?, A> toUnmodifiableLinkedList() {
-		return new StreamCollector<>(
+	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableList<E>> toUnmodifiableLinkedList() {
+		return new StreamCollector<E, ConcurrentLinkedList<E>, ConcurrentUnmodifiableList<E>>(
 			ConcurrentLinkedList::new,
 			ConcurrentLinkedList::addAll,
 			(left, right) -> { left.addAll(right); return left; },
-			list -> (A) list.toUnmodifiableLinkedList(),
+			ConcurrentUnmodifiableList::new,
 			ORDERED_CHARACTERISTICS
 		);
 	}
@@ -1076,20 +1132,14 @@ public final class Concurrent {
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
 	 * {@link ConcurrentUnmodifiableMap} backed by a {@link ConcurrentSortedMap} ordered by the
 	 * given comparator. Throws on duplicate keys.
-	 * <p>
-	 * Delegates to the general
-	 * {@link #toUnmodifiableMap(Function, Function, BinaryOperator, Supplier) toUnmodifiableMap}
-	 * form with a supplier that creates a comparator-backed sorted map, so the resulting
-	 * unmodifiable view preserves the comparator's key-ordering and equivalence semantics
-	 * (e.g. {@link String#CASE_INSENSITIVE_ORDER} yields a case-insensitive string-keyed map).
 	 *
 	 * @param comparator the comparator used to order and compare the keys
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableSortedMap} ordered by {@code comparator}
+	 * @return a collector producing a {@link ConcurrentUnmodifiableMap} ordered by {@code comparator}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableSortedMap<K, V>> toUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
 		return toUnmodifiableSortedMap(
 			Map.Entry::getKey,
 			Map.Entry::getValue,
@@ -1099,21 +1149,22 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentUnmodifiableMap},
-	 * using the given key mapper, value mapper, merge function, and map supplier.
-	 * This is the most general {@code toUnmodifiableMap} overload.
+	 * Returns a {@link Collector} that accumulates stream elements into a
+	 * {@link ConcurrentUnmodifiableMap} backed by the supplied map (typically a
+	 * {@link ConcurrentSortedMap}), applying the given key mapper, value mapper, and
+	 * merge function.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
 	 * @param valueMapper the function to extract map values from stream elements
 	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param mapSupplier the supplier providing a new empty mutable map used during accumulation
+	 * @param mapSupplier the supplier providing a new empty sorted map used during accumulation
 	 * @param <K>           the key type
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type
 	 * @param <A>           the intermediate map type (extends {@link ConcurrentMap})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap}
 	 */
-	public static <K, V, T, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableSortedMap<K, V>> toUnmodifiableSortedMap(
+	public static <K, V, T, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableSortedMap(
 		@NotNull Function<? super T, ? extends K> keyMapper,
 		@NotNull Function<? super T, ? extends V> valueMapper,
 		@NotNull BinaryOperator<V> mergeFunction,
@@ -1130,7 +1181,7 @@ public final class Concurrent {
 				m2.forEach((key, value) -> m1.merge(key, value, mergeFunction));
 				return m1;
 			},
-			Concurrent::newUnmodifiableSortedMap,
+			Concurrent::newUnmodifiableMap,
 			UNORDERED_CHARACTERISTICS
 		);
 	}

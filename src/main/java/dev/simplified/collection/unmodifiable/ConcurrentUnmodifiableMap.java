@@ -1,472 +1,131 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
-import lombok.AllArgsConstructor;
+import dev.simplified.collection.atomic.AtomicMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.AbstractMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Spliterator;
-import java.util.function.Consumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
- * An unmodifiable thread-safe map backed by a {@link HashMap} that permits concurrent reads
- * but rejects all modifications. Mutating operations throw {@link UnsupportedOperationException}.
- * Entry sets, key sets, and values views are also unmodifiable.
+ * A live, unmodifiable view over any {@link AtomicMap}. Shares the source map's {@code ref}
+ * and lock, so the wrapper reflects current source state (iteration order, size, contents),
+ * but every mutating operation rejects with {@link UnsupportedOperationException}.
+ * <p>
+ * Because {@link AtomicMap}'s view classes ({@code entrySet}, {@code keySet}, {@code values})
+ * route all mutations through overridable {@code AtomicMap} public methods, overriding those
+ * methods here is sufficient to make iterator removals, {@code Entry.setValue}, and every
+ * other view-level write throw as well.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
 public class ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
 
-    /** Lazily initialized unmodifiable view of the key set. */
-    private transient volatile Set<K> unmodifiableKeySet;
-    /** Lazily initialized unmodifiable view of the entry set. */
-    private transient volatile Set<Map.Entry<K,V>> unmodifiableEntrySet;
-    /** Lazily initialized unmodifiable view of the values collection. */
-    private transient volatile Collection<V> unmodifiableValues;
-
-    /**
-     * Create a new unmodifiable concurrent map.
-     */
-    public ConcurrentUnmodifiableMap() {
-        super();
-    }
-
-    /**
-     * Create a new unmodifiable concurrent map and fill it with the given map.
-     */
-    public ConcurrentUnmodifiableMap(@Nullable Map<? extends K, ? extends V> map) {
-        super(map);
-    }
-
-    /**
-     * Create a new concurrent map and fill it with the given pairs.
-     */
-    @SafeVarargs
-    public ConcurrentUnmodifiableMap(@Nullable Map.Entry<K, V>... pairs) {
-        super(pairs);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final void clear() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns a lazily initialized unmodifiable view of the entry set, where each entry
-     * prevents modification of the backing map via {@link Map.Entry#setValue(Object)}.
-     */
-    @Override
-    public final @NotNull Set<Map.Entry<K, V>> entrySet() {
-        Set<Map.Entry<K, V>> result = this.unmodifiableEntrySet;
-
-        if (result == null) {
-            synchronized (this) {
-                result = this.unmodifiableEntrySet;
-
-                if (result == null) {
-                    result = new UnmodifiableEntrySet<>(super.entrySet());
-                    this.unmodifiableEntrySet = result;
-                }
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns a lazily initialized unmodifiable view of the key set.
-     */
-    @Override
-    public final @NotNull Set<K> keySet() {
-        Set<K> result = this.unmodifiableKeySet;
-
-        if (result == null) {
-            synchronized (this) {
-                result = this.unmodifiableKeySet;
-
-                if (result == null) {
-                    result = Concurrent.newUnmodifiableSet(super.keySet());
-                    this.unmodifiableKeySet = result;
-                }
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final @Nullable V put(K key, V value) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final void putAll(@NotNull Map<? extends K, ? extends V> map) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final @Nullable V putIfAbsent(K key, V value) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final @Nullable V remove(Object key) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final boolean remove(Object key, Object value) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Returns a lazily initialized unmodifiable view of the values collection.
-     */
-    @Override
-    public final @NotNull Collection<V> values() {
-        Collection<V> result = this.unmodifiableValues;
-
-        if (result == null) {
-            synchronized (this) {
-                result = this.unmodifiableValues;
-
-                if (result == null) {
-                    result = Concurrent.newUnmodifiableCollection(super.values());
-                    this.unmodifiableValues = result;
-                }
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * We need this class in addition to UnmodifiableSet as
-     * Map.Entries themselves permit modification of the backing Map
-     * via their setValue operation.  This class is subtle: there are
-     * many possible attacks that must be thwarted.
-     */
-    private static class UnmodifiableEntrySet<K, V> extends ConcurrentUnmodifiableSet<Map.Entry<K, V>> {
-
-        /**
-         * Creates a new unmodifiable entry set backed by the given set of entries.
-         *
-         * @param entries the backing entry set, or {@code null} for an empty set
-         */
-        public UnmodifiableEntrySet(@Nullable Set<Map.Entry<K, V>> entries) {
-            super(entries);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void forEach(@NotNull Consumer<? super Map.Entry<K, V>> action) {
-            Objects.requireNonNull(action);
-            this.ref.forEach(UnmodifiableEntry.wrap(action));
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public @NotNull Spliterator<Map.Entry<K, V>> spliterator() {
-            return new UnmodifiableSpliterator<>(this.ref.spliterator());
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>
-         * The returned iterator wraps each entry in an {@link UnmodifiableEntry} to prevent
-         * modification via {@link Map.Entry#setValue(Object)}.
-         */
-        @Override
-        public @NotNull Iterator<Map.Entry<K, V>> iterator() {
-            return new Iterator<>() {
-
-                private final Iterator<? extends Map.Entry<? extends K, ? extends V>> iterator = UnmodifiableEntrySet.this.ref.iterator();
-
-                /**
-                 * {@inheritDoc}
-                 */
-                @Override
-                public boolean hasNext() {
-                    return this.iterator.hasNext();
-                }
-
-                /**
-                 * {@inheritDoc}
-                 */
-                @Override
-                public Map.Entry<K, V> next() {
-                    return new UnmodifiableEntry<>(this.iterator.next());
-                }
-
-                /**
-                 * {@inheritDoc}
-                 */
-                @Override
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-
-            };
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public @NotNull Object @NotNull [] toArray() {
-            Object[] a = this.ref.toArray();
-
-            for (int i = 0; i < a.length; i++)
-                a[i] = new UnmodifiableEntry<>((Map.Entry<? extends K, ? extends V>) a[i]);
-
-            return a;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        @SuppressWarnings("all")
-        public <T> T @NotNull [] toArray(T @NotNull [] array) {
-            // We don't pass ref.toArray, to avoid window of
-            // vulnerability wherein an unscrupulous multithreaded client
-            // could get his hands on raw (unwrapped) Entries from ref
-            Object[] arr = this.ref.toArray(array.length == 0 ? array : Arrays.copyOf(array, 0));
-
-            for (int i = 0; i < arr.length; i++)
-                arr[i] = new UnmodifiableEntry<>((Map.Entry<? extends K, ? extends V>) arr[i]);
-
-            if (arr.length > array.length)
-                return (T[]) arr;
-
-            System.arraycopy(arr, 0, array, 0, arr.length);
-            if (array.length > arr.length)
-                array[arr.length] = null;
-
-            return array;
-        }
-
-        /**
-         * This method is overridden to protect the backing set against
-         * an object with a nefarious equals function that senses
-         * that the equality-candidate is Map.Entry and calls its
-         * setValue method.
-         */
-        @Override
-        public boolean contains(Object item) {
-            if (!(item instanceof Map.Entry)) return false;
-            return this.ref.contains(new UnmodifiableEntry<>((Map.Entry<?,?>) item));
-        }
-
-        /**
-         * The next two methods are overridden to protect against
-         * an unscrupulous List which contains(Object o) method senses
-         * when o is a Map.Entry, and calls o.setValue.
-         */
-        @Override
-        public boolean containsAll(@NotNull Collection<?> coll) {
-            for (Object e : coll) {
-                if (!this.contains(e)) // Invokes safe contains() above
-                    return false;
-            }
-
-            return true;
-        }
-
-    }
-
-    /**
-     * This "wrapper class" serves two purposes: it prevents
-     * the client from modifying the backing Map, by short-circuiting
-     * the setValue method, and it protects the backing Map against
-     * an ill-behaved Map.Entry that attempts to modify another
-     * Map Entry when asked to perform an equality check.
-     */
-    @AllArgsConstructor
-    private static class UnmodifiableEntry<K, V> implements Map.Entry<K, V> {
-
-        private final Map.Entry<? extends K, ? extends V> entry;
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public K getKey() {
-            return this.entry.getKey();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public V getValue() {
-            return this.entry.getValue();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public V setValue(V value) {
-            throw new UnsupportedOperationException();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int hashCode() {
-            return this.entry.hashCode();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Map.Entry<?, ?> t)) return false;
-
-            return (this.entry.getKey() == null ? t.getKey() == null : this.entry.getKey().equals(t.getKey())) &&
-                    (this.entry.getValue() == null ? t.getValue() == null : this.entry.getValue().equals(t.getValue()));
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString() {
-            return this.entry.toString();
-        }
-
-        /**
-         * Wraps a consumer so that each entry passed to it is wrapped in an {@link UnmodifiableEntry}.
-         *
-         * @param action the consumer to wrap
-         * @param <K> the key type
-         * @param <V> the value type
-         * @return a consumer that wraps entries before passing them to the given action
-         */
-        private static <K, V> @NotNull Consumer<Map.Entry<K, V>> wrap(@NotNull Consumer<? super Map.Entry<K, V>> action) {
-            return entry -> action.accept(new UnmodifiableEntry<>(entry));
-        }
-
-    }
-
-    /**
-     * A {@link Spliterator} wrapper that wraps each entry in an {@link UnmodifiableEntry}
-     * to prevent modification of the backing map.
-     */
-    @AllArgsConstructor
-    private static class UnmodifiableSpliterator<K, V> implements Spliterator<Map.Entry<K,V>> {
-
-        private final @NotNull Spliterator<Map.Entry<K, V>> spliterator;
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean tryAdvance(@NotNull Consumer<? super Map.Entry<K, V>> action) {
-            Objects.requireNonNull(action);
-            return this.spliterator.tryAdvance(UnmodifiableEntry.wrap(action));
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void forEachRemaining(@NotNull Consumer<? super Map.Entry<K, V>> action) {
-            Objects.requireNonNull(action);
-            this.spliterator.forEachRemaining(UnmodifiableEntry.wrap(action));
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public @Nullable Spliterator<Map.Entry<K, V>> trySplit() {
-            Spliterator<Map.Entry<K, V>> split = this.spliterator.trySplit();
-            return split == null ? null : new UnmodifiableSpliterator<>(split);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long estimateSize() {
-            return this.spliterator.estimateSize();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long getExactSizeIfKnown() {
-            return this.spliterator.getExactSizeIfKnown();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int characteristics() {
-            return this.spliterator.characteristics();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean hasCharacteristics(int characteristics) {
-            return this.spliterator.hasCharacteristics(characteristics);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public @NotNull Comparator<? super Map.Entry<K, V>> getComparator() {
-            return this.spliterator.getComparator();
-        }
-
-    }
+	/**
+	 * Creates a live, unmodifiable view over the given source. The wrapper shares the source's
+	 * underlying map and lock, so source mutations are visible through this wrapper.
+	 *
+	 * @param source the source whose state is shared with this unmodifiable view
+	 */
+	public ConcurrentUnmodifiableMap(@NotNull AtomicMap<K, V, ? extends AbstractMap<K, V>> source) {
+		super(source);
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final void clear() {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final @Nullable V compute(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final V computeIfAbsent(K key, @NotNull Function<? super K, ? extends V> mappingFunction) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final @Nullable V computeIfPresent(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final @Nullable V put(K key, V value) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final void putAll(@NotNull Map<? extends K, ? extends V> map) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final boolean putIf(@NotNull Supplier<Boolean> predicate, K key, V value) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final boolean putIf(@NotNull BiPredicate<? super K, ? super V> predicate, K key, V value) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final boolean putIf(@NotNull Predicate<AbstractMap<K, V>> predicate, K key, V value) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final @Nullable V putIfAbsent(K key, V value) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final @Nullable V remove(Object key) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final boolean remove(Object key, Object value) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final boolean removeIf(@NotNull BiPredicate<? super K, ? super V> predicate) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) {
+		throw new UnsupportedOperationException();
+	}
+
+	/** {@inheritDoc} */
+	@Override
+	public final @NotNull ConcurrentMap<K, V> toUnmodifiableMap() {
+		return this;
+	}
 
 }

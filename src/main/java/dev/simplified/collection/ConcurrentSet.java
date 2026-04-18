@@ -51,6 +51,17 @@ public class ConcurrentSet<E> extends AtomicSet<E, AbstractSet<E>> {
 	}
 
 	/**
+	 * Constructs a {@code ConcurrentSet} sharing the given source's {@code ref} and lock.
+	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableSet} to
+	 * present a live, unmodifiable view over any existing {@link AtomicSet}.
+	 *
+	 * @param source the source set whose state is shared
+	 */
+	protected ConcurrentSet(@NotNull AtomicSet<E, ? extends AbstractSet<E>> source) {
+		super(source);
+	}
+
+	/**
 	 * Creates a new empty {@code ConcurrentSet} instance, used internally for copy operations.
 	 *
 	 * @return a new empty {@link ConcurrentSet}

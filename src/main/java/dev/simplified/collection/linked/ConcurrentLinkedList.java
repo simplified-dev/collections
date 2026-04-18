@@ -129,14 +129,4 @@ public class ConcurrentLinkedList<E> extends ConcurrentList<E> {
 		return (ConcurrentLinkedList<E>) super.sorted(comparator);
 	}
 
-	/**
-	 * Returns an unmodifiable view of this {@code ConcurrentLinkedList}.
-	 * Attempts to modify the returned list will throw {@link UnsupportedOperationException}.
-	 *
-	 * @return an unmodifiable {@link ConcurrentLinkedList} containing the same elements
-	 */
-	public @NotNull ConcurrentLinkedList<E> toUnmodifiableLinkedList() {
-		return Concurrent.newUnmodifiableLinkedList(this);
-	}
-
 }

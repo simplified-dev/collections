@@ -25,10 +25,20 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	}
 
 	/**
+	 * Constructs an {@code AtomicDeque} sharing the given source's underlying storage - the
+	 * pattern used by {@code ConcurrentUnmodifiableDeque} to provide a live unmodifiable view.
+	 *
+	 * @param source the source deque whose storage is shared
+	 */
+	protected AtomicDeque(@NotNull AtomicDeque<E> source) {
+		super(source);
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void addFirst(E element) {
+	public void addFirst(E element) {
 		this.storage.add(0, element);
 	}
 
@@ -36,7 +46,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void addLast(E element) {
+	public void addLast(E element) {
 		super.add(element);
 	}
 
@@ -44,7 +54,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final boolean offerFirst(E element) {
+	public boolean offerFirst(E element) {
 		try {
 			this.storage.lock.writeLock().lock();
 			int before = this.storage.ref.size();
@@ -59,7 +69,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final boolean offerLast(E element) {
+	public boolean offerLast(E element) {
 		try {
 			this.storage.lock.writeLock().lock();
 			return this.storage.ref.add(element);
@@ -72,7 +82,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final E removeFirst() {
+	public E removeFirst() {
 		return super.remove();
 	}
 
@@ -80,7 +90,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final E removeLast() {
+	public E removeLast() {
 		E element = this.pollLast();
 
 		if (element != null)
@@ -93,7 +103,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final E pollFirst() {
+	public E pollFirst() {
 		return super.poll();
 	}
 
@@ -101,7 +111,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @Nullable E pollLast() {
+	public @Nullable E pollLast() {
 		try {
 			this.storage.lock.writeLock().lock();
 
@@ -172,7 +182,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * occurrence is guaranteed to be the first match present at the moment of the call.
 	 */
 	@Override
-	public final boolean removeFirstOccurrence(Object obj) {
+	public boolean removeFirstOccurrence(Object obj) {
 		try {
 			this.storage.lock.writeLock().lock();
 			return this.storage.ref.remove(obj);
@@ -188,7 +198,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * occurrence is guaranteed to be the last match present at the moment of the call.
 	 */
 	@Override
-	public final boolean removeLastOccurrence(Object obj) {
+	public boolean removeLastOccurrence(Object obj) {
 		try {
 			this.storage.lock.writeLock().lock();
 			int index = this.storage.ref.lastIndexOf(obj);
@@ -207,7 +217,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void push(E element) {
+	public void push(E element) {
 		super.offer(element);
 	}
 
@@ -215,7 +225,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @NotNull E pop() {
+	public @NotNull E pop() {
 		return this.removeFirst();
 	}
 

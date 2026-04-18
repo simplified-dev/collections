@@ -25,6 +25,16 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	}
 
 	/**
+	 * Constructs an {@code AtomicList} sharing the given source's {@code ref} and lock - the
+	 * pattern used by {@code ConcurrentUnmodifiableList} to provide a live unmodifiable view.
+	 *
+	 * @param source the source list whose state is shared
+	 */
+	protected AtomicList(@NotNull AtomicList<E, ? extends T> source) {
+		super(source);
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public void add(int index, @NotNull E element) {
@@ -263,7 +273,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final E removeFirst() {
+	public E removeFirst() {
 		try {
 			super.lock.writeLock().lock();
 			return super.ref.removeFirst();
@@ -277,7 +287,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final E removeLast() {
+	public E removeLast() {
 		try {
 			super.lock.writeLock().lock();
 			return super.ref.removeLast();

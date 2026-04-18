@@ -39,4 +39,24 @@ public class ConcurrentQueue<E> extends AtomicQueue<E> {
 		super(collection == null ? new LinkedList<>() : new LinkedList<>(collection));
 	}
 
+	/**
+	 * Constructs a {@code ConcurrentQueue} sharing the given source's underlying storage.
+	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableQueue} to
+	 * present a live, unmodifiable view over any existing {@link AtomicQueue}.
+	 *
+	 * @param source the source queue whose storage is shared
+	 */
+	protected ConcurrentQueue(@NotNull AtomicQueue<E> source) {
+		super(source);
+	}
+
+	/**
+	 * Returns a live, unmodifiable view of this {@code ConcurrentQueue}.
+	 *
+	 * @return an unmodifiable {@link ConcurrentQueue} view over the same state
+	 */
+	public @NotNull ConcurrentQueue<E> toUnmodifiableQueue() {
+		return Concurrent.newUnmodifiableQueue(this);
+	}
+
 }

@@ -62,10 +62,22 @@ public class ConcurrentMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> {
     }
 
     /**
-     * Returns an unmodifiable view of this {@code ConcurrentMap}.
-     * Attempts to modify the returned map will throw {@link UnsupportedOperationException}.
+     * Constructs a {@code ConcurrentMap} sharing the given source's {@code ref} and lock.
+     * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableMap} to
+     * present a live, unmodifiable view over any existing {@link AtomicMap}.
      *
-     * @return an unmodifiable {@link ConcurrentMap} containing the same entries
+     * @param source the source map whose state is shared
+     */
+    protected ConcurrentMap(@NotNull AtomicMap<K, V, ? extends AbstractMap<K, V>> source) {
+        super(source);
+    }
+
+    /**
+     * Returns a live, unmodifiable view of this {@code ConcurrentMap}. The returned wrapper
+     * shares this map's state, so subsequent mutations on this map are visible through the
+     * wrapper. Mutations attempted on the wrapper throw {@link UnsupportedOperationException}.
+     *
+     * @return an unmodifiable {@link ConcurrentMap} view over the same state
      */
     public @NotNull ConcurrentMap<K, V> toUnmodifiableMap() {
         return Concurrent.newUnmodifiableMap(this);

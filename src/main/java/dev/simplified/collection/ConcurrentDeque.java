@@ -39,4 +39,24 @@ public class ConcurrentDeque<E> extends AtomicDeque<E> {
 		super(collection == null ? new LinkedList<>() : new LinkedList<>(collection));
 	}
 
+	/**
+	 * Constructs a {@code ConcurrentDeque} sharing the given source's underlying storage.
+	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque} to
+	 * present a live, unmodifiable view over any existing {@link AtomicDeque}.
+	 *
+	 * @param source the source deque whose storage is shared
+	 */
+	protected ConcurrentDeque(@NotNull AtomicDeque<E> source) {
+		super(source);
+	}
+
+	/**
+	 * Returns a live, unmodifiable view of this {@code ConcurrentDeque}.
+	 *
+	 * @return an unmodifiable {@link ConcurrentDeque} view over the same state
+	 */
+	public @NotNull ConcurrentDeque<E> toUnmodifiableDeque() {
+		return Concurrent.newUnmodifiableDeque(this);
+	}
+
 }

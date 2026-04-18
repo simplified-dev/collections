@@ -41,6 +41,17 @@ public class ConcurrentCollection<E> extends AtomicCollection<E, AbstractCollect
 	}
 
 	/**
+	 * Constructs a {@code ConcurrentCollection} sharing the given source's {@code ref} and lock.
+	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection} to
+	 * present a live, unmodifiable view over any existing {@link AtomicCollection}.
+	 *
+	 * @param source the source collection whose state is shared
+	 */
+	protected ConcurrentCollection(@NotNull AtomicCollection<E, ? extends AbstractCollection<E>> source) {
+		super(source);
+	}
+
+	/**
 	 * Creates a new empty {@code ConcurrentCollection} instance, used internally for copy operations.
 	 *
 	 * @return a new empty {@link ConcurrentCollection}
@@ -48,6 +59,15 @@ public class ConcurrentCollection<E> extends AtomicCollection<E, AbstractCollect
 	@Override
 	protected final @NotNull AtomicCollection<E, AbstractCollection<E>> createEmpty() {
 		return Concurrent.newCollection();
+	}
+
+	/**
+	 * Returns a live, unmodifiable view of this {@code ConcurrentCollection}.
+	 *
+	 * @return an unmodifiable {@link ConcurrentCollection} view over the same state
+	 */
+	public @NotNull ConcurrentCollection<E> toUnmodifiableCollection() {
+		return Concurrent.newUnmodifiableCollection(this);
 	}
 
 }

@@ -22,4 +22,14 @@ public abstract class AtomicSet<E, T extends AbstractSet<E>> extends AtomicColle
 		super(type);
 	}
 
+	/**
+	 * Constructs an {@code AtomicSet} sharing the given source's {@code ref} and lock - the
+	 * pattern used by {@code ConcurrentUnmodifiableSet} to provide a live unmodifiable view.
+	 *
+	 * @param source the source set whose state is shared
+	 */
+	protected AtomicSet(@NotNull AtomicSet<E, ? extends T> source) {
+		super(source);
+	}
+
 }

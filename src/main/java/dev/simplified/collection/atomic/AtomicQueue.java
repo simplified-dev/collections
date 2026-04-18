@@ -28,10 +28,20 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	}
 
 	/**
+	 * Constructs an {@code AtomicQueue} sharing the given source's underlying storage - the
+	 * pattern used by {@code ConcurrentUnmodifiableQueue} to provide a live unmodifiable view.
+	 *
+	 * @param source the source queue whose storage is shared
+	 */
+	protected AtomicQueue(@NotNull AtomicQueue<E> source) {
+		this.storage = source.storage;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final boolean add(E element) {
+	public boolean add(E element) {
 		return super.add(element);
 	}
 
@@ -39,7 +49,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final boolean addAll(@NotNull Collection<? extends E> collection) {
+	public boolean addAll(@NotNull Collection<? extends E> collection) {
 		return this.storage.addAll(collection);
 	}
 
@@ -47,7 +57,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void clear() {
+	public void clear() {
 		super.clear();
 	}
 
@@ -95,7 +105,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final boolean offer(E element) {
+	public boolean offer(E element) {
 		return this.storage.add(element);
 	}
 
@@ -103,7 +113,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @Nullable E peek() {
+	public @Nullable E peek() {
 		try {
 			this.storage.lock.readLock().lock();
 			return this.storage.ref.isEmpty() ? null : this.storage.ref.get(0);
@@ -116,7 +126,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @Nullable E poll() {
+	public @Nullable E poll() {
 		try {
 			this.storage.lock.writeLock().lock();
 			return this.storage.ref.isEmpty() ? null : this.storage.ref.remove(0);
@@ -129,7 +139,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @NotNull E remove() {
+	public @NotNull E remove() {
 		return super.remove();
 	}
 
@@ -137,7 +147,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final boolean remove(Object obj) {
+	public boolean remove(Object obj) {
 		return super.remove(obj);
 	}
 
@@ -145,7 +155,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final boolean removeAll(@NotNull Collection<?> collection) {
+	public boolean removeAll(@NotNull Collection<?> collection) {
 		return this.storage.removeAll(collection);
 	}
 
@@ -153,7 +163,7 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final boolean retainAll(@NotNull Collection<?> collection) {
+	public boolean retainAll(@NotNull Collection<?> collection) {
 		return this.storage.retainAll(collection);
 	}
 

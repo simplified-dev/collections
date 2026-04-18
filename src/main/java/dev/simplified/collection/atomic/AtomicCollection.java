@@ -35,7 +35,7 @@ import java.util.stream.StreamSupport;
 public abstract class AtomicCollection<E, T extends Collection<E>> extends AbstractCollection<E> implements Collection<E>, Searchable<E>, Serializable {
 
 	protected final @NotNull T ref;
-	protected final transient @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
+	protected final transient @NotNull ReadWriteLock lock;
 
 	/**
 	 * Cached {@link #toArray} snapshot used by iterators. Published under the read lock,
@@ -45,7 +45,30 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	protected transient volatile @Nullable Object @Nullable [] snapshotCache;
 
 	protected AtomicCollection(@NotNull T ref) {
+		this(ref, new ReentrantReadWriteLock());
+	}
+
+	/**
+	 * Constructs an {@code AtomicCollection} with an explicit lock, typically one shared with
+	 * another {@link AtomicCollection} to provide a live, unmodifiable view of the same state.
+	 *
+	 * @param ref the underlying collection
+	 * @param lock the lock guarding {@code ref}
+	 */
+	protected AtomicCollection(@NotNull T ref, @NotNull ReadWriteLock lock) {
 		this.ref = ref;
+		this.lock = lock;
+	}
+
+	/**
+	 * Constructs an {@code AtomicCollection} sharing the given source's {@code ref} and lock.
+	 * Reads and writes go through the same state as the source, giving live-view semantics.
+	 *
+	 * @param source the source collection whose state is shared
+	 */
+	protected AtomicCollection(@NotNull AtomicCollection<E, ? extends T> source) {
+		this.ref = source.ref;
+		this.lock = source.lock;
 	}
 
 	/**
