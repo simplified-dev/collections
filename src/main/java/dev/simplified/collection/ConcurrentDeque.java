@@ -2,6 +2,7 @@ package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicDeque;
 import dev.simplified.collection.linked.ConcurrentLinkedList;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,8 +42,8 @@ public class ConcurrentDeque<E> extends AtomicDeque<E> {
 
 	/**
 	 * Constructs a {@code ConcurrentDeque} sharing the given source's underlying storage.
-	 * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque} to
-	 * present a live, unmodifiable view over any existing {@link AtomicDeque}.
+	 * Used by {@link ConcurrentUnmodifiableDeque} to present a live, unmodifiable view
+	 * over any existing {@link AtomicDeque}.
 	 *
 	 * @param source the source deque whose storage is shared
 	 */

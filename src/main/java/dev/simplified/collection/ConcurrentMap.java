@@ -1,17 +1,18 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicMap;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * A thread-safe map backed by a {@link HashMap} with concurrent read and write access
- * via {@link java.util.concurrent.locks.ReadWriteLock}. Supports snapshot-based iteration
- * over entries, keys, and values.
+ * via {@link ReadWriteLock}. Supports snapshot-based iteration over entries, keys, and values.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
@@ -63,8 +64,8 @@ public class ConcurrentMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> {
 
     /**
      * Constructs a {@code ConcurrentMap} sharing the given source's {@code ref} and lock.
-     * Used by {@link dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableMap} to
-     * present a live, unmodifiable view over any existing {@link AtomicMap}.
+     * Used by {@link ConcurrentUnmodifiableMap} to present a live, unmodifiable view over
+     * any existing {@link AtomicMap}.
      *
      * @param source the source map whose state is shared
      */

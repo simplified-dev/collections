@@ -218,7 +218,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public void push(E element) {
-		super.offer(element);
+		this.addFirst(element);
 	}
 
 	/**
