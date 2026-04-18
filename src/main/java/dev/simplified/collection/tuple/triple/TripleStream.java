@@ -1,5 +1,9 @@
 package dev.simplified.collection.tuple.triple;
 
+import dev.simplified.collection.function.QuadFunction;
+import dev.simplified.collection.function.ToDoubleTriFunction;
+import dev.simplified.collection.function.ToIntTriFunction;
+import dev.simplified.collection.function.ToLongTriFunction;
 import dev.simplified.collection.function.TriConsumer;
 import dev.simplified.collection.function.TriFunction;
 import dev.simplified.collection.function.TriPredicate;
@@ -139,7 +143,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
     /** {@inheritDoc} */
     @Override
     default long count() {
-        return this.underlying().count();
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.count();
+        }
     }
 
     /** {@inheritDoc} */
@@ -271,13 +277,17 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Triple<L, M, R>> findAny() {
-        return this.underlying().findAny();
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.findAny();
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Triple<L, M, R>> findFirst() {
-        return this.underlying().findFirst();
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.findFirst();
+        }
     }
 
     // Flatmapping
@@ -374,7 +384,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
     /** {@inheritDoc} */
     @Override
     default void forEach(@NotNull Consumer<? super Triple<L, M, R>> action) {
-        this.underlying().forEach(action);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            s.forEach(action);
+        }
     }
 
     /**
@@ -384,13 +396,17 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @param action a {@link TriConsumer} receiving each triple's elements
      */
     default void forEach(@NotNull TriConsumer<? super L, ? super M, ? super R> action) {
-        this.underlying().forEach(entry -> action.accept(entry.left(), entry.middle(), entry.right()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            s.forEach(entry -> action.accept(entry.left(), entry.middle(), entry.right()));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default void forEachOrdered(@NotNull Consumer<? super Triple<L, M, R>> action) {
-        this.underlying().forEachOrdered(action);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            s.forEachOrdered(action);
+        }
     }
 
     /**
@@ -400,7 +416,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @param action a {@link TriConsumer} receiving each triple's elements
      */
     default void forEachOrdered(@NotNull TriConsumer<? super L, ? super M, ? super R> action) {
-        this.underlying().forEachOrdered(entry -> action.accept(entry.left(), entry.middle(), entry.right()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            s.forEachOrdered(entry -> action.accept(entry.left(), entry.middle(), entry.right()));
+        }
     }
 
     // Iterator
@@ -447,13 +465,13 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
 
     /**
      * Returns a {@link DoubleStream} by applying {@code mapper} to the left, middle, and
-     * right elements of each triple.
+     * right elements of each triple, with no boxing of the primitive result.
      *
      * @param mapper a function receiving each triple's elements, returning a {@code double}
      * @return a mapped {@code DoubleStream}
      */
-    default @NotNull DoubleStream mapToDouble(@NotNull TriFunction<? super L, ? super M, ? super R, Double> mapper) {
-        return this.underlying().mapToDouble(entry -> mapper.apply(entry.left(), entry.middle(), entry.right()));
+    default @NotNull DoubleStream mapToDouble(@NotNull ToDoubleTriFunction<? super L, ? super M, ? super R> mapper) {
+        return this.underlying().mapToDouble(entry -> mapper.applyAsDouble(entry.left(), entry.middle(), entry.right()));
     }
 
     /** {@inheritDoc} */
@@ -464,13 +482,13 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
 
     /**
      * Returns an {@link IntStream} by applying {@code mapper} to the left, middle, and
-     * right elements of each triple.
+     * right elements of each triple, with no boxing of the primitive result.
      *
      * @param mapper a function receiving each triple's elements, returning an {@code int}
      * @return a mapped {@code IntStream}
      */
-    default @NotNull IntStream mapToInt(@NotNull TriFunction<? super L, ? super M, ? super R, Integer> mapper) {
-        return this.underlying().mapToInt(entry -> mapper.apply(entry.left(), entry.middle(), entry.right()));
+    default @NotNull IntStream mapToInt(@NotNull ToIntTriFunction<? super L, ? super M, ? super R> mapper) {
+        return this.underlying().mapToInt(entry -> mapper.applyAsInt(entry.left(), entry.middle(), entry.right()));
     }
 
     /** {@inheritDoc} */
@@ -481,13 +499,13 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
 
     /**
      * Returns a {@link LongStream} by applying {@code mapper} to the left, middle, and
-     * right elements of each triple.
+     * right elements of each triple, with no boxing of the primitive result.
      *
      * @param mapper a function receiving each triple's elements, returning a {@code long}
      * @return a mapped {@code LongStream}
      */
-    default @NotNull LongStream mapToLong(@NotNull TriFunction<? super L, ? super M, ? super R, Long> mapper) {
-        return this.underlying().mapToLong(entry -> mapper.apply(entry.left(), entry.middle(), entry.right()));
+    default @NotNull LongStream mapToLong(@NotNull ToLongTriFunction<? super L, ? super M, ? super R> mapper) {
+        return this.underlying().mapToLong(entry -> mapper.applyAsLong(entry.left(), entry.middle(), entry.right()));
     }
 
     /**
@@ -531,7 +549,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
     /** {@inheritDoc} */
     @Override
     default boolean allMatch(@NotNull Predicate<? super Triple<L, M, R>> predicate) {
-        return this.underlying().allMatch(predicate);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.allMatch(predicate);
+        }
     }
 
     /**
@@ -542,13 +562,17 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return {@code true} if all triples match, {@code false} otherwise
      */
     default boolean allMatch(@NotNull TriPredicate<? super L, ? super M, ? super R> predicate) {
-        return this.underlying().allMatch(entry -> predicate.test(entry.left(), entry.middle(), entry.right()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.allMatch(entry -> predicate.test(entry.left(), entry.middle(), entry.right()));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default boolean anyMatch(@NotNull Predicate<? super Triple<L, M, R>> predicate) {
-        return this.underlying().anyMatch(predicate);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.anyMatch(predicate);
+        }
     }
 
     /**
@@ -559,13 +583,17 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return {@code true} if any triple matches, {@code false} otherwise
      */
     default boolean anyMatch(@NotNull TriPredicate<? super L, ? super M, ? super R> predicate) {
-        return this.underlying().anyMatch(entry -> predicate.test(entry.left(), entry.middle(), entry.right()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.anyMatch(entry -> predicate.test(entry.left(), entry.middle(), entry.right()));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default boolean noneMatch(@NotNull Predicate<? super Triple<L, M, R>> predicate) {
-        return this.underlying().noneMatch(predicate);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.noneMatch(predicate);
+        }
     }
 
     /**
@@ -576,7 +604,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return {@code true} if no triples match, {@code false} otherwise
      */
     default boolean noneMatch(@NotNull TriPredicate<? super L, ? super M, ? super R> predicate) {
-        return this.underlying().noneMatch(entry -> predicate.test(entry.left(), entry.middle(), entry.right()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.noneMatch(entry -> predicate.test(entry.left(), entry.middle(), entry.right()));
+        }
     }
 
     // Minmax
@@ -584,7 +614,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Triple<L, M, R>> max(@NotNull Comparator<? super Triple<L, M, R>> comparator) {
-        return this.underlying().max(comparator);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.max(comparator);
+        }
     }
 
     /**
@@ -595,7 +627,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return an {@code Optional} of the triple with the maximum left element
      */
     default @NotNull Optional<Triple<L, M, R>> maxByLeft(@NotNull Comparator<? super L> comparator) {
-        return this.underlying().max((c1, c2) -> comparator.compare(c1.left(), c2.left()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.max((c1, c2) -> comparator.compare(c1.left(), c2.left()));
+        }
     }
 
     /**
@@ -606,7 +640,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return an {@code Optional} of the triple with the maximum middle element
      */
     default @NotNull Optional<Triple<L, M, R>> maxByMiddle(@NotNull Comparator<? super M> comparator) {
-        return this.underlying().max((c1, c2) -> comparator.compare(c1.middle(), c2.middle()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.max((c1, c2) -> comparator.compare(c1.middle(), c2.middle()));
+        }
     }
 
     /**
@@ -617,13 +653,17 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return an {@code Optional} of the triple with the maximum right element
      */
     default @NotNull Optional<Triple<L, M, R>> maxByRight(@NotNull Comparator<? super R> comparator) {
-        return this.underlying().max((c1, c2) -> comparator.compare(c1.right(), c2.right()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.max((c1, c2) -> comparator.compare(c1.right(), c2.right()));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Triple<L, M, R>> min(@NotNull Comparator<? super Triple<L, M, R>> comparator) {
-        return this.underlying().min(comparator);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.min(comparator);
+        }
     }
 
     /**
@@ -634,7 +674,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return an {@code Optional} of the triple with the minimum left element
      */
     default @NotNull Optional<Triple<L, M, R>> minByLeft(@NotNull Comparator<? super L> comparator) {
-        return this.underlying().min((c1, c2) -> comparator.compare(c1.left(), c2.left()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.min((c1, c2) -> comparator.compare(c1.left(), c2.left()));
+        }
     }
 
     /**
@@ -645,7 +687,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return an {@code Optional} of the triple with the minimum middle element
      */
     default @NotNull Optional<Triple<L, M, R>> minByMiddle(@NotNull Comparator<? super M> comparator) {
-        return this.underlying().min((c1, c2) -> comparator.compare(c1.middle(), c2.middle()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.min((c1, c2) -> comparator.compare(c1.middle(), c2.middle()));
+        }
     }
 
     /**
@@ -656,7 +700,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * @return an {@code Optional} of the triple with the minimum right element
      */
     default @NotNull Optional<Triple<L, M, R>> minByRight(@NotNull Comparator<? super R> comparator) {
-        return this.underlying().min((c1, c2) -> comparator.compare(c1.right(), c2.right()));
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.min((c1, c2) -> comparator.compare(c1.right(), c2.right()));
+        }
     }
 
     // Order
@@ -690,27 +736,57 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
     /** {@inheritDoc} */
     @Override
     default @NotNull Triple<L, M, R> reduce(@NotNull Triple<L, M, R> identity, @NotNull BinaryOperator<Triple<L, M, R>> accumulator) {
-        return this.underlying().reduce(identity, accumulator);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.reduce(identity, accumulator);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Triple<L, M, R>> reduce(@NotNull BinaryOperator<Triple<L, M, R>> accumulator) {
-        return this.underlying().reduce(accumulator);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.reduce(accumulator);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default <U> @NotNull U reduce(@NotNull U identity, @NotNull BiFunction<U, ? super Triple<L, M, R>, U> accumulator, @NotNull BinaryOperator<U> combiner) {
-        return this.underlying().reduce(identity, accumulator, combiner);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.reduce(identity, accumulator, combiner);
+        }
+    }
+
+    /**
+     * Performs a reduction on the triples of this stream, using the provided identity value,
+     * an accumulator that receives the left, middle, and right elements separately, and a
+     * combiner for parallel execution.
+     *
+     * @param <U>         the type of the result
+     * @param identity    the identity value for the accumulator
+     * @param accumulator a function that folds the left, middle, and right elements into the result
+     * @param combiner    a function to combine two partial results in parallel execution
+     * @return the reduced result
+     */
+    default <U> @NotNull U reduce(@NotNull U identity, @NotNull QuadFunction<U, ? super L, ? super M, ? super R, U> accumulator, @NotNull BinaryOperator<U> combiner) {
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.reduce(identity, (u, entry) -> accumulator.apply(u, entry.left(), entry.middle(), entry.right()), combiner);
+        }
     }
 
     // Sorting
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Sorts triples by their natural left-element ordering. The left type must be
+     * {@link Comparable}; otherwise a {@link ClassCastException} is thrown at terminal
+     * evaluation, matching the underlying {@link Stream#sorted()} contract.
+     */
     @Override
+    @SuppressWarnings("unchecked")
     default @NotNull TripleStream<L, M ,R> sorted() {
-        return of(this.underlying().sorted());
+        return this.sortedByLeft((Comparator<? super L>) Comparator.naturalOrder());
     }
 
     /** {@inheritDoc} */
@@ -759,7 +835,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      */
     @Override
     default <T, A> T collect(@NotNull Collector<? super Triple<L, M, R>, A, T> collector) {
-        return this.underlying().collect(collector);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.collect(collector);
+        }
     }
 
     /**
@@ -819,19 +897,25 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      */
     @Override
     default <T> T collect(@NotNull Supplier<T> supplier, @NotNull BiConsumer<T, ? super Triple<L, M, R>> accumulator, @NotNull BiConsumer<T, T> combiner) {
-        return this.underlying().collect(supplier, accumulator, combiner);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.collect(supplier, accumulator, combiner);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Object @NotNull [] toArray() {
-        return this.underlying().toArray();
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.toArray();
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default <A> @NotNull A @NotNull [] toArray(@NotNull IntFunction<A[]> generator) {
-        return this.underlying().toArray(generator);
+        try (Stream<Triple<L, M, R>> s = this.underlying()) {
+            return s.toArray(generator);
+        }
     }
 
     // Collapse
