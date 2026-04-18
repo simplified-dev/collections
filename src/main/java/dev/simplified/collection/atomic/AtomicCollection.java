@@ -5,12 +5,12 @@ import dev.simplified.collection.tuple.single.SingleStream;
 import dev.simplified.collection.tuple.triple.TripleStream;
 import dev.simplified.collection.StreamUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -37,6 +37,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	protected final @NotNull T ref;
 	protected final transient @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
 
+	/**
+	 * Cached {@link #toArray} snapshot used by iterators. Published under the read lock,
+	 * invalidated to {@code null} under the write lock. The volatile publishes the array
+	 * safely to lock-free readers; iterators never mutate the snapshot so sharing it is safe.
+	 */
+	protected transient volatile @Nullable Object @Nullable [] snapshotCache;
+
 	protected AtomicCollection(@NotNull T ref) {
 		this.ref = ref;
 	}
@@ -50,6 +57,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.add(element);
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -73,6 +81,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.addAll(collection);
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -93,6 +102,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 			return false;
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -114,6 +124,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 			return false;
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -127,6 +138,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			this.ref.clear();
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -196,7 +208,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 		if (this == obj) return true;
 		if (obj == null) return false;
 		if (obj instanceof AtomicCollection) obj = ((AtomicCollection<?, ?>) obj).ref;
-		return this.ref.equals(obj);
+
+		try {
+			this.lock.readLock().lock();
+			return this.ref.equals(obj);
+		} finally {
+			this.lock.readLock().unlock();
+		}
 	}
 
 	/**
@@ -247,15 +265,30 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Fast path: a volatile read of the cached snapshot. If present, returns an iterator
+	 * over the shared array with no lock acquisition. Otherwise falls back to a read-locked
+	 * double-checked populate, so the snapshot is only computed once per write generation.
 	 */
 	@Override
 	public @NotNull Iterator<E> iterator() {
-		try {
-			this.lock.readLock().lock();
-			return new ConcurrentCollectionIterator(this.ref.toArray(), 0);
-		} finally {
-			this.lock.readLock().unlock();
+		Object[] snapshot = this.snapshotCache;
+
+		if (snapshot == null) {
+			try {
+				this.lock.readLock().lock();
+				snapshot = this.snapshotCache;
+
+				if (snapshot == null) {
+					snapshot = this.ref.toArray();
+					this.snapshotCache = snapshot;
+				}
+			} finally {
+				this.lock.readLock().unlock();
+			}
 		}
+
+		return new ConcurrentCollectionIterator(snapshot, 0);
 	}
 
 	/**
@@ -294,6 +327,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.remove(element);
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -316,6 +350,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 			return false;
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -329,6 +364,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.removeAll(collection);
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -342,6 +378,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.retainAll(collection);
 		} finally {
+			this.snapshotCache = null;
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -395,7 +432,12 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * A concurrent version of {@link CopyOnWriteArrayList.COWIterator}.
+	 * A concurrent snapshot-backed iterator. Iteration is weakly consistent: the snapshot
+	 * is captured at iterator creation and never refreshed, so self-modifications via
+	 * {@link #remove()} update the backing collection but are not reflected in subsequent
+	 * {@code next()} calls.
+	 *
+	 * @see CopyOnWriteArrayList.COWIterator
 	 */
 	protected class ConcurrentCollectionIterator extends AtomicIterator<E> {
 
@@ -411,14 +453,8 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			if (this.last < 0)
 				throw new IllegalStateException();
 
-			try {
-				AtomicCollection.this.remove(this.snapshot[this.last]);
-				this.snapshot = AtomicCollection.this.toArray();
-				this.cursor = this.last;
-				this.last = -1;
-			} catch (IndexOutOfBoundsException ex) {
-				throw new ConcurrentModificationException();
-			}
+			AtomicCollection.this.remove(this.snapshot[this.last]);
+			this.last = -1;
 		}
 
 	}

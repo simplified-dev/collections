@@ -7,12 +7,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
+import java.util.AbstractCollection;
 import java.util.AbstractMap;
-import java.util.ArrayList;
+import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,20 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected final @NotNull M ref;
 	protected final transient ReadWriteLock lock = new ReentrantReadWriteLock();
 
+	/** Lazily initialized live view of the entry set. */
+	private transient volatile @Nullable Set<Entry<K, V>> entrySetView;
+	/** Lazily initialized live view of the key set. */
+	private transient volatile @Nullable Set<K> keySetView;
+	/** Lazily initialized live view of the values collection. */
+	private transient volatile @Nullable Collection<V> valuesView;
+
+	/** Cached iterator snapshot for the entry set view. */
+	private transient volatile @Nullable Object@Nullable [] entrySetSnapshot;
+	/** Cached iterator snapshot for the key set view. */
+	private transient volatile @Nullable Object@Nullable [] keySetSnapshot;
+	/** Cached iterator snapshot for the values collection view. */
+	private transient volatile @Nullable Object@Nullable [] valuesSnapshot;
+
 	protected AtomicMap(@NotNull M ref, @Nullable Map<? extends K, ? extends V> items) {
 		if (Objects.nonNull(items)) ref.putAll(items);
 		this.ref = ref;
@@ -51,6 +66,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
+	 * Invalidates all cached view iteration snapshots. Must be called from every write path
+	 * while still holding the write lock so the nullify is ordered before the unlock.
+	 */
+	private void invalidateViewSnapshots() {
+		this.entrySetSnapshot = null;
+		this.keySetSnapshot = null;
+		this.valuesSnapshot = null;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -59,6 +84,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			this.ref.clear();
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -72,6 +98,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.compute(key, remappingFunction);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -85,6 +112,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.computeIfAbsent(key, mappingFunction);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -98,6 +126,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.computeIfPresent(key, remappingFunction);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -129,39 +158,31 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Creates a new empty {@link AtomicSet} suitable for holding map entries.
-	 *
-	 * @return a new empty set for {@link Entry} instances
-	 */
-	protected abstract @NotNull AtomicSet<Entry<K, V>, ?> createEmptyEntrySet();
-
-	/**
-	 * Creates a new empty {@link AtomicSet} suitable for holding map keys.
-	 *
-	 * @return a new empty set for keys
-	 */
-	protected abstract @NotNull AtomicSet<K, ?> createEmptyKeySet();
-
-	/**
-	 * Creates a new empty {@link AtomicList} suitable for holding map values.
-	 *
-	 * @return a new empty list for values
-	 */
-	protected abstract @NotNull AtomicList<V, ?> createEmptyValueList();
-
-	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Returns a lazily initialized live view of the entry set. Structural reads
+	 * ({@code size}, {@code contains}, {@code isEmpty}) reflect the current map state.
+	 * Structural writes ({@code remove}, {@code clear}, {@link Iterator#remove()},
+	 * {@link Entry#setValue(Object)}) propagate to the map under the write lock.
+	 * Iteration uses a read-locked snapshot cached until the next write, so consumers
+	 * never observe a partially modified map and never throw {@link java.util.ConcurrentModificationException}.
 	 */
 	@Override
 	public @NotNull Set<Entry<K, V>> entrySet() {
-		try {
-			this.lock.readLock().lock();
-			AtomicSet<Entry<K, V>, ?> result = this.createEmptyEntrySet();
-			result.ref.addAll(this.ref.entrySet());
-			return result;
-		} finally {
-			this.lock.readLock().unlock();
+		Set<Entry<K, V>> view = this.entrySetView;
+
+		if (view == null) {
+			synchronized (this) {
+				view = this.entrySetView;
+
+				if (view == null) {
+					view = new EntrySetView();
+					this.entrySetView = view;
+				}
+			}
 		}
+
+		return view;
 	}
 
 	/**
@@ -172,7 +193,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		if (this == obj) return true;
 		if (obj == null) return false;
 		if (obj instanceof AtomicMap<?, ?, ?>) obj = ((AtomicMap<?, ?, ?>) obj).ref;
-		return this.ref.equals(obj);
+
+		try {
+			this.lock.readLock().lock();
+			return this.ref.equals(obj);
+		} finally {
+			this.lock.readLock().unlock();
+		}
 	}
 
 	/**
@@ -240,30 +267,36 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Equivalent to {@code entrySet().iterator()}, so the two paths share the same
+	 * cached iteration snapshot.
 	 */
 	@Override
 	public final @NotNull Iterator<Entry<K, V>> iterator() {
-		try {
-			this.lock.readLock().lock();
-			return new ConcurrentMapIterator(this.ref.entrySet().toArray(), 0);
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		return this.entrySet().iterator();
 	}
 
 	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Returns a lazily initialized live view of the key set.
 	 */
 	@Override
 	public @NotNull Set<K> keySet() {
-		try {
-			this.lock.readLock().lock();
-			AtomicSet<K, ?> result = this.createEmptyKeySet();
-			result.ref.addAll(this.ref.keySet());
-			return result;
-		} finally {
-			this.lock.readLock().unlock();
+		Set<K> view = this.keySetView;
+
+		if (view == null) {
+			synchronized (this) {
+				view = this.keySetView;
+
+				if (view == null) {
+					view = new KeySetView();
+					this.keySetView = view;
+				}
+			}
 		}
+
+		return view;
 	}
 
 	/**
@@ -293,6 +326,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.put(key, value);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -316,6 +350,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			this.ref.putAll(map);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -339,6 +374,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 			return false;
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -384,6 +420,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 			return false;
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -397,6 +434,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.putIfAbsent(key, value);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -410,6 +448,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.remove(key);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -431,26 +470,11 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return {@code true} if any entries were removed
 	 */
 	public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) {
-		List<K> toRemove = new ArrayList<>();
-		try {
-			this.lock.readLock().lock();
-
-			for (Entry<K, V> entry : this.ref.entrySet()) {
-				if (predicate.test(entry))
-					toRemove.add(entry.getKey());
-			}
-		} finally {
-			this.lock.readLock().unlock();
-		}
-
-		if (toRemove.isEmpty())
-			return false;
-
 		try {
 			this.lock.writeLock().lock();
-			toRemove.forEach(this.ref::remove);
-			return true;
+			return this.ref.entrySet().removeIf(predicate);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -476,6 +500,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.remove(key, value);
 		} finally {
+			this.invalidateViewSnapshots();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -504,39 +529,435 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Returns a lazily initialized live view of the values collection.
 	 */
 	@Override
 	public @NotNull Collection<V> values() {
-		try {
-			this.lock.readLock().lock();
-			AtomicList<V, ?> result = this.createEmptyValueList();
-			result.ref.addAll(this.ref.values());
-			return result;
-		} finally {
-			this.lock.readLock().unlock();
+		Collection<V> view = this.valuesView;
+
+		if (view == null) {
+			synchronized (this) {
+				view = this.valuesView;
+
+				if (view == null) {
+					view = new ValuesView();
+					this.valuesView = view;
+				}
+			}
 		}
+
+		return view;
 	}
 
 	/**
-	 * A concurrent iterator over map entries backed by a snapshot of the entry set.
+	 * Loads the cached entry-set snapshot, populating it under the read lock on first call
+	 * after any write. Snapshot elements are {@link SnapshotEntry} instances holding the
+	 * key and value captured at snapshot time.
 	 */
-	protected class ConcurrentMapIterator extends AtomicIterator<Entry<K, V>> {
+	private Object[] entrySetSnapshot() {
+		Object[] snapshot = this.entrySetSnapshot;
 
-		protected ConcurrentMapIterator(Object[] snapshot, int index) {
-			super(snapshot, index);
+		if (snapshot == null) {
+			try {
+				this.lock.readLock().lock();
+				snapshot = this.entrySetSnapshot;
+
+				if (snapshot == null) {
+					Set<Entry<K, V>> source = this.ref.entrySet();
+					Object[] built = new Object[source.size()];
+					int i = 0;
+
+					for (Entry<K, V> entry : source)
+						built[i++] = new SnapshotEntry<>(entry.getKey(), entry.getValue());
+
+					snapshot = built;
+					this.entrySetSnapshot = snapshot;
+				}
+			} finally {
+				this.lock.readLock().unlock();
+			}
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
+		return snapshot;
+	}
+
+	/**
+	 * Loads the cached key-set snapshot, populating it under the read lock on first call
+	 * after any write.
+	 */
+	private Object[] keySetSnapshot() {
+		Object[] snapshot = this.keySetSnapshot;
+
+		if (snapshot == null) {
+			try {
+				this.lock.readLock().lock();
+				snapshot = this.keySetSnapshot;
+
+				if (snapshot == null) {
+					snapshot = this.ref.keySet().toArray();
+					this.keySetSnapshot = snapshot;
+				}
+			} finally {
+				this.lock.readLock().unlock();
+			}
+		}
+
+		return snapshot;
+	}
+
+	/**
+	 * Loads the cached values snapshot, populating it under the read lock on first call
+	 * after any write.
+	 */
+	private Object[] valuesSnapshot() {
+		Object[] snapshot = this.valuesSnapshot;
+
+		if (snapshot == null) {
+			try {
+				this.lock.readLock().lock();
+				snapshot = this.valuesSnapshot;
+
+				if (snapshot == null) {
+					snapshot = this.ref.values().toArray();
+					this.valuesSnapshot = snapshot;
+				}
+			} finally {
+				this.lock.readLock().unlock();
+			}
+		}
+
+		return snapshot;
+	}
+
+	/**
+	 * An immutable (key, value) pair captured at snapshot time. Shared across iterators.
+	 * Throws {@link UnsupportedOperationException} on {@link #setValue(Object)} - callers
+	 * receive a {@link LiveEntry} wrapper from the entry-set iterator instead, which
+	 * provides a write-locked {@code setValue}.
+	 */
+	private static final class SnapshotEntry<K, V> implements Entry<K, V> {
+
+		private final K key;
+		private final V value;
+
+		SnapshotEntry(K key, V value) {
+			this.key = key;
+			this.value = value;
+		}
+
+		@Override
+		public K getKey() {
+			return this.key;
+		}
+
+		@Override
+		public V getValue() {
+			return this.value;
+		}
+
+		@Override
+		public V setValue(V value) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (!(o instanceof Entry<?, ?> e)) return false;
+			return Objects.equals(this.key, e.getKey()) && Objects.equals(this.value, e.getValue());
+		}
+
+		@Override
+		public int hashCode() {
+			return (this.key == null ? 0 : this.key.hashCode())
+				^ (this.value == null ? 0 : this.value.hashCode());
+		}
+
+		@Override
+		public String toString() {
+			return this.key + "=" + this.value;
+		}
+
+	}
+
+	/**
+	 * A per-iterator mutable {@link Entry} wrapper. {@link #setValue(Object)} propagates
+	 * to the backing map via {@link AtomicMap#put(Object, Object)} and updates the
+	 * locally cached value. Each call to {@code iterator.next()} returns a fresh instance,
+	 * so concurrent {@code setValue} calls on different entries never race.
+	 */
+	private final class LiveEntry implements Entry<K, V> {
+
+		private final K key;
+		private V value;
+
+		LiveEntry(K key, V value) {
+			this.key = key;
+			this.value = value;
+		}
+
+		@Override
+		public K getKey() {
+			return this.key;
+		}
+
+		@Override
+		public V getValue() {
+			return this.value;
+		}
+
+		@Override
+		public V setValue(V newValue) {
+			V old = AtomicMap.this.put(this.key, newValue);
+			this.value = newValue;
+			return old;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (!(o instanceof Entry<?, ?> e)) return false;
+			return Objects.equals(this.key, e.getKey()) && Objects.equals(this.value, e.getValue());
+		}
+
+		@Override
+		public int hashCode() {
+			return (this.key == null ? 0 : this.key.hashCode())
+				^ (this.value == null ? 0 : this.value.hashCode());
+		}
+
+		@Override
+		public String toString() {
+			return this.key + "=" + this.value;
+		}
+
+	}
+
+	/**
+	 * Live view over the map's entry set. All reads delegate to the backing map under
+	 * the read lock; mutations delegate under the write lock and invalidate all three
+	 * view snapshots. Iteration is snapshot-based.
+	 */
+	private final class EntrySetView extends AbstractSet<Entry<K, V>> {
+
+		@Override
+		public int size() {
+			return AtomicMap.this.size();
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return AtomicMap.this.isEmpty();
+		}
+
+		@Override
+		public boolean contains(Object o) {
+			if (!(o instanceof Entry<?, ?>))
+				return false;
+
+			try {
+				AtomicMap.this.lock.readLock().lock();
+				return AtomicMap.this.ref.entrySet().contains(o);
+			} finally {
+				AtomicMap.this.lock.readLock().unlock();
+			}
+		}
+
+		@Override
+		public boolean remove(Object o) {
+			if (!(o instanceof Entry<?, ?>))
+				return false;
+
+			try {
+				AtomicMap.this.lock.writeLock().lock();
+				return AtomicMap.this.ref.entrySet().remove(o);
+			} finally {
+				AtomicMap.this.invalidateViewSnapshots();
+				AtomicMap.this.lock.writeLock().unlock();
+			}
+		}
+
+		@Override
+		public void clear() {
+			AtomicMap.this.clear();
+		}
+
+		@Override
+		public @NotNull Iterator<Entry<K, V>> iterator() {
+			return new EntrySetIterator(AtomicMap.this.entrySetSnapshot());
+		}
+
+	}
+
+	/**
+	 * Live view over the map's key set.
+	 */
+	private final class KeySetView extends AbstractSet<K> {
+
+		@Override
+		public int size() {
+			return AtomicMap.this.size();
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return AtomicMap.this.isEmpty();
+		}
+
+		@Override
+		public boolean contains(Object o) {
+			return AtomicMap.this.containsKey(o);
+		}
+
+		@Override
+		@SuppressWarnings("RedundantCollectionOperation")
+		public boolean remove(Object o) {
+			try {
+				AtomicMap.this.lock.writeLock().lock();
+				return AtomicMap.this.ref.keySet().remove(o);
+			} finally {
+				AtomicMap.this.invalidateViewSnapshots();
+				AtomicMap.this.lock.writeLock().unlock();
+			}
+		}
+
+		@Override
+		public void clear() {
+			AtomicMap.this.clear();
+		}
+
+		@Override
+		public @NotNull Iterator<K> iterator() {
+			return new KeySetIterator(AtomicMap.this.keySetSnapshot());
+		}
+
+	}
+
+	/**
+	 * Live view over the map's values collection. {@link #remove(Object)} delegates to
+	 * {@link java.util.Collection#remove(Object) ref.values().remove(o)}, which removes the
+	 * first entry whose value equals {@code o} (matching the JDK contract).
+	 */
+	private final class ValuesView extends AbstractCollection<V> {
+
+		@Override
+		public int size() {
+			return AtomicMap.this.size();
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return AtomicMap.this.isEmpty();
+		}
+
+		@Override
+		public boolean contains(Object o) {
+			return AtomicMap.this.containsValue(o);
+		}
+
+		@Override
+		public boolean remove(Object o) {
+			try {
+				AtomicMap.this.lock.writeLock().lock();
+				return AtomicMap.this.ref.values().remove(o);
+			} finally {
+				AtomicMap.this.invalidateViewSnapshots();
+				AtomicMap.this.lock.writeLock().unlock();
+			}
+		}
+
+		@Override
+		public void clear() {
+			AtomicMap.this.clear();
+		}
+
+		@Override
+		public @NotNull Iterator<V> iterator() {
+			return new ValuesIterator(AtomicMap.this.valuesSnapshot());
+		}
+
+	}
+
+	/**
+	 * Snapshot-backed iterator over the entry set view. {@link #next()} wraps each
+	 * snapshot entry in a fresh {@link LiveEntry} so {@code setValue} propagates to the
+	 * map; {@link #remove()} removes the current entry from the map by key.
+	 */
+	private final class EntrySetIterator extends AtomicIterator<Entry<K, V>> {
+
+		EntrySetIterator(Object[] snapshot) {
+			super(snapshot, 0);
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public @NotNull Entry<K, V> next() {
+			if (!this.hasNext())
+				throw new NoSuchElementException();
+
+			SnapshotEntry<K, V> snap = (SnapshotEntry<K, V>) this.snapshot[this.last = this.cursor++];
+			return new LiveEntry(snap.getKey(), snap.getValue());
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public void remove() {
+			if (this.last < 0)
+				throw new IllegalStateException();
+
+			SnapshotEntry<K, V> snap = (SnapshotEntry<K, V>) this.snapshot[this.last];
+			AtomicMap.this.remove(snap.getKey());
+			this.last = -1;
+		}
+
+	}
+
+	/**
+	 * Snapshot-backed iterator over the key set view.
+	 */
+	private final class KeySetIterator extends AtomicIterator<K> {
+
+		KeySetIterator(Object[] snapshot) {
+			super(snapshot, 0);
+		}
+
 		@Override
 		public void remove() {
 			if (this.last < 0)
 				throw new IllegalStateException();
 
 			AtomicMap.this.remove(this.snapshot[this.last]);
-			this.snapshot = AtomicMap.this.entrySet().toArray();
-			this.cursor = this.last;
+			this.last = -1;
+		}
+
+	}
+
+	/**
+	 * Snapshot-backed iterator over the values view. {@link #remove()} removes the first
+	 * entry whose value equals the just-returned element, matching the JDK
+	 * {@link java.util.Collection#remove(Object) values().remove(Object)} contract.
+	 */
+	private final class ValuesIterator extends AtomicIterator<V> {
+
+		ValuesIterator(Object[] snapshot) {
+			super(snapshot, 0);
+		}
+
+		@Override
+		@SuppressWarnings("SuspiciousMethodCalls")
+		public void remove() {
+			if (this.last < 0)
+				throw new IllegalStateException();
+
+			try {
+				AtomicMap.this.lock.writeLock().lock();
+				AtomicMap.this.ref.values().remove(this.snapshot[this.last]);
+			} finally {
+				AtomicMap.this.invalidateViewSnapshots();
+				AtomicMap.this.lock.writeLock().unlock();
+			}
+
 			this.last = -1;
 		}
 

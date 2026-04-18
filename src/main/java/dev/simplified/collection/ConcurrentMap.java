@@ -62,45 +62,6 @@ public class ConcurrentMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> {
     }
 
     /**
-     * Creates a new empty {@code ConcurrentSet} for holding map entries, used internally by entry set operations.
-     * <p>
-     * Overridable so subclasses backed by an insertion-ordered map (e.g. {@link dev.simplified.collection.linked.ConcurrentLinkedMap ConcurrentLinkedMap})
-     * can return an insertion-ordered set type - otherwise {@link AtomicMap#entrySet()} copies the
-     * backing map's entries into a {@link java.util.HashSet}-backed set and silently loses order,
-     * which also breaks the default {@link java.util.Map#forEach} implementation.
-     *
-     * @return a new empty {@link ConcurrentSet} of entries
-     */
-    @Override
-    protected @NotNull ConcurrentSet<Entry<K, V>> createEmptyEntrySet() {
-        return Concurrent.newSet();
-    }
-
-    /**
-     * Creates a new empty {@code ConcurrentSet} for holding map keys, used internally by key set operations.
-     * <p>
-     * Overridable for the same reason as {@link #createEmptyEntrySet()}.
-     *
-     * @return a new empty {@link ConcurrentSet} of keys
-     */
-    @Override
-    protected @NotNull ConcurrentSet<K> createEmptyKeySet() {
-        return Concurrent.newSet();
-    }
-
-    /**
-     * Creates a new empty {@code ConcurrentList} for holding map values, used internally by values operations.
-     * <p>
-     * Overridable so subclasses can match the backing map's value iteration order.
-     *
-     * @return a new empty {@link ConcurrentList} of values
-     */
-    @Override
-    protected @NotNull ConcurrentList<V> createEmptyValueList() {
-        return Concurrent.newList();
-    }
-
-    /**
      * Returns an unmodifiable view of this {@code ConcurrentMap}.
      * Attempts to modify the returned map will throw {@link UnsupportedOperationException}.
      *

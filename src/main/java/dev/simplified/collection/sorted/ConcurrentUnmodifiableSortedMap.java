@@ -29,11 +29,11 @@ import java.util.function.Consumer;
 public class ConcurrentUnmodifiableSortedMap<K, V> extends ConcurrentSortedMap<K, V> {
 
     /** Lazily initialized unmodifiable view of the key set. */
-    private transient Set<K> unmodifiableKeySet;
+    private transient volatile Set<K> unmodifiableKeySet;
     /** Lazily initialized unmodifiable view of the entry set. */
-    private transient Set<Entry<K,V>> unmodifiableEntrySet;
+    private transient volatile Set<Entry<K,V>> unmodifiableEntrySet;
     /** Lazily initialized unmodifiable view of the values collection. */
-    private transient Collection<V> unmodifiableValues;
+    private transient volatile Collection<V> unmodifiableValues;
 
     /**
      * Create a new concurrent sorted map with natural key ordering.
@@ -103,10 +103,20 @@ public class ConcurrentUnmodifiableSortedMap<K, V> extends ConcurrentSortedMap<K
      */
     @Override
     public final @NotNull Set<Entry<K, V>> entrySet() {
-        if (this.unmodifiableEntrySet == null)
-            this.unmodifiableEntrySet = new UnmodifiableEntrySet<>(super.entrySet());
+        Set<Entry<K, V>> result = this.unmodifiableEntrySet;
 
-        return this.unmodifiableEntrySet;
+        if (result == null) {
+            synchronized (this) {
+                result = this.unmodifiableEntrySet;
+
+                if (result == null) {
+                    result = new UnmodifiableEntrySet<>(super.entrySet());
+                    this.unmodifiableEntrySet = result;
+                }
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -116,10 +126,20 @@ public class ConcurrentUnmodifiableSortedMap<K, V> extends ConcurrentSortedMap<K
      */
     @Override
     public final @NotNull Set<K> keySet() {
-        if (this.unmodifiableKeySet == null)
-            this.unmodifiableKeySet = Concurrent.newUnmodifiableSet(super.keySet());
+        Set<K> result = this.unmodifiableKeySet;
 
-        return this.unmodifiableKeySet;
+        if (result == null) {
+            synchronized (this) {
+                result = this.unmodifiableKeySet;
+
+                if (result == null) {
+                    result = Concurrent.newUnmodifiableSet(super.keySet());
+                    this.unmodifiableKeySet = result;
+                }
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -169,10 +189,20 @@ public class ConcurrentUnmodifiableSortedMap<K, V> extends ConcurrentSortedMap<K
      */
     @Override
     public final @NotNull Collection<V> values() {
-        if (this.unmodifiableValues == null)
-            this.unmodifiableValues = Concurrent.newUnmodifiableCollection(super.values());
+        Collection<V> result = this.unmodifiableValues;
 
-        return this.unmodifiableValues;
+        if (result == null) {
+            synchronized (this) {
+                result = this.unmodifiableValues;
+
+                if (result == null) {
+                    result = Concurrent.newUnmodifiableCollection(super.values());
+                    this.unmodifiableValues = result;
+                }
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -181,10 +211,7 @@ public class ConcurrentUnmodifiableSortedMap<K, V> extends ConcurrentSortedMap<K
      * via their setValue operation.  This class is subtle: there are
      * many possible attacks that must be thwarted.
      */
-    @AllArgsConstructor
     private static class UnmodifiableEntrySet<K, V> extends ConcurrentUnmodifiableSet<Entry<K, V>> {
-
-        private @NotNull Iterator<Entry<K, V>> iterator;
 
         /**
          * Creates a new unmodifiable entry set backed by the given set of entries.

@@ -104,7 +104,12 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 */
 	@Override
 	public final @Nullable E peek() {
-		return this.isEmpty() ? null : this.storage.get(0);
+		try {
+			this.storage.lock.readLock().lock();
+			return this.storage.ref.isEmpty() ? null : this.storage.ref.get(0);
+		} finally {
+			this.storage.lock.readLock().unlock();
+		}
 	}
 
 	/**
@@ -112,7 +117,12 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	 */
 	@Override
 	public final @Nullable E poll() {
-		return this.isEmpty() ? null : this.storage.remove(0);
+		try {
+			this.storage.lock.writeLock().lock();
+			return this.storage.ref.isEmpty() ? null : this.storage.ref.remove(0);
+		} finally {
+			this.storage.lock.writeLock().unlock();
+		}
 	}
 
 	/**
