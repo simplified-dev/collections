@@ -1,6 +1,6 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.function.TriFunction;
+import dev.simplified.collection.function.IndexedFunction;
 import dev.simplified.collection.tuple.triple.Triple;
 import dev.simplified.collection.tuple.triple.TripleStream;
 import lombok.AccessLevel;
@@ -109,7 +109,8 @@ public final class StreamUtil {
 
     /**
      * Applies the given function to each element of the stream along with its zero-based index
-     * and the estimated stream size.
+     * and the estimated stream size. The index and size are primitive {@code long}s - no
+     * boxing per element.
      *
      * @param <T> the input element type
      * @param <R> the output element type
@@ -118,17 +119,17 @@ public final class StreamUtil {
      * @return a stream of mapped results
      */
     @SuppressWarnings("unchecked")
-    public static <T, R> @NotNull Stream<R> mapWithIndex(@NotNull Stream<T> stream, @NotNull TriFunction<? super T, Long, Long, ? extends R> function) {
+    public static <T, R> @NotNull Stream<R> mapWithIndex(@NotNull Stream<T> stream, @NotNull IndexedFunction<? super T, ? extends R> function) {
         return (Stream<R>) mapWithIndex(stream.spliterator(), stream.isParallel(), function).onClose(stream::close);
     }
 
     /**
-     * Returns a stream consisting of the results of applying the given function to the elements of
-     * the source spliterator and their indices. For example,
+     * Returns a stream consisting of the results of applying the given function to the elements
+     * of the source spliterator and their indices. For example,
      *
      * <pre>{@code
      * mapWithIndex(
-     *     Stream.of("a", "b", "c"),
+     *     Stream.of("a", "b", "c").spliterator(), false,
      *     (str, index, size) -> str + ":" + index + "/" + size)
      * }</pre>
      *
@@ -138,11 +139,13 @@ public final class StreamUtil {
      * href="http://gee.cs.oswego.edu/dl/html/StreamParallelGuidance.html">efficiently splittable</a>
      * if and only if the source was efficiently splittable and its underlying spliterator
      * reported {@link Spliterator#SUBSIZED}. This is generally the case if the underlying stream
-     * comes from a data structure supporting efficient indexed random access, typically an array or
-     * list.
+     * comes from a data structure supporting efficient indexed random access, typically an array
+     * or list.
      *
-     * <p>The order of the resulting stream is defined if and only if the order of the original stream
-     * was defined.
+     * <p>The order of the resulting stream is defined if and only if the order of the original
+     * stream was defined.
+     *
+     * <p>Index and size are passed as primitive {@code long}s - no boxing per element.
      *
      * @param <T> the input element type
      * @param <R> the output element type
@@ -151,7 +154,7 @@ public final class StreamUtil {
      * @param function a function accepting {@code (element, index, size)} and producing the mapped result
      * @return a stream of mapped results
      */
-    public static <T, R> @NotNull Stream<R> mapWithIndex(@NotNull Spliterator<T> spliterator, boolean parallel, @NotNull TriFunction<? super T, Long, Long, ? extends R> function) {
+    public static <T, R> @NotNull Stream<R> mapWithIndex(@NotNull Spliterator<T> spliterator, boolean parallel, @NotNull IndexedFunction<? super T, ? extends R> function) {
         long size = spliterator.estimateSize();
 
         if (!spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
@@ -218,14 +221,15 @@ public final class StreamUtil {
 
     /**
      * Transforms each element in the stream using a function that also receives the element's
-     * zero-based index and the estimated stream size.
+     * zero-based index and the estimated stream size. The index and size are primitive
+     * {@code long}s - no boxing per element.
      *
      * @param <T> the element type
      * @param stream the source stream
      * @param modFunction a function accepting {@code (element, index, size)} and returning the modified element
      * @return a stream of modified elements
      */
-    public static <T> @NotNull Stream<T> modifyStream(@NotNull Stream<T> stream, @NotNull TriFunction<T, Long, Long, T> modFunction) {
+    public static <T> @NotNull Stream<T> modifyStream(@NotNull Stream<T> stream, @NotNull IndexedFunction<T, T> modFunction) {
         return mapWithIndex(stream, modFunction);
     }
 

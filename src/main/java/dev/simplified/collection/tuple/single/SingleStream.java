@@ -2,6 +2,9 @@ package dev.simplified.collection.tuple.single;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
+import dev.simplified.collection.function.IndexedConsumer;
+import dev.simplified.collection.function.IndexedFunction;
+import dev.simplified.collection.function.IndexedPredicate;
 import dev.simplified.collection.tuple.pair.Pair;
 import dev.simplified.collection.tuple.pair.PairStream;
 import dev.simplified.collection.tuple.triple.Triple;
@@ -508,12 +511,69 @@ public interface SingleStream<E> extends Stream<E> {
 
     /**
      * Zips the current stream with its indices, producing a {@link TripleStream} of
-     * {@code (element, index, size)}.
+     * {@code (element, index, size)}. The index and size in each {@link Triple} are boxed
+     * {@link Long}s - for hot paths prefer {@link #mapIndexed(IndexedFunction)},
+     * {@link #filterIndexed(IndexedPredicate)}, or {@link #forEachIndexed(IndexedConsumer)}
+     * which route primitive {@code long}s directly through the callback.
      *
      * @return a triple stream where each triple contains the element, its zero-based index, and the estimated size
      */
     default @NotNull TripleStream<E, Long, Long> indexed() {
         return StreamUtil.zipWithIndex(this);
+    }
+
+    /**
+     * Returns a {@code SingleStream} with each element replaced by the result of applying
+     * {@code mapper} to the element, its zero-based index, and the estimated stream size.
+     * The index and size are primitive {@code long}s - no boxing or {@link Triple} allocation
+     * per element, unlike {@link #indexed()}{@code .map(...)}.
+     *
+     * @param <R>    the element type of the resulting stream
+     * @param mapper a function receiving {@code (element, index, size)} and returning the mapped result
+     * @return a mapped {@code SingleStream}
+     */
+    default <R> @NotNull SingleStream<R> mapIndexed(@NotNull IndexedFunction<? super E, ? extends R> mapper) {
+        return of(StreamUtil.mapWithIndex(this.underlying(), mapper));
+    }
+
+    /**
+     * Returns a {@code SingleStream} containing only the elements for which {@code predicate}
+     * returns {@code true} when supplied the element, its zero-based index, and the estimated
+     * stream size. The index and size are primitive {@code long}s - no boxing per element.
+     * The filter runs sequentially because index is only meaningful in a deterministic
+     * traversal.
+     *
+     * @param predicate a predicate receiving {@code (element, index, size)}
+     * @return a filtered {@code SingleStream}
+     */
+    default @NotNull SingleStream<E> filterIndexed(@NotNull IndexedPredicate<? super E> predicate) {
+        Stream<E> source = this.underlying();
+        Spliterator<E> splitr = source.spliterator();
+        long size = splitr.estimateSize();
+        long[] index = {0};
+        return of(
+            java.util.stream.StreamSupport.stream(splitr, false)
+                .onClose(source::close)
+                .filter(e -> predicate.test(e, index[0]++, size))
+        );
+    }
+
+    /**
+     * Terminal operation that performs {@code action} on each element together with its
+     * zero-based index and the estimated stream size. The index and size are primitive
+     * {@code long}s - no boxing, no {@link Triple} allocation, no intermediate stream wrap.
+     * Encounter order is preserved; the iteration is sequential regardless of the source
+     * stream's parallelism because index is only meaningful in a deterministic traversal.
+     *
+     * @param action a consumer receiving {@code (element, index, size)}
+     */
+    default void forEachIndexed(@NotNull IndexedConsumer<? super E> action) {
+        try (Stream<E> s = this.underlying()) {
+            Spliterator<E> splitr = s.spliterator();
+            long size = splitr.estimateSize();
+            long[] index = {0};
+            splitr.forEachRemaining(e -> action.accept(e, index[0]++, size));
+        }
     }
 
 }
