@@ -138,7 +138,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     /** {@inheritDoc} */
     @Override
     default long count() {
-        return this.underlying().count();
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.count();
+        }
     }
 
     /** {@inheritDoc} */
@@ -222,7 +224,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Map.Entry<K, V>> findAny() {
-        return this.underlying().findAny();
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.findAny();
+        }
     }
 
     /**
@@ -232,13 +236,17 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return a {@code PairOptional} of any matching entry
      */
     default @NotNull PairOptional<K, V> findAnyPair() {
-        return PairOptional.of(this.underlying().findAny());
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return PairOptional.of(s.findAny());
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Map.Entry<K, V>> findFirst() {
-        return this.underlying().findFirst();
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.findFirst();
+        }
     }
 
     /**
@@ -248,7 +256,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return a {@code PairOptional} of the first entry
      */
     default @NotNull PairOptional<K, V> findFirstPair() {
-        return PairOptional.of(this.underlying().findFirst());
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return PairOptional.of(s.findFirst());
+        }
     }
 
     // Flatmapping
@@ -353,7 +363,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     /** {@inheritDoc} */
     @Override
     default void forEach(@NotNull Consumer<? super Map.Entry<K, V>> action) {
-        this.underlying().forEach(action);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            s.forEach(action);
+        }
     }
 
     /**
@@ -363,13 +375,17 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @param action a {@link BiConsumer} receiving the key and value of each entry
      */
     default void forEach(@NotNull BiConsumer<? super K, ? super V> action) {
-        this.underlying().forEach(entry -> action.accept(entry.getKey(), entry.getValue()));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            s.forEach(entry -> action.accept(entry.getKey(), entry.getValue()));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default void forEachOrdered(@NotNull Consumer<? super Map.Entry<K, V>> action) {
-        this.underlying().forEachOrdered(action);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            s.forEachOrdered(action);
+        }
     }
 
     /**
@@ -379,7 +395,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @param action a {@link BiConsumer} receiving the key and value of each entry
      */
     default void forEachOrdered(@NotNull BiConsumer<? super K, ? super V> action) {
-        this.underlying().forEachOrdered(entry -> action.accept(entry.getKey(), entry.getValue()));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            s.forEachOrdered(entry -> action.accept(entry.getKey(), entry.getValue()));
+        }
     }
 
     // Iterator
@@ -497,7 +515,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     /** {@inheritDoc} */
     @Override
     default boolean allMatch(@NotNull Predicate<? super Map.Entry<K, V>> predicate) {
-        return this.underlying().allMatch(predicate);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.allMatch(predicate);
+        }
     }
 
     /**
@@ -508,13 +528,17 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return {@code true} if all entries match, {@code false} otherwise
      */
     default boolean allMatch(@NotNull BiPredicate<? super K, ? super V> predicate) {
-        return this.underlying().allMatch(entry -> predicate.test(entry.getKey(), entry.getValue()));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.allMatch(entry -> predicate.test(entry.getKey(), entry.getValue()));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default boolean anyMatch(@NotNull Predicate<? super Map.Entry<K, V>> predicate) {
-        return this.underlying().anyMatch(predicate);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.anyMatch(predicate);
+        }
     }
 
     /**
@@ -525,13 +549,17 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return {@code true} if any entry matches, {@code false} otherwise
      */
     default boolean anyMatch(@NotNull BiPredicate<? super K, ? super V> predicate) {
-        return this.underlying().anyMatch(entry -> predicate.test(entry.getKey(), entry.getValue()));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.anyMatch(entry -> predicate.test(entry.getKey(), entry.getValue()));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default boolean noneMatch(@NotNull Predicate<? super Map.Entry<K, V>> predicate) {
-        return this.underlying().noneMatch(predicate);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.noneMatch(predicate);
+        }
     }
 
     /**
@@ -542,7 +570,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return {@code true} if no entries match, {@code false} otherwise
      */
     default boolean noneMatch(@NotNull BiPredicate<? super K, ? super V> predicate) {
-        return this.underlying().noneMatch(entry -> predicate.test(entry.getKey(), entry.getValue()));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.noneMatch(entry -> predicate.test(entry.getKey(), entry.getValue()));
+        }
     }
 
     // Minmax
@@ -550,7 +580,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Map.Entry<K, V>> max(@NotNull Comparator<? super Map.Entry<K, V>> comparator) {
-        return this.underlying().max(comparator);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.max(comparator);
+        }
     }
 
     /**
@@ -561,7 +593,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return an {@code Optional} of the entry with the maximum key
      */
     default @NotNull Optional<Map.Entry<K, V>> maxByKey(@NotNull Comparator<? super K> comparator) {
-        return this.underlying().max(Map.Entry.comparingByKey(comparator));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.max(Map.Entry.comparingByKey(comparator));
+        }
     }
 
     /**
@@ -572,13 +606,17 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return an {@code Optional} of the entry with the maximum value
      */
     default @NotNull Optional<Map.Entry<K, V>> maxByValue(@NotNull Comparator<? super V> comparator) {
-        return this.underlying().max(Map.Entry.comparingByValue(comparator));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.max(Map.Entry.comparingByValue(comparator));
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Map.Entry<K, V>> min(@NotNull Comparator<? super Map.Entry<K, V>> comparator) {
-        return this.underlying().min(comparator);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.min(comparator);
+        }
     }
 
     /**
@@ -589,7 +627,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return an {@code Optional} of the entry with the minimum key
      */
     default @NotNull Optional<Map.Entry<K, V>> minByKey(@NotNull Comparator<? super K> comparator) {
-        return this.underlying().min(Map.Entry.comparingByKey(comparator));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.min(Map.Entry.comparingByKey(comparator));
+        }
     }
 
     /**
@@ -600,7 +640,9 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return an {@code Optional} of the entry with the minimum value
      */
     default @NotNull Optional<Map.Entry<K, V>> minByValue(@NotNull Comparator<? super V> comparator) {
-        return this.underlying().min(Map.Entry.comparingByValue(comparator));
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.min(Map.Entry.comparingByValue(comparator));
+        }
     }
 
     // Order
@@ -634,19 +676,25 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     /** {@inheritDoc} */
     @Override
     default @NotNull Map.Entry<K, V> reduce(@NotNull Map.Entry<K, V> identity, @NotNull BinaryOperator<Map.Entry<K, V>> accumulator) {
-        return this.underlying().reduce(identity, accumulator);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.reduce(identity, accumulator);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Optional<Map.Entry<K, V>> reduce(@NotNull BinaryOperator<Map.Entry<K, V>> accumulator) {
-        return this.underlying().reduce(accumulator);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.reduce(accumulator);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default <U> @NotNull U reduce(@NotNull U identity, @NotNull BiFunction<U, ? super Map.Entry<K, V>, U> accumulator, @NotNull BinaryOperator<U> combiner) {
-        return this.underlying().reduce(identity, accumulator, combiner);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.reduce(identity, accumulator, combiner);
+        }
     }
 
     /**
@@ -661,15 +709,24 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * @return the reduced result
      */
     default <U> @NotNull U reduce(@NotNull U identity, @NotNull TriFunction<U, ? super K, ? super V, U> accumulator, @NotNull BinaryOperator<U> combiner) {
-        return this.underlying().reduce(identity, (u, entry) -> accumulator.apply(u, entry.getKey(), entry.getValue()), combiner);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.reduce(identity, (u, entry) -> accumulator.apply(u, entry.getKey(), entry.getValue()), combiner);
+        }
     }
 
     // Sorting
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Sorts entries by their natural key ordering. The key type must be {@link Comparable};
+     * otherwise a {@link ClassCastException} is thrown at terminal evaluation, matching
+     * the underlying {@link Stream#sorted()} contract.
+     */
     @Override
+    @SuppressWarnings("unchecked")
     default @NotNull PairStream<K, V> sorted() {
-        return of(this.underlying().sorted());
+        return of(this.underlying().sorted(Map.Entry.comparingByKey((Comparator<? super K>) Comparator.naturalOrder())));
     }
 
     /** {@inheritDoc} */
@@ -705,25 +762,33 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      */
     @Override
     default <R, A> R collect(@NotNull Collector<? super Map.Entry<K, V>, A, R> collector) {
-        return this.underlying().collect(collector);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.collect(collector);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default <R> R collect(@NotNull Supplier<R> supplier, @NotNull BiConsumer<R, ? super Map.Entry<K, V>> accumulator, @NotNull BiConsumer<R, R> combiner) {
-        return this.underlying().collect(supplier, accumulator, combiner);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.collect(supplier, accumulator, combiner);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default @NotNull Object @NotNull [] toArray() {
-        return this.underlying().toArray();
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.toArray();
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     default <A> @NotNull A @NotNull [] toArray(@NotNull IntFunction<A[]> generator) {
-        return this.underlying().toArray(generator);
+        try (Stream<Map.Entry<K, V>> s = this.underlying()) {
+            return s.toArray(generator);
+        }
     }
 
     /**
