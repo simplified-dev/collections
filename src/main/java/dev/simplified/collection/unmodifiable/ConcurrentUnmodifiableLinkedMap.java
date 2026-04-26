@@ -1,10 +1,11 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.ConcurrentMap;
+import dev.simplified.collection.linked.ConcurrentLinkedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -13,26 +14,25 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * An immutable snapshot of a {@link ConcurrentMap}. The wrapper owns a fresh copy of the
- * source's entries at construction time and never reflects subsequent mutations on the
- * source. Reads on the snapshot are wait-free, backed by {@link NoOpReadWriteLock}.
+ * An immutable snapshot of a {@link ConcurrentLinkedMap} preserving the source's insertion
+ * order. The wrapper owns a fresh {@link LinkedHashMap} copy and never reflects subsequent
+ * mutations on the source. Reads on the snapshot are wait-free, backed by
+ * {@link NoOpReadWriteLock}.
  *
- * <p>Every mutating operation rejects with {@link UnsupportedOperationException}, including
- * those routed through view collections ({@code entrySet}, {@code keySet}, {@code values}),
- * iterator removal, and {@code Entry.setValue}.</p>
+ * <p>Every mutating operation rejects with {@link UnsupportedOperationException}.</p>
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-public class ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
+public class ConcurrentUnmodifiableLinkedMap<K, V> extends ConcurrentLinkedMap<K, V> {
 
 	/**
 	 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot}
-	 * by copying a source map's contents under that source's read lock.
+	 * by copying a source map's entries under that source's read lock.
 	 *
 	 * @param snapshot a freshly cloned backing map
 	 */
-	public ConcurrentUnmodifiableMap(@NotNull AbstractMap<K, V> snapshot) {
+	public ConcurrentUnmodifiableLinkedMap(@NotNull LinkedHashMap<K, V> snapshot) {
 		super(snapshot, NoOpReadWriteLock.INSTANCE);
 	}
 
@@ -122,7 +122,7 @@ public class ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
 
 	/** {@inheritDoc} */
 	@Override
-	public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
+	public @NotNull ConcurrentLinkedMap<K, V> toUnmodifiable() {
 		return this;
 	}
 

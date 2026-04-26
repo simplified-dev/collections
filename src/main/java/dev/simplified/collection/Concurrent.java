@@ -1,11 +1,7 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.atomic.AtomicCollection;
 import dev.simplified.collection.atomic.AtomicDeque;
-import dev.simplified.collection.atomic.AtomicList;
-import dev.simplified.collection.atomic.AtomicMap;
 import dev.simplified.collection.atomic.AtomicQueue;
-import dev.simplified.collection.atomic.AtomicSet;
 import dev.simplified.collection.linked.ConcurrentLinkedList;
 import dev.simplified.collection.linked.ConcurrentLinkedMap;
 import dev.simplified.collection.linked.ConcurrentLinkedSet;
@@ -17,6 +13,11 @@ import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableMap;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableQueue;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableSet;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedList;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedMap;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedSet;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeMap;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeSet;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -508,7 +509,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent collection
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection() {
-		return new ConcurrentUnmodifiableCollection<>(new ConcurrentCollection<>());
+		return new ConcurrentUnmodifiableCollection<>(new java.util.ArrayList<>());
 	}
 
 	/**
@@ -520,24 +521,26 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection(@NotNull E... array) {
-		return new ConcurrentUnmodifiableCollection<>(new ConcurrentCollection<>(array));
+		return new ConcurrentUnmodifiableCollection<>(new java.util.ArrayList<>(java.util.Arrays.asList(array)));
 	}
 
 	/**
-	 * Creates an unmodifiable view of the given collection. If the source is already an
-	 * {@link AtomicCollection}, the returned wrapper shares its state (live view); otherwise
-	 * the source is first copied into a fresh {@link ConcurrentCollection}.
+	 * Creates an immutable snapshot of the given collection.
+	 *
+	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
+	 * on the source are not reflected. If the source is itself a {@link ConcurrentCollection},
+	 * its {@code toUnmodifiable()} is delegated to so its read lock guards the copy.</p>
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return an unmodifiable {@link ConcurrentCollection} view
+	 * @return a snapshot {@link ConcurrentUnmodifiableCollection}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection(@NotNull Collection<? extends E> collection) {
-		AtomicCollection<E, ? extends java.util.AbstractCollection<E>> source = collection instanceof AtomicCollection
-			? (AtomicCollection<E, ? extends java.util.AbstractCollection<E>>) collection
-			: new ConcurrentCollection<>((Collection<E>) collection);
-		return new ConcurrentUnmodifiableCollection<>(source);
+		if (collection instanceof ConcurrentCollection)
+			return (ConcurrentUnmodifiableCollection<E>) ((ConcurrentCollection<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableCollection<>(new java.util.ArrayList<>(collection));
 	}
 
 	/**
@@ -548,7 +551,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent list
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList() {
-		return new ConcurrentUnmodifiableList<>(new ConcurrentList<>());
+		return new ConcurrentUnmodifiableList<>(new java.util.ArrayList<>());
 	}
 
 	/**
@@ -560,25 +563,29 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@NotNull E... array) {
-		return new ConcurrentUnmodifiableList<>(new ConcurrentList<>(array));
+		return new ConcurrentUnmodifiableList<>(new java.util.ArrayList<>(java.util.Arrays.asList(array)));
 	}
 
 	/**
-	 * Creates an unmodifiable view of the given collection as a list. If the source is
-	 * already an {@link AtomicList}, the wrapper shares its state (live view, preserves
-	 * insertion order for {@link ConcurrentLinkedList}); otherwise the source is copied
-	 * into a fresh {@link ConcurrentList}.
+	 * Creates an immutable snapshot of the given collection as a list.
+	 *
+	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
+	 * on the source are not reflected. If the source is itself a {@link ConcurrentList},
+	 * its {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy
+	 * and any type-specific iteration order ({@link ConcurrentLinkedList}) is preserved via
+	 * the source's {@code cloneRef} override.</p>
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return an unmodifiable {@link ConcurrentList} view
+	 * @return a snapshot {@link ConcurrentUnmodifiableList}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@Nullable Collection<? extends E> collection) {
-		AtomicList<E, ? extends java.util.List<E>> source = collection instanceof AtomicList
-			? (AtomicList<E, ? extends java.util.List<E>>) collection
-			: new ConcurrentList<>((Collection<E>) collection);
-		return new ConcurrentUnmodifiableList<>(source);
+		if (collection == null) return newUnmodifiableList();
+		if (collection instanceof ConcurrentList)
+			return (ConcurrentUnmodifiableList<E>) ((ConcurrentList<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableList<>(new java.util.ArrayList<>(collection));
 	}
 
 	/**
@@ -591,26 +598,33 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <K, V> @NotNull ConcurrentUnmodifiableMap<K, V> newUnmodifiableMap(@NotNull Map.Entry<K, V>... entries) {
-		return new ConcurrentUnmodifiableMap<>(new ConcurrentMap<>(entries));
+		java.util.HashMap<K, V> snapshot = new java.util.HashMap<>();
+		for (Map.Entry<K, V> entry : entries) {
+			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
+		}
+		return new ConcurrentUnmodifiableMap<>(snapshot);
 	}
 
 	/**
-	 * Creates an unmodifiable view of the given map. If the source is already an
-	 * {@link AtomicMap}, the wrapper shares its state (live view, preserves iteration
-	 * order for {@link ConcurrentLinkedMap} or {@link ConcurrentTreeMap}); otherwise
-	 * the source is copied into a fresh {@link ConcurrentMap}.
+	 * Creates an immutable snapshot of the given map.
+	 *
+	 * <p>The snapshot copies the input's entries at construction time; subsequent mutations
+	 * on the source are not reflected. If the source is itself a {@link ConcurrentMap},
+	 * its {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy
+	 * and any type-specific iteration order ({@link ConcurrentLinkedMap}, {@link ConcurrentTreeMap})
+	 * is preserved via the source's {@code cloneRef} override.</p>
 	 *
 	 * @param map the source map
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return an unmodifiable {@link ConcurrentMap} view
+	 * @return a snapshot {@link ConcurrentUnmodifiableMap}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentUnmodifiableMap<K, V> newUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
-		AtomicMap<K, V, ? extends java.util.AbstractMap<K, V>> source = map instanceof AtomicMap
-			? (AtomicMap<K, V, ? extends java.util.AbstractMap<K, V>>) map
-			: new ConcurrentMap<>((Map<K, V>) map);
-		return new ConcurrentUnmodifiableMap<>(source);
+		if (map instanceof ConcurrentMap)
+			return (ConcurrentUnmodifiableMap<K, V>) ((ConcurrentMap<K, V>) map).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableMap<>(new java.util.HashMap<>(map));
 	}
 
 	/**
@@ -621,7 +635,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent set
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet() {
-		return new ConcurrentUnmodifiableSet<>(new ConcurrentSet<>());
+		return new ConcurrentUnmodifiableSet<>(new java.util.HashSet<>());
 	}
 
 	/**
@@ -633,25 +647,28 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet(@NotNull E... array) {
-		return new ConcurrentUnmodifiableSet<>(new ConcurrentSet<>(array));
+		return new ConcurrentUnmodifiableSet<>(new java.util.HashSet<>(java.util.Arrays.asList(array)));
 	}
 
 	/**
-	 * Creates an unmodifiable view of the given collection as a set. If the source is
-	 * already an {@link AtomicSet}, the wrapper shares its state (live view, preserves
-	 * ordering for {@link ConcurrentLinkedSet} / {@link ConcurrentTreeSet}); otherwise
-	 * the source is copied into a fresh {@link ConcurrentSet}.
+	 * Creates an immutable snapshot of the given collection as a set.
+	 *
+	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
+	 * on the source are not reflected. If the source is itself a {@link ConcurrentSet}, its
+	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy and
+	 * any type-specific iteration order ({@link ConcurrentLinkedSet}, {@link ConcurrentTreeSet})
+	 * is preserved via the source's {@code cloneRef} override.</p>
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return an unmodifiable {@link ConcurrentSet} view
+	 * @return a snapshot {@link ConcurrentUnmodifiableSet}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet(@NotNull Collection<? extends E> collection) {
-		AtomicSet<E, ? extends java.util.AbstractSet<E>> source = collection instanceof AtomicSet
-			? (AtomicSet<E, ? extends java.util.AbstractSet<E>>) collection
-			: new ConcurrentSet<>((Collection<E>) collection);
-		return new ConcurrentUnmodifiableSet<>(source);
+		if (collection instanceof ConcurrentSet)
+			return (ConcurrentUnmodifiableSet<E>) ((ConcurrentSet<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableSet<>(new java.util.HashSet<>(collection));
 	}
 
 	/**
@@ -677,13 +694,14 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates an unmodifiable view of the given queue. If the source is already an
-	 * {@link AtomicQueue}, the wrapper shares its state (live view); otherwise the source
-	 * is copied into a fresh {@link ConcurrentQueue}.
+	 * Creates an immutable snapshot of the given queue.
+	 *
+	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
+	 * on the source are not reflected.</p>
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return an unmodifiable {@link ConcurrentQueue} view
+	 * @return a snapshot {@link ConcurrentUnmodifiableQueue}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue(@NotNull Collection<? extends E> collection) {
@@ -716,13 +734,14 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates an unmodifiable view of the given deque. If the source is already an
-	 * {@link AtomicDeque}, the wrapper shares its state (live view); otherwise the source
-	 * is copied into a fresh {@link ConcurrentDeque}.
+	 * Creates an immutable snapshot of the given deque.
+	 *
+	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
+	 * on the source are not reflected.</p>
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return an unmodifiable {@link ConcurrentDeque} view
+	 * @return a snapshot {@link ConcurrentUnmodifiableDeque}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque(@NotNull Collection<? extends E> collection) {
@@ -730,6 +749,217 @@ public final class Concurrent {
 			? (AtomicDeque<E>) collection
 			: new ConcurrentDeque<>((Collection<E>) collection);
 		return new ConcurrentUnmodifiableDeque<>(source);
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableLinkedList}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty unmodifiable concurrent linked list
+	 */
+	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList() {
+		return new ConcurrentUnmodifiableLinkedList<>(new java.util.LinkedList<>());
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentUnmodifiableLinkedList} containing the given elements.
+	 *
+	 * @param array the elements to include
+	 * @param <E>   the element type
+	 * @return a new unmodifiable concurrent linked list containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList(@NotNull E... array) {
+		return new ConcurrentUnmodifiableLinkedList<>(new java.util.LinkedList<>(java.util.Arrays.asList(array)));
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given collection as a linked list, preserving
+	 * insertion order.
+	 *
+	 * @param collection the source collection
+	 * @param <E>        the element type
+	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedList}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
+		if (collection instanceof ConcurrentLinkedList)
+			return (ConcurrentUnmodifiableLinkedList<E>) ((ConcurrentLinkedList<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableLinkedList<>(new java.util.LinkedList<>(collection));
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableLinkedSet}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty unmodifiable concurrent linked set
+	 */
+	public static <E> @NotNull ConcurrentUnmodifiableLinkedSet<E> newUnmodifiableLinkedSet() {
+		return new ConcurrentUnmodifiableLinkedSet<>(new java.util.LinkedHashSet<>());
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentUnmodifiableLinkedSet} containing the given elements.
+	 *
+	 * @param array the elements to include
+	 * @param <E>   the element type
+	 * @return a new unmodifiable concurrent linked set containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentUnmodifiableLinkedSet<E> newUnmodifiableLinkedSet(@NotNull E... array) {
+		return new ConcurrentUnmodifiableLinkedSet<>(new java.util.LinkedHashSet<>(java.util.Arrays.asList(array)));
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given collection as a linked set, preserving
+	 * insertion order.
+	 *
+	 * @param collection the source collection
+	 * @param <E>        the element type
+	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedSet}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> @NotNull ConcurrentUnmodifiableLinkedSet<E> newUnmodifiableLinkedSet(@NotNull Collection<? extends E> collection) {
+		if (collection instanceof ConcurrentLinkedSet)
+			return (ConcurrentUnmodifiableLinkedSet<E>) ((ConcurrentLinkedSet<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableLinkedSet<>(new java.util.LinkedHashSet<>(collection));
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableLinkedMap}.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new empty unmodifiable concurrent linked map
+	 */
+	public static <K, V> @NotNull ConcurrentUnmodifiableLinkedMap<K, V> newUnmodifiableLinkedMap() {
+		return new ConcurrentUnmodifiableLinkedMap<>(new java.util.LinkedHashMap<>());
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given map as a linked map, preserving insertion
+	 * order.
+	 *
+	 * @param map the source map
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedMap}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K, V> @NotNull ConcurrentUnmodifiableLinkedMap<K, V> newUnmodifiableLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
+		if (map instanceof ConcurrentLinkedMap)
+			return (ConcurrentUnmodifiableLinkedMap<K, V>) ((ConcurrentLinkedMap<K, V>) map).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableLinkedMap<>(new java.util.LinkedHashMap<>(map));
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableTreeSet} with natural element ordering.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty unmodifiable concurrent sorted set
+	 */
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableSortedSet() {
+		return new ConcurrentUnmodifiableTreeSet<>(new java.util.TreeSet<>());
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableTreeSet} ordered by the given comparator.
+	 *
+	 * @param comparator the comparator used to order the elements
+	 * @param <E>        the element type
+	 * @return a new empty unmodifiable concurrent sorted set
+	 */
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableSortedSet(@NotNull Comparator<? super E> comparator) {
+		return new ConcurrentUnmodifiableTreeSet<>(new java.util.TreeSet<>(comparator));
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given collection as a sorted set with natural
+	 * element ordering.
+	 *
+	 * @param collection the source collection
+	 * @param <E>        the element type
+	 * @return a snapshot {@link ConcurrentUnmodifiableTreeSet}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableSortedSet(@NotNull Collection<? extends E> collection) {
+		if (collection instanceof ConcurrentTreeSet)
+			return (ConcurrentUnmodifiableTreeSet<E>) ((ConcurrentTreeSet<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableTreeSet<>(new java.util.TreeSet<>(collection));
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given collection as a sorted set ordered by the
+	 * given comparator.
+	 *
+	 * @param comparator the comparator used to order the elements
+	 * @param collection the source collection
+	 * @param <E>        the element type
+	 * @return a snapshot {@link ConcurrentUnmodifiableTreeSet}
+	 */
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableSortedSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
+		java.util.TreeSet<E> snapshot = new java.util.TreeSet<>(comparator);
+		snapshot.addAll(collection);
+		return new ConcurrentUnmodifiableTreeSet<>(snapshot);
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableTreeMap} with natural key ordering.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new empty unmodifiable concurrent sorted map
+	 */
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableSortedMap() {
+		return new ConcurrentUnmodifiableTreeMap<>(new java.util.TreeMap<>());
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentUnmodifiableTreeMap} ordered by the given comparator.
+	 *
+	 * @param comparator the comparator used to order the keys
+	 * @param <K>        the key type
+	 * @param <V>        the value type
+	 * @return a new empty unmodifiable concurrent sorted map
+	 */
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
+		return new ConcurrentUnmodifiableTreeMap<>(new java.util.TreeMap<>(comparator));
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given map as a sorted map with natural key ordering.
+	 *
+	 * @param map the source map
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a snapshot {@link ConcurrentUnmodifiableTreeMap}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableSortedMap(@NotNull Map<? extends K, ? extends V> map) {
+		if (map instanceof ConcurrentTreeMap)
+			return (ConcurrentUnmodifiableTreeMap<K, V>) ((ConcurrentTreeMap<K, V>) map).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableTreeMap<>(new java.util.TreeMap<>(map));
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given map as a sorted map ordered by the given
+	 * comparator.
+	 *
+	 * @param comparator the comparator used to order the keys
+	 * @param map        the source map
+	 * @param <K>        the key type
+	 * @param <V>        the value type
+	 * @return a snapshot {@link ConcurrentUnmodifiableTreeMap}
+	 */
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
+		java.util.TreeMap<K, V> snapshot = new java.util.TreeMap<>(comparator);
+		snapshot.putAll(map);
+		return new ConcurrentUnmodifiableTreeMap<>(snapshot);
 	}
 
 	/**

@@ -52,14 +52,15 @@ public class ConcurrentSet<E> extends AtomicSet<E, AbstractSet<E>> {
 	}
 
 	/**
-	 * Constructs a {@code ConcurrentSet} sharing the given source's {@code ref} and lock.
-	 * Used by {@link ConcurrentUnmodifiableSet} to present a live, unmodifiable view over
-	 * any existing {@link AtomicSet}.
+	 * Constructs a {@code ConcurrentSet} with a pre-built backing set and an explicit lock.
+	 * Used by {@link ConcurrentUnmodifiableSet} (and its variants) to install a snapshot set
+	 * paired with a no-op lock for wait-free reads.
 	 *
-	 * @param source the source set whose state is shared
+	 * @param backingSet the pre-built backing set
+	 * @param lock the lock guarding {@code backingSet}
 	 */
-	protected ConcurrentSet(@NotNull AtomicSet<E, ? extends AbstractSet<E>> source) {
-		super(source);
+	protected ConcurrentSet(@NotNull AbstractSet<E> backingSet, @NotNull ReadWriteLock lock) {
+		super(backingSet, lock);
 	}
 
 	/**
@@ -73,13 +74,35 @@ public class ConcurrentSet<E> extends AtomicSet<E, AbstractSet<E>> {
 	}
 
 	/**
-	 * Returns an unmodifiable view of this {@code ConcurrentSet}.
-	 * Attempts to modify the returned set will throw {@link UnsupportedOperationException}.
+	 * Returns a type-preserving snapshot of this set's backing reference, captured under the
+	 * read lock. Subclasses backed by a different concrete {@link AbstractSet} implementation
+	 * override this to return an instance of that type so iteration order is preserved on
+	 * the snapshot.
 	 *
-	 * @return an unmodifiable {@link ConcurrentSet} containing the same elements
+	 * @return a fresh {@link AbstractSet} containing the current elements
+	 */
+	protected @NotNull AbstractSet<E> cloneRef() {
+		try {
+			this.lock.readLock().lock();
+			return new HashSet<>(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Returns an immutable snapshot of this {@code ConcurrentSet}.
+	 *
+	 * <p>The returned wrapper owns a fresh copy of the current elements - subsequent mutations
+	 * on this set are not reflected in the snapshot. Reads on the snapshot are wait-free.
+	 * The runtime type is {@link ConcurrentUnmodifiableSet}; the declared return type is the
+	 * mutable parent so subclasses can covariantly override to their own
+	 * {@code ConcurrentUnmodifiable*} variant.</p>
+	 *
+	 * @return an immutable snapshot - runtime type is {@link ConcurrentUnmodifiableSet}
 	 */
 	public @NotNull ConcurrentSet<E> toUnmodifiable() {
-		return Concurrent.newUnmodifiableSet(this);
+		return new ConcurrentUnmodifiableSet<>(this.cloneRef());
 	}
 
 }

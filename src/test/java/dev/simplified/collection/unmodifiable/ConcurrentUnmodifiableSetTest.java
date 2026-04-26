@@ -41,17 +41,19 @@ class ConcurrentUnmodifiableSetTest {
 	}
 
 	@Nested
-	class LiveView {
+	class Snapshot {
 
 		@Test
-		void sourceMutations_visibleThroughWrapper() {
+		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentSet<String> src = Concurrent.newSet();
+			src.add("a");
 			ConcurrentSet<String> u = src.toUnmodifiable();
 
-			assertTrue(u.isEmpty());
-			src.add("a");
+			assertEquals(1, u.size());
+			src.add("b");
 			assertEquals(1, u.size());
 			assertTrue(u.contains("a"));
+			assertFalse(u.contains("b"));
 		}
 	}
 

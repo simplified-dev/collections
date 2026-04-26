@@ -39,16 +39,17 @@ class ConcurrentUnmodifiableDequeTest {
 	}
 
 	@Nested
-	class LiveView {
+	class Snapshot {
 
 		@Test
-		void sourceMutations_visibleThroughWrapper() {
+		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentDeque<String> src = new ConcurrentDeque<>();
-			ConcurrentDeque<String> u = src.toUnmodifiable();
-
-			assertTrue(u.isEmpty());
 			src.offerFirst("a");
 			src.offerLast("b");
+			ConcurrentDeque<String> u = src.toUnmodifiable();
+
+			assertEquals(2, u.size());
+			src.offerLast("c");
 			assertEquals(2, u.size());
 			assertEquals("a", u.peekFirst());
 			assertEquals("b", u.peekLast());

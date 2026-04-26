@@ -59,15 +59,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Constructs an {@code AtomicMap} sharing the given source's {@code ref} and lock. Reads
-	 * and writes go through the same state as the source, giving live-view semantics - the
-	 * pattern used by {@code ConcurrentUnmodifiable*} wrappers.
+	 * Constructs an {@code AtomicMap} with an explicit lock, typically a no-op lock paired
+	 * with a snapshot {@code ref} for wait-free reads in {@code ConcurrentUnmodifiable*}
+	 * wrappers.
 	 *
-	 * @param source the source map whose state is shared
+	 * @param ref the underlying map
+	 * @param lock the lock guarding {@code ref}
 	 */
-	protected AtomicMap(@NotNull AtomicMap<K, V, ? extends M> source) {
-		this.ref = source.ref;
-		this.lock = source.lock;
+	protected AtomicMap(@NotNull M ref, @NotNull ReadWriteLock lock) {
+		this.ref = ref;
+		this.lock = lock;
 	}
 
 	/**

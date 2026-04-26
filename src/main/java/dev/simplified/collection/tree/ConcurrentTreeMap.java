@@ -1,12 +1,15 @@
 package dev.simplified.collection.tree;
 
 import dev.simplified.collection.ConcurrentMap;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * A thread-safe map backed by a {@link TreeMap} with concurrent read and write access
@@ -68,6 +71,46 @@ public class ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V> {
      */
     public ConcurrentTreeMap(@NotNull Comparator<? super K> comparator, @Nullable Map<? extends K, ? extends V> map) {
         super(new TreeMap<>(comparator), map);
+    }
+
+    /**
+     * Constructs a {@code ConcurrentTreeMap} with a pre-built backing map and an explicit
+     * lock. Used by {@link ConcurrentUnmodifiableTreeMap} to install a snapshot map paired
+     * with a no-op lock for wait-free reads.
+     *
+     * @param backingMap the pre-built backing map
+     * @param lock the lock guarding {@code backingMap}
+     */
+    protected ConcurrentTreeMap(@NotNull TreeMap<K, V> backingMap, @NotNull ReadWriteLock lock) {
+        super(backingMap, lock);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Overrides {@link ConcurrentMap#cloneRef()} to produce a {@link TreeMap} snapshot.
+     * {@link TreeMap#TreeMap(java.util.SortedMap)} preserves the source's comparator when
+     * the source is itself a {@code SortedMap}.</p>
+     */
+    @Override
+    protected @NotNull AbstractMap<K, V> cloneRef() {
+        try {
+            this.lock.readLock().lock();
+            return new TreeMap<>((TreeMap<K, V>) this.ref);
+        } finally {
+            this.lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Returns an immutable snapshot of this {@code ConcurrentTreeMap} preserving the source's
+     * comparator and sort order.
+     *
+     * @return an unmodifiable {@link ConcurrentTreeMap} containing a snapshot of the entries
+     */
+    @Override
+    public @NotNull ConcurrentTreeMap<K, V> toUnmodifiable() {
+        return new ConcurrentUnmodifiableTreeMap<>((TreeMap<K, V>) this.cloneRef());
     }
 
 }

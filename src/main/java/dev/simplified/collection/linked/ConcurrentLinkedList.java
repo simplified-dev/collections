@@ -4,6 +4,7 @@ import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.collection.atomic.AtomicList;
 import dev.simplified.collection.query.SortOrder;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Function;
 
 /**
@@ -47,6 +49,18 @@ public class ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	}
 
 	/**
+	 * Constructs a {@code ConcurrentLinkedList} with a pre-built backing list and an explicit
+	 * lock. Used by {@link ConcurrentUnmodifiableLinkedList} to install a snapshot list paired
+	 * with a no-op lock for wait-free reads.
+	 *
+	 * @param backingList the pre-built backing list
+	 * @param lock the lock guarding {@code backingList}
+	 */
+	protected ConcurrentLinkedList(@NotNull LinkedList<E> backingList, @NotNull ReadWriteLock lock) {
+		super(backingList, lock);
+	}
+
+	/**
 	 * Creates a new empty {@code ConcurrentLinkedList} instance, used internally for copy and sort operations.
 	 *
 	 * @return a new empty {@link ConcurrentLinkedList}
@@ -54,6 +68,22 @@ public class ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	@Override
 	protected @NotNull AtomicList<E, List<E>> createEmpty() {
 		return Concurrent.newLinkedList();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Overrides {@link ConcurrentList#cloneRef()} to produce a {@link LinkedList} snapshot
+	 * preserving the source's insertion-order traversal characteristics.</p>
+	 */
+	@Override
+	protected @NotNull List<E> cloneRef() {
+		try {
+			this.lock.readLock().lock();
+			return new LinkedList<>(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
 	}
 
 	/**
@@ -127,6 +157,16 @@ public class ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	@Override
 	public @NotNull ConcurrentLinkedList<E> sorted(Comparator<? super E> comparator) {
 		return (ConcurrentLinkedList<E>) super.sorted(comparator);
+	}
+
+	/**
+	 * Returns an immutable snapshot of this {@code ConcurrentLinkedList} preserving insertion order.
+	 *
+	 * @return an unmodifiable {@link ConcurrentLinkedList} containing a snapshot of the elements
+	 */
+	@Override
+	public @NotNull ConcurrentLinkedList<E> toUnmodifiable() {
+		return new ConcurrentUnmodifiableLinkedList<>((LinkedList<E>) this.cloneRef());
 	}
 
 }

@@ -1,25 +1,27 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.ConcurrentList;
+import dev.simplified.collection.linked.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
- * An immutable snapshot of a {@link ConcurrentList}. The wrapper owns a fresh copy of the
- * source's contents at construction time and never reflects subsequent mutations on the
- * source. Reads on the snapshot are wait-free, backed by {@link NoOpReadWriteLock}.
+ * An immutable snapshot of a {@link ConcurrentLinkedList} preserving the source's
+ * insertion order. The wrapper owns a fresh {@link LinkedList} copy and never reflects
+ * subsequent mutations on the source. Reads on the snapshot are wait-free, backed by
+ * {@link NoOpReadWriteLock}.
  *
  * <p>Every mutating operation rejects with {@link UnsupportedOperationException}.</p>
  *
  * @param <E> the type of elements in this list
  */
-public class ConcurrentUnmodifiableList<E> extends ConcurrentList<E> {
+public class ConcurrentUnmodifiableLinkedList<E> extends ConcurrentLinkedList<E> {
 
 	/**
 	 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot}
@@ -27,7 +29,7 @@ public class ConcurrentUnmodifiableList<E> extends ConcurrentList<E> {
 	 *
 	 * @param snapshot a freshly cloned backing list
 	 */
-	public ConcurrentUnmodifiableList(@NotNull List<E> snapshot) {
+	public ConcurrentUnmodifiableLinkedList(@NotNull LinkedList<E> snapshot) {
 		super(snapshot, NoOpReadWriteLock.INSTANCE);
 	}
 
@@ -147,7 +149,7 @@ public class ConcurrentUnmodifiableList<E> extends ConcurrentList<E> {
 
 	/** {@inheritDoc} */
 	@Override
-	public @NotNull ConcurrentList<E> toUnmodifiable() {
+	public @NotNull ConcurrentLinkedList<E> toUnmodifiable() {
 		return this;
 	}
 

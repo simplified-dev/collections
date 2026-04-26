@@ -42,14 +42,15 @@ public class ConcurrentCollection<E> extends AtomicCollection<E, AbstractCollect
 	}
 
 	/**
-	 * Constructs a {@code ConcurrentCollection} sharing the given source's {@code ref} and lock.
-	 * Used by {@link ConcurrentUnmodifiableCollection} to present a live, unmodifiable view
-	 * over any existing {@link AtomicCollection}.
+	 * Constructs a {@code ConcurrentCollection} with a pre-built backing collection and an
+	 * explicit lock. Used by {@link ConcurrentUnmodifiableCollection} to install a snapshot
+	 * collection paired with a no-op lock for wait-free reads.
 	 *
-	 * @param source the source collection whose state is shared
+	 * @param backingCollection the pre-built backing collection
+	 * @param lock the lock guarding {@code backingCollection}
 	 */
-	protected ConcurrentCollection(@NotNull AtomicCollection<E, ? extends AbstractCollection<E>> source) {
-		super(source);
+	protected ConcurrentCollection(@NotNull AbstractCollection<E> backingCollection, @NotNull ReadWriteLock lock) {
+		super(backingCollection, lock);
 	}
 
 	/**
@@ -63,12 +64,33 @@ public class ConcurrentCollection<E> extends AtomicCollection<E, AbstractCollect
 	}
 
 	/**
-	 * Returns a live, unmodifiable view of this {@code ConcurrentCollection}.
+	 * Returns a type-preserving snapshot of this collection's backing reference, captured under
+	 * the read lock.
 	 *
-	 * @return an unmodifiable {@link ConcurrentCollection} view over the same state
+	 * @return a fresh {@link AbstractCollection} containing the current elements
+	 */
+	protected @NotNull AbstractCollection<E> cloneRef() {
+		try {
+			this.lock.readLock().lock();
+			return new ArrayList<>(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Returns an immutable snapshot of this {@code ConcurrentCollection}.
+	 *
+	 * <p>The returned wrapper owns a fresh copy of the current contents - subsequent mutations
+	 * on this collection are not reflected in the snapshot. Reads on the snapshot are wait-free.
+	 * The runtime type is {@link ConcurrentUnmodifiableCollection}; the declared return type
+	 * is the mutable parent so subclasses can covariantly override to their own
+	 * {@code ConcurrentUnmodifiable*} variant.</p>
+	 *
+	 * @return an immutable snapshot - runtime type is {@link ConcurrentUnmodifiableCollection}
 	 */
 	public @NotNull ConcurrentCollection<E> toUnmodifiable() {
-		return Concurrent.newUnmodifiableCollection(this);
+		return new ConcurrentUnmodifiableCollection<>(this.cloneRef());
 	}
 
 }

@@ -61,17 +61,6 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * Constructs an {@code AtomicCollection} sharing the given source's {@code ref} and lock.
-	 * Reads and writes go through the same state as the source, giving live-view semantics.
-	 *
-	 * @param source the source collection whose state is shared
-	 */
-	protected AtomicCollection(@NotNull AtomicCollection<E, ? extends T> source) {
-		this.ref = source.ref;
-		this.lock = source.lock;
-	}
-
-	/**
 	 * {@inheritDoc}
 	 */
 	@Override

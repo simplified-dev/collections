@@ -25,13 +25,13 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	}
 
 	/**
-	 * Constructs an {@code AtomicDeque} sharing the given source's underlying storage - the
-	 * pattern used by {@code ConcurrentUnmodifiableDeque} to provide a live unmodifiable view.
+	 * Constructs an {@code AtomicDeque} with a pre-built backing storage - the pattern used
+	 * by {@code ConcurrentUnmodifiableDeque} to install a snapshot storage at construction.
 	 *
-	 * @param source the source deque whose storage is shared
+	 * @param storage the pre-built backing storage
 	 */
-	protected AtomicDeque(@NotNull AtomicDeque<E> source) {
-		super(source);
+	protected AtomicDeque(@NotNull dev.simplified.collection.linked.ConcurrentLinkedList<E> storage) {
+		super(storage);
 	}
 
 	/**

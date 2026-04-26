@@ -1,28 +1,36 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentQueue;
 import dev.simplified.collection.atomic.AtomicQueue;
+import dev.simplified.collection.linked.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
 /**
- * A live, unmodifiable view over any {@link AtomicQueue}. Shares the source queue's
- * underlying storage, so the wrapper reflects current source state (size, contents, iteration
- * order), but every mutating operation rejects with {@link UnsupportedOperationException}.
+ * An immutable snapshot of a {@link ConcurrentQueue}. The wrapper owns a fresh copy of the
+ * source's contents at construction time and never reflects subsequent mutations on the source.
+ *
+ * <p>Every mutating operation rejects with {@link UnsupportedOperationException}.</p>
  *
  * @param <E> the type of elements in this queue
  */
 public class ConcurrentUnmodifiableQueue<E> extends ConcurrentQueue<E> {
 
 	/**
-	 * Creates a live, unmodifiable view over the given source.
+	 * Wraps a snapshot of the given source queue. The source's contents are copied under its
+	 * own read lock at construction time.
 	 *
-	 * @param source the source whose storage is shared with this unmodifiable view
+	 * @param source the source queue whose elements are snapshotted
 	 */
 	public ConcurrentUnmodifiableQueue(@NotNull AtomicQueue<E> source) {
-		super(source);
+		super(snapshotStorage(source));
+	}
+
+	private static <E> @NotNull ConcurrentLinkedList<E> snapshotStorage(@NotNull AtomicQueue<E> source) {
+		return Concurrent.newLinkedList(source);
 	}
 
 	/** {@inheritDoc} */

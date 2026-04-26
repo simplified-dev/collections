@@ -1,7 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
 import dev.simplified.collection.ConcurrentCollection;
-import dev.simplified.collection.atomic.AtomicCollection;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractCollection;
@@ -10,21 +9,24 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * A live, unmodifiable view over any {@link AtomicCollection}. Shares the source collection's
- * {@code ref} and lock, so the wrapper reflects current source state (size, contents,
- * iteration order), but every mutating operation rejects with {@link UnsupportedOperationException}.
+ * An immutable snapshot of a {@link ConcurrentCollection}. The wrapper owns a fresh copy of
+ * the source's contents at construction time and never reflects subsequent mutations on the
+ * source. Reads on the snapshot are wait-free, backed by {@link NoOpReadWriteLock}.
+ *
+ * <p>Every mutating operation rejects with {@link UnsupportedOperationException}.</p>
  *
  * @param <E> the type of elements in this collection
  */
 public class ConcurrentUnmodifiableCollection<E> extends ConcurrentCollection<E> {
 
 	/**
-	 * Creates a live, unmodifiable view over the given source.
+	 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot}
+	 * by copying a source collection's contents under that source's read lock.
 	 *
-	 * @param source the source whose state is shared with this unmodifiable view
+	 * @param snapshot a freshly cloned backing collection
 	 */
-	public ConcurrentUnmodifiableCollection(@NotNull AtomicCollection<E, ? extends AbstractCollection<E>> source) {
-		super(source);
+	public ConcurrentUnmodifiableCollection(@NotNull AbstractCollection<E> snapshot) {
+		super(snapshot, NoOpReadWriteLock.INSTANCE);
 	}
 
 	/** {@inheritDoc} */

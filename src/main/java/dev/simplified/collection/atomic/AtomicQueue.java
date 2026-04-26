@@ -28,13 +28,13 @@ public abstract class AtomicQueue<E> extends AbstractQueue<E> implements Queue<E
 	}
 
 	/**
-	 * Constructs an {@code AtomicQueue} sharing the given source's underlying storage - the
-	 * pattern used by {@code ConcurrentUnmodifiableQueue} to provide a live unmodifiable view.
+	 * Constructs an {@code AtomicQueue} with a pre-built backing storage - the pattern used
+	 * by {@code ConcurrentUnmodifiableQueue} to install a snapshot storage at construction.
 	 *
-	 * @param source the source queue whose storage is shared
+	 * @param storage the pre-built backing storage
 	 */
-	protected AtomicQueue(@NotNull AtomicQueue<E> source) {
-		this.storage = source.storage;
+	protected AtomicQueue(@NotNull ConcurrentLinkedList<E> storage) {
+		this.storage = storage;
 	}
 
 	/**
