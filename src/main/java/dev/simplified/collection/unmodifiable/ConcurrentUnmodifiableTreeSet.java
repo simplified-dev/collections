@@ -1,23 +1,25 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.ConcurrentSet;
+import dev.simplified.collection.tree.ConcurrentTreeSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractSet;
 import java.util.Collection;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * An immutable snapshot of a {@link ConcurrentSet}. The wrapper owns a fresh copy of the
- * source's contents at construction time and never reflects subsequent mutations on the
- * source. Reads on the snapshot are wait-free, backed by {@link NoOpReadWriteLock}.
+ * An immutable snapshot of a {@link ConcurrentTreeSet} preserving the source's comparator
+ * and sort order. The wrapper owns a fresh {@link TreeSet} copy and never reflects subsequent
+ * mutations on the source. Reads on the snapshot are wait-free, backed by
+ * {@link NoOpReadWriteLock}.
  *
  * <p>Every mutating operation rejects with {@link UnsupportedOperationException}.</p>
  *
  * @param <E> the type of elements in this set
  */
-public class ConcurrentUnmodifiableSet<E> extends ConcurrentSet<E> {
+public class ConcurrentUnmodifiableTreeSet<E> extends ConcurrentTreeSet<E> {
 
 	/**
 	 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot}
@@ -25,7 +27,7 @@ public class ConcurrentUnmodifiableSet<E> extends ConcurrentSet<E> {
 	 *
 	 * @param snapshot a freshly cloned backing set
 	 */
-	public ConcurrentUnmodifiableSet(@NotNull AbstractSet<E> snapshot) {
+	public ConcurrentUnmodifiableTreeSet(@NotNull TreeSet<E> snapshot) {
 		super(snapshot, NoOpReadWriteLock.INSTANCE);
 	}
 
@@ -85,7 +87,7 @@ public class ConcurrentUnmodifiableSet<E> extends ConcurrentSet<E> {
 
 	/** {@inheritDoc} */
 	@Override
-	public @NotNull ConcurrentSet<E> toUnmodifiable() {
+	public @NotNull ConcurrentTreeSet<E> toUnmodifiable() {
 		return this;
 	}
 

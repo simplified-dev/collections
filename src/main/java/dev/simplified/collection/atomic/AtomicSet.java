@@ -23,13 +23,15 @@ public abstract class AtomicSet<E, T extends AbstractSet<E>> extends AtomicColle
 	}
 
 	/**
-	 * Constructs an {@code AtomicSet} sharing the given source's {@code ref} and lock - the
-	 * pattern used by {@code ConcurrentUnmodifiableSet} to provide a live unmodifiable view.
+	 * Constructs an {@code AtomicSet} with an explicit lock - the pattern used by
+	 * {@code ConcurrentUnmodifiableSet} (and its variants) to install a snapshot set
+	 * paired with a no-op lock for wait-free reads.
 	 *
-	 * @param source the source set whose state is shared
+	 * @param ref the underlying set
+	 * @param lock the lock guarding {@code ref}
 	 */
-	protected AtomicSet(@NotNull AtomicSet<E, ? extends T> source) {
-		super(source);
+	protected AtomicSet(@NotNull T ref, @NotNull java.util.concurrent.locks.ReadWriteLock lock) {
+		super(ref, lock);
 	}
 
 }

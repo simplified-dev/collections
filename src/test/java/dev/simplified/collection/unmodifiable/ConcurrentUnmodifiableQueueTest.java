@@ -30,16 +30,17 @@ class ConcurrentUnmodifiableQueueTest {
 	}
 
 	@Nested
-	class LiveView {
+	class Snapshot {
 
 		@Test
-		void sourceMutations_visibleThroughWrapper() {
+		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentQueue<String> src = new ConcurrentQueue<>();
-			ConcurrentQueue<String> u = src.toUnmodifiable();
-
-			assertTrue(u.isEmpty());
 			src.offer("a");
 			src.offer("b");
+			ConcurrentQueue<String> u = src.toUnmodifiable();
+
+			assertEquals(2, u.size());
+			src.offer("c");
 			assertEquals(2, u.size());
 			assertEquals("a", u.peek());
 		}

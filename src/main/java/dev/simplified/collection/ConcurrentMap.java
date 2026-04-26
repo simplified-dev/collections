@@ -63,25 +63,47 @@ public class ConcurrentMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> {
     }
 
     /**
-     * Constructs a {@code ConcurrentMap} sharing the given source's {@code ref} and lock.
-     * Used by {@link ConcurrentUnmodifiableMap} to present a live, unmodifiable view over
-     * any existing {@link AtomicMap}.
+     * Constructs a {@code ConcurrentMap} with a pre-built backing map and an explicit lock.
+     * Used by {@link ConcurrentUnmodifiableMap} (and its variants) to install a snapshot map
+     * paired with a no-op lock for wait-free reads.
      *
-     * @param source the source map whose state is shared
+     * @param backingMap the pre-built backing map
+     * @param lock the lock guarding {@code backingMap}
      */
-    protected ConcurrentMap(@NotNull AtomicMap<K, V, ? extends AbstractMap<K, V>> source) {
-        super(source);
+    protected ConcurrentMap(@NotNull AbstractMap<K, V> backingMap, @NotNull ReadWriteLock lock) {
+        super(backingMap, lock);
     }
 
     /**
-     * Returns a live, unmodifiable view of this {@code ConcurrentMap}. The returned wrapper
-     * shares this map's state, so subsequent mutations on this map are visible through the
-     * wrapper. Mutations attempted on the wrapper throw {@link UnsupportedOperationException}.
+     * Returns a type-preserving snapshot of this map's backing reference, captured under the
+     * read lock. Subclasses backed by a different concrete {@link AbstractMap} implementation
+     * override this to return an instance of that type so iteration order is preserved on
+     * the snapshot.
      *
-     * @return an unmodifiable {@link ConcurrentMap} view over the same state
+     * @return a fresh {@link AbstractMap} containing the current entries
+     */
+    protected @NotNull AbstractMap<K, V> cloneRef() {
+        try {
+            this.lock.readLock().lock();
+            return new HashMap<>(this.ref);
+        } finally {
+            this.lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Returns an immutable snapshot of this {@code ConcurrentMap}.
+     *
+     * <p>The returned wrapper owns a fresh copy of the current entries - subsequent mutations
+     * on this map are not reflected in the snapshot. Reads on the snapshot are wait-free.
+     * The runtime type is {@link ConcurrentUnmodifiableMap}; the declared return type is the
+     * mutable parent so subclasses can covariantly override to their own
+     * {@code ConcurrentUnmodifiable*} variant.</p>
+     *
+     * @return an immutable snapshot - runtime type is {@link ConcurrentUnmodifiableMap}
      */
     public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
-        return Concurrent.newUnmodifiableMap(this);
+        return new ConcurrentUnmodifiableMap<>(this.cloneRef());
     }
 
 }

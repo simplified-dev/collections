@@ -61,15 +61,16 @@ class ConcurrentUnmodifiableListTest {
 	}
 
 	@Nested
-	class LiveView {
+	class Snapshot {
 
 		@Test
-		void sourceMutations_visibleThroughWrapper() {
+		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentList<String> src = Concurrent.newList();
+			src.add("a");
 			ConcurrentList<String> u = src.toUnmodifiable();
 
-			assertTrue(u.isEmpty());
-			src.add("a");
+			assertEquals(1, u.size());
+			src.add("b");
 			assertEquals(1, u.size());
 			assertEquals("a", u.get(0));
 		}

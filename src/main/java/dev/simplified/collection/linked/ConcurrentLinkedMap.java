@@ -1,10 +1,14 @@
 package dev.simplified.collection.linked;
 
 import dev.simplified.collection.ConcurrentMap;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedMap;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.AbstractMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * A thread-safe map backed by an insertion-ordered {@link LinkedHashMap} with concurrent read and
@@ -49,6 +53,46 @@ public class ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	 */
 	public ConcurrentLinkedMap(@Nullable Map<? extends K, ? extends V> map, int maxSize) {
 		super(new MaxSizeLinkedMap<>(maxSize), map);
+	}
+
+	/**
+	 * Constructs a {@code ConcurrentLinkedMap} with a pre-built backing map and an explicit
+	 * lock. Used by {@link ConcurrentUnmodifiableLinkedMap} to install a snapshot map paired
+	 * with a no-op lock for wait-free reads.
+	 *
+	 * @param backingMap the pre-built backing map
+	 * @param lock the lock guarding {@code backingMap}
+	 */
+	protected ConcurrentLinkedMap(@NotNull LinkedHashMap<K, V> backingMap, @NotNull ReadWriteLock lock) {
+		super(backingMap, lock);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Overrides {@link ConcurrentMap#cloneRef()} to produce a {@link LinkedHashMap} snapshot
+	 * preserving the source's insertion-order traversal characteristics. The eldest-entry
+	 * eviction cap is intentionally not carried into the snapshot - the snapshot is immutable,
+	 * so eviction is moot.</p>
+	 */
+	@Override
+	protected @NotNull AbstractMap<K, V> cloneRef() {
+		try {
+			this.lock.readLock().lock();
+			return new LinkedHashMap<>(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Returns an immutable snapshot of this {@code ConcurrentLinkedMap} preserving insertion order.
+	 *
+	 * @return an unmodifiable {@link ConcurrentLinkedMap} containing a snapshot of the entries
+	 */
+	@Override
+	public @NotNull ConcurrentLinkedMap<K, V> toUnmodifiable() {
+		return new ConcurrentUnmodifiableLinkedMap<>((LinkedHashMap<K, V>) this.cloneRef());
 	}
 
 	/**

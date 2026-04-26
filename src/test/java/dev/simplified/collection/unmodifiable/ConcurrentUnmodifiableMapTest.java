@@ -104,39 +104,41 @@ class ConcurrentUnmodifiableMapTest {
 	}
 
 	@Nested
-	class LiveView {
+	class Snapshot {
 
 		@Test
-		void sourceMutations_visibleThroughWrapper() {
+		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
+			src.put("a", 1);
 			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
-			assertTrue(u.isEmpty());
-			src.put("a", 1);
 			assertEquals(1, u.size());
 			assertEquals(1, u.get("a"));
 
 			src.put("b", 2);
-			assertEquals(2, u.size());
-			assertTrue(u.containsKey("b"));
+			assertEquals(1, u.size());
+			assertFalse(u.containsKey("b"));
 
 			src.remove("a");
 			assertEquals(1, u.size());
-			assertFalse(u.containsKey("a"));
+			assertTrue(u.containsKey("a"));
 		}
 
 		@Test
-		void entrySetIteration_reflectsCurrentState() {
+		void entrySetIteration_reflectsSnapshotState() {
 			ConcurrentMap<String, Integer> src = Concurrent.newMap();
 			src.put("a", 1);
 			src.put("b", 2);
 			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
+
+			src.put("c", 3);
 
 			List<String> keys = new ArrayList<>();
 			for (Map.Entry<String, Integer> e : u.entrySet()) keys.add(e.getKey());
 			assertEquals(2, keys.size());
 			assertTrue(keys.contains("a"));
 			assertTrue(keys.contains("b"));
+			assertFalse(keys.contains("c"));
 		}
 	}
 

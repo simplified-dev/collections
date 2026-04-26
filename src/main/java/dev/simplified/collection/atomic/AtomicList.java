@@ -25,13 +25,15 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	}
 
 	/**
-	 * Constructs an {@code AtomicList} sharing the given source's {@code ref} and lock - the
-	 * pattern used by {@code ConcurrentUnmodifiableList} to provide a live unmodifiable view.
+	 * Constructs an {@code AtomicList} with an explicit lock - the pattern used by
+	 * {@code ConcurrentUnmodifiableList} (and its variants) to install a snapshot list
+	 * paired with a no-op lock for wait-free reads.
 	 *
-	 * @param source the source list whose state is shared
+	 * @param ref the underlying list
+	 * @param lock the lock guarding {@code ref}
 	 */
-	protected AtomicList(@NotNull AtomicList<E, ? extends T> source) {
-		super(source);
+	protected AtomicList(@NotNull T ref, @NotNull java.util.concurrent.locks.ReadWriteLock lock) {
+		super(ref, lock);
 	}
 
 	/**

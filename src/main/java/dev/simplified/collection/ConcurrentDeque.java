@@ -41,23 +41,25 @@ public class ConcurrentDeque<E> extends AtomicDeque<E> {
 	}
 
 	/**
-	 * Constructs a {@code ConcurrentDeque} sharing the given source's underlying storage.
-	 * Used by {@link ConcurrentUnmodifiableDeque} to present a live, unmodifiable view
-	 * over any existing {@link AtomicDeque}.
+	 * Constructs a {@code ConcurrentDeque} with a pre-built backing storage. Used by
+	 * {@link ConcurrentUnmodifiableDeque} to install snapshot storage.
 	 *
-	 * @param source the source deque whose storage is shared
+	 * @param storage the pre-built backing storage
 	 */
-	protected ConcurrentDeque(@NotNull AtomicDeque<E> source) {
-		super(source);
+	protected ConcurrentDeque(@NotNull ConcurrentLinkedList<E> storage) {
+		super(storage);
 	}
 
 	/**
-	 * Returns a live, unmodifiable view of this {@code ConcurrentDeque}.
+	 * Returns an immutable snapshot of this {@code ConcurrentDeque}.
 	 *
-	 * @return an unmodifiable {@link ConcurrentDeque} view over the same state
+	 * <p>The returned wrapper owns a fresh copy of the current elements - subsequent mutations
+	 * on this deque are not reflected in the snapshot.</p>
+	 *
+	 * @return an unmodifiable {@link ConcurrentDeque} containing a snapshot of the elements
 	 */
 	public @NotNull ConcurrentDeque<E> toUnmodifiable() {
-		return Concurrent.newUnmodifiableDeque(this);
+		return new ConcurrentUnmodifiableDeque<>(this);
 	}
 
 }

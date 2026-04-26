@@ -41,23 +41,25 @@ public class ConcurrentQueue<E> extends AtomicQueue<E> {
 	}
 
 	/**
-	 * Constructs a {@code ConcurrentQueue} sharing the given source's underlying storage.
-	 * Used by {@link ConcurrentUnmodifiableQueue} to present a live, unmodifiable view
-	 * over any existing {@link AtomicQueue}.
+	 * Constructs a {@code ConcurrentQueue} with a pre-built backing storage. Used by
+	 * {@link ConcurrentUnmodifiableQueue} to install snapshot storage.
 	 *
-	 * @param source the source queue whose storage is shared
+	 * @param storage the pre-built backing storage
 	 */
-	protected ConcurrentQueue(@NotNull AtomicQueue<E> source) {
-		super(source);
+	protected ConcurrentQueue(@NotNull ConcurrentLinkedList<E> storage) {
+		super(storage);
 	}
 
 	/**
-	 * Returns a live, unmodifiable view of this {@code ConcurrentQueue}.
+	 * Returns an immutable snapshot of this {@code ConcurrentQueue}.
 	 *
-	 * @return an unmodifiable {@link ConcurrentQueue} view over the same state
+	 * <p>The returned wrapper owns a fresh copy of the current elements - subsequent mutations
+	 * on this queue are not reflected in the snapshot.</p>
+	 *
+	 * @return an unmodifiable {@link ConcurrentQueue} containing a snapshot of the elements
 	 */
 	public @NotNull ConcurrentQueue<E> toUnmodifiable() {
-		return Concurrent.newUnmodifiableQueue(this);
+		return new ConcurrentUnmodifiableQueue<>(this);
 	}
 
 }

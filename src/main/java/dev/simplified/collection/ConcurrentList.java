@@ -62,14 +62,15 @@ public class ConcurrentList<E> extends AtomicList<E, List<E>> {
 	}
 
 	/**
-	 * Constructs a {@code ConcurrentList} sharing the given source's {@code ref} and lock.
-	 * Used by {@link ConcurrentUnmodifiableList} to present a live, unmodifiable view over
-	 * any existing {@link AtomicList}.
+	 * Constructs a {@code ConcurrentList} with a pre-built backing list and an explicit lock.
+	 * Used by {@link ConcurrentUnmodifiableList} (and its variants) to install a snapshot list
+	 * paired with a no-op lock for wait-free reads.
 	 *
-	 * @param source the source list whose state is shared
+	 * @param backingList the pre-built backing list
+	 * @param lock the lock guarding {@code backingList}
 	 */
-	protected ConcurrentList(@NotNull AtomicList<E, ? extends List<E>> source) {
-		super(source);
+	protected ConcurrentList(@NotNull List<E> backingList, @NotNull ReadWriteLock lock) {
+		super(backingList, lock);
 	}
 
 	/**
@@ -80,6 +81,23 @@ public class ConcurrentList<E> extends AtomicList<E, List<E>> {
 	@Override
 	protected @NotNull AtomicList<E, List<E>> createEmpty() {
 		return Concurrent.newList();
+	}
+
+	/**
+	 * Returns a type-preserving snapshot of this list's backing reference, captured under the
+	 * read lock. Subclasses backed by a different concrete {@link List} implementation override
+	 * this to return an instance of that type so iteration order and structural characteristics
+	 * are preserved on the snapshot.
+	 *
+	 * @return a fresh {@link List} containing the current elements
+	 */
+	protected @NotNull List<E> cloneRef() {
+		try {
+			this.lock.readLock().lock();
+			return new ArrayList<>(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
 	}
 
 	/**
@@ -192,13 +210,18 @@ public class ConcurrentList<E> extends AtomicList<E, List<E>> {
 	}
 
 	/**
-	 * Returns an unmodifiable view of this {@code ConcurrentList}.
-	 * Attempts to modify the returned list will throw {@link UnsupportedOperationException}.
+	 * Returns an immutable snapshot of this {@code ConcurrentList}.
 	 *
-	 * @return an unmodifiable {@link ConcurrentList} containing the same elements
+	 * <p>The returned wrapper owns a fresh copy of the current elements - subsequent mutations
+	 * on this list are not reflected in the snapshot. Reads on the snapshot are wait-free.
+	 * The runtime type is {@link ConcurrentUnmodifiableList}; the declared return type is the
+	 * mutable parent so subclasses can covariantly override to their own
+	 * {@code ConcurrentUnmodifiable*} variant.</p>
+	 *
+	 * @return an immutable snapshot - runtime type is {@link ConcurrentUnmodifiableList}
 	 */
 	public @NotNull ConcurrentList<E> toUnmodifiable() {
-		return Concurrent.newUnmodifiableList(this);
+		return new ConcurrentUnmodifiableList<>(this.cloneRef());
 	}
 
 }

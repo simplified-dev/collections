@@ -3,6 +3,7 @@ package dev.simplified.collection.tree;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentSet;
 import dev.simplified.collection.atomic.AtomicCollection;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.TreeSet;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * A thread-safe set backed by a {@link TreeSet} with concurrent read and write access
@@ -74,6 +76,18 @@ public class ConcurrentTreeSet<E> extends ConcurrentSet<E> {
 	}
 
 	/**
+	 * Constructs a {@code ConcurrentTreeSet} with a pre-built backing set and an explicit
+	 * lock. Used by {@link ConcurrentUnmodifiableTreeSet} to install a snapshot set paired
+	 * with a no-op lock for wait-free reads.
+	 *
+	 * @param backingSet the pre-built backing set
+	 * @param lock the lock guarding {@code backingSet}
+	 */
+	protected ConcurrentTreeSet(@NotNull TreeSet<E> backingSet, @NotNull ReadWriteLock lock) {
+		super(backingSet, lock);
+	}
+
+	/**
 	 * Creates a new {@link TreeSet} with the given comparator, populated from the collection.
 	 */
 	private static <E> @NotNull TreeSet<E> newTreeSet(@NotNull Comparator<? super E> comparator, @Nullable Collection<? extends E> collection) {
@@ -90,6 +104,34 @@ public class ConcurrentTreeSet<E> extends ConcurrentSet<E> {
 	@Override
 	protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
 		return Concurrent.newSortedSet();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Overrides {@link ConcurrentSet#cloneRef()} to produce a {@link TreeSet} snapshot.
+	 * {@link TreeSet#TreeSet(java.util.SortedSet)} preserves the source's comparator when
+	 * the source is itself a {@code SortedSet}.</p>
+	 */
+	@Override
+	protected @NotNull AbstractSet<E> cloneRef() {
+		try {
+			this.lock.readLock().lock();
+			return new TreeSet<>((TreeSet<E>) this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Returns an immutable snapshot of this {@code ConcurrentTreeSet} preserving the source's
+	 * comparator and sort order.
+	 *
+	 * @return an unmodifiable {@link ConcurrentTreeSet} containing a snapshot of the elements
+	 */
+	@Override
+	public @NotNull ConcurrentTreeSet<E> toUnmodifiable() {
+		return new ConcurrentUnmodifiableTreeSet<>((TreeSet<E>) this.cloneRef());
 	}
 
 }
