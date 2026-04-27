@@ -5,17 +5,7 @@ import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -1148,7 +1138,6 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 		}
 
 		@Override
-		@SuppressWarnings("unchecked")
 		public @NotNull Iterator<Map.Entry<K, V>> iterator() {
 			Object[] snapshot;
 
@@ -1200,10 +1189,11 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 		}
 
 		@Override
+		@SuppressWarnings("SuspiciousMethodCalls")
 		public boolean contains(Object o) {
 			try {
 				this.lock.readLock().lock();
-				return this.delegate.values().contains(o);
+				return this.delegate.containsValue(o);
 			} finally {
 				this.lock.readLock().unlock();
 			}

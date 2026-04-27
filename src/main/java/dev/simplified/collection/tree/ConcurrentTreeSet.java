@@ -132,6 +132,7 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 		 * @return a new empty {@link ConcurrentTreeSet.Impl}
 		 */
 		@Override
+		@SuppressWarnings("unchecked")
 		protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
 			return (ConcurrentTreeSet.Impl<E>) Concurrent.newTreeSet();
 		}
