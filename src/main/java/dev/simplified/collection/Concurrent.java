@@ -582,7 +582,10 @@ public final class Concurrent {
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@Nullable Collection<? extends E> collection) {
 		if (collection == null) return newUnmodifiableList();
-		if (collection instanceof ConcurrentList)
+		// Narrow the shortcut: ConcurrentLinkedList overrides toUnmodifiable() to return
+		// ConcurrentUnmodifiableLinkedList (a sibling, not a subtype, of ConcurrentUnmodifiableList),
+		// so let LinkedList variants fall through to the ArrayList-backed snapshot copy.
+		if (collection instanceof ConcurrentList && !(collection instanceof ConcurrentLinkedList))
 			return (ConcurrentUnmodifiableList<E>) ((ConcurrentList<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableList<>(new java.util.ArrayList<>(collection));
@@ -621,7 +624,11 @@ public final class Concurrent {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentUnmodifiableMap<K, V> newUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
-		if (map instanceof ConcurrentMap)
+		// Narrow the shortcut: ConcurrentTreeMap and ConcurrentLinkedMap override
+		// toUnmodifiable() to return their own UnmodifiableTreeMap/UnmodifiableLinkedMap
+		// (siblings, not subtypes, of ConcurrentUnmodifiableMap), so let those variants
+		// fall through to the HashMap-backed snapshot copy.
+		if (map instanceof ConcurrentMap && !(map instanceof ConcurrentTreeMap) && !(map instanceof ConcurrentLinkedMap))
 			return (ConcurrentUnmodifiableMap<K, V>) ((ConcurrentMap<K, V>) map).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableMap<>(new java.util.HashMap<>(map));
@@ -665,7 +672,11 @@ public final class Concurrent {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet(@NotNull Collection<? extends E> collection) {
-		if (collection instanceof ConcurrentSet)
+		// Narrow the shortcut: ConcurrentTreeSet and ConcurrentLinkedSet override
+		// toUnmodifiable() to return their own UnmodifiableTreeSet/UnmodifiableLinkedSet
+		// (siblings, not subtypes, of ConcurrentUnmodifiableSet), so let those variants
+		// fall through to the HashSet-backed snapshot copy.
+		if (collection instanceof ConcurrentSet && !(collection instanceof ConcurrentTreeSet) && !(collection instanceof ConcurrentLinkedSet))
 			return (ConcurrentUnmodifiableSet<E>) ((ConcurrentSet<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableSet<>(new java.util.HashSet<>(collection));
@@ -1411,16 +1422,16 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@link ConcurrentUnmodifiableMap} backed by a {@link ConcurrentTreeMap} ordered by the
-	 * given comparator. Throws on duplicate keys.
+	 * {@link ConcurrentUnmodifiableTreeMap} ordered by the given comparator. Throws on
+	 * duplicate keys.
 	 *
 	 * @param comparator the comparator used to order and compare the keys
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap} ordered by {@code comparator}
+	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap} ordered by {@code comparator}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
 		return toUnmodifiableSortedMap(
 			Map.Entry::getKey,
 			Map.Entry::getValue,
@@ -1431,9 +1442,9 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@link ConcurrentUnmodifiableMap} backed by the supplied map (typically a
-	 * {@link ConcurrentTreeMap}), applying the given key mapper, value mapper, and
-	 * merge function.
+	 * {@link ConcurrentUnmodifiableTreeMap} backed by the supplied sorted-map source
+	 * (typically a {@link ConcurrentTreeMap}), applying the given key mapper, value
+	 * mapper, and merge function.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
 	 * @param valueMapper the function to extract map values from stream elements
@@ -1443,9 +1454,9 @@ public final class Concurrent {
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type
 	 * @param <A>           the intermediate map type (extends {@link ConcurrentMap})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap}
+	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap}
 	 */
-	public static <K, V, T, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableSortedMap(
+	public static <K, V, T, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableSortedMap(
 		@NotNull Function<? super T, ? extends K> keyMapper,
 		@NotNull Function<? super T, ? extends V> valueMapper,
 		@NotNull BinaryOperator<V> mergeFunction,
@@ -1462,7 +1473,7 @@ public final class Concurrent {
 				m2.forEach((key, value) -> m1.merge(key, value, mergeFunction));
 				return m1;
 			},
-			Concurrent::newUnmodifiableMap,
+			Concurrent::newUnmodifiableSortedMap,
 			UNORDERED_FINISHING_CHARACTERISTICS
 		);
 	}
