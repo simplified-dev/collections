@@ -2,15 +2,16 @@ package dev.simplified.collection.tuple.single;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
-import dev.simplified.collection.linked.ConcurrentLinkedList;
+import dev.simplified.collection.StreamUtil;
 import dev.simplified.collection.function.IndexedConsumer;
 import dev.simplified.collection.function.IndexedFunction;
 import dev.simplified.collection.function.IndexedPredicate;
+import dev.simplified.collection.linked.ConcurrentLinkedList;
 import dev.simplified.collection.tuple.pair.Pair;
 import dev.simplified.collection.tuple.pair.PairStream;
 import dev.simplified.collection.tuple.triple.Triple;
 import dev.simplified.collection.tuple.triple.TripleStream;
-import dev.simplified.collection.StreamUtil;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -111,6 +112,7 @@ public interface SingleStream<E> extends Stream<E> {
      *
      * @return the underlying stream
      */
+    @ApiStatus.Internal
     @NotNull Stream<E> underlying();
 
     /** {@inheritDoc} */
