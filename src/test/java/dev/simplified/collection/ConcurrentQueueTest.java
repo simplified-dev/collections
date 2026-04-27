@@ -1,4 +1,5 @@
 package dev.simplified.collection;
+import dev.simplified.collection.ConcurrentQueue;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -19,7 +20,7 @@ class ConcurrentQueueTest {
 
 		@Test
 		void offer_poll_fifo() {
-			ConcurrentQueue<String> q = new ConcurrentQueue<>();
+			ConcurrentQueue<String> q = Concurrent.newQueue();
 			q.offer("a");
 			q.offer("b");
 			q.offer("c");
@@ -31,7 +32,7 @@ class ConcurrentQueueTest {
 
 		@Test
 		void peek_doesNotRemove() {
-			ConcurrentQueue<String> q = new ConcurrentQueue<>();
+			ConcurrentQueue<String> q = Concurrent.newQueue();
 			q.offer("a");
 			assertEquals("a", q.peek());
 			assertEquals("a", q.peek());
@@ -40,13 +41,13 @@ class ConcurrentQueueTest {
 
 		@Test
 		void peek_emptyReturnsNull() {
-			ConcurrentQueue<String> q = new ConcurrentQueue<>();
+			ConcurrentQueue<String> q = Concurrent.newQueue();
 			assertNull(q.peek());
 		}
 
 		@Test
 		void size_and_isEmpty() {
-			ConcurrentQueue<String> q = new ConcurrentQueue<>();
+			ConcurrentQueue<String> q = Concurrent.newQueue();
 			assertTrue(q.isEmpty());
 			q.offer("a");
 			q.offer("b");
@@ -61,7 +62,7 @@ class ConcurrentQueueTest {
 
 		@Test
 		void concurrent_offerAndPoll_noExceptions() throws Exception {
-			ConcurrentQueue<Integer> q = new ConcurrentQueue<>();
+			ConcurrentQueue<Integer> q = Concurrent.newQueue();
 			int threadCount = 8;
 			ExecutorService pool = Executors.newFixedThreadPool(threadCount);
 			CountDownLatch latch = new CountDownLatch(threadCount);

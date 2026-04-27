@@ -8,58 +8,81 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.LinkedList;
 
 /**
- * A thread-safe double-ended queue backed by a {@link ConcurrentLinkedList} with concurrent access.
- * Supports element insertion and removal at both ends with FIFO and LIFO semantics.
+ * A thread-safe {@link Deque} extension combining the {@link ConcurrentQueue} surface with the
+ * double-ended semantics of {@link Deque}.
  *
  * @param <E> the type of elements in this deque
  */
-public class ConcurrentDeque<E> extends AtomicDeque<E> {
+public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 
 	/**
-	 * Create a new concurrent deque.
+	 * {@inheritDoc}
 	 */
-	public ConcurrentDeque() {
-		super(new LinkedList<>());
-	}
+	@Override
+	@NotNull ConcurrentUnmodifiableDeque<E> toUnmodifiable();
 
 	/**
-	 * Create a new concurrent deque and fill it with the given array.
-	 */
-	@SafeVarargs
-	public ConcurrentDeque(@NotNull E... array) {
-		this(Arrays.asList(array));
-	}
-
-	/**
-	 * Create a new concurrent deque and fill it with the given collection.
-	 */
-	public ConcurrentDeque(@Nullable Collection<? extends E> collection) {
-		super(collection == null ? new LinkedList<>() : new LinkedList<>(collection));
-	}
-
-	/**
-	 * Constructs a {@code ConcurrentDeque} with a pre-built backing storage. Used by
-	 * {@link ConcurrentUnmodifiableDeque} to install snapshot storage.
+	 * A thread-safe double-ended queue backed by a {@link ConcurrentLinkedList.Impl} with
+	 * concurrent access. Supports element insertion and removal at both ends with FIFO and LIFO
+	 * semantics.
 	 *
-	 * @param storage the pre-built backing storage
+	 * @param <E> the type of elements in this deque
 	 */
-	protected ConcurrentDeque(@NotNull ConcurrentLinkedList<E> storage) {
-		super(storage);
-	}
+	class Impl<E> extends AtomicDeque<E> implements ConcurrentDeque<E> {
 
-	/**
-	 * Returns an immutable snapshot of this {@code ConcurrentDeque}.
-	 *
-	 * <p>The returned wrapper owns a fresh copy of the current elements - subsequent mutations
-	 * on this deque are not reflected in the snapshot.</p>
-	 *
-	 * @return an unmodifiable {@link ConcurrentDeque} containing a snapshot of the elements
-	 */
-	public @NotNull ConcurrentDeque<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiableDeque<>(this);
+		/**
+		 * Creates a new concurrent deque.
+		 */
+		public Impl() {
+			super(new LinkedList<>());
+		}
+
+		/**
+		 * Creates a new concurrent deque and fills it with the given array.
+		 *
+		 * @param array the elements to include
+		 */
+		@SafeVarargs
+		public Impl(@NotNull E... array) {
+			this(Arrays.asList(array));
+		}
+
+		/**
+		 * Creates a new concurrent deque and fills it with the given collection.
+		 *
+		 * @param collection the source collection to copy from, or {@code null} for an empty deque
+		 */
+		public Impl(@Nullable Collection<? extends E> collection) {
+			super(collection == null ? new LinkedList<>() : new LinkedList<>(collection));
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentDeque.Impl} with a pre-built backing storage. Used by
+		 * {@link ConcurrentUnmodifiableDeque.Impl} to install snapshot storage.
+		 *
+		 * @param storage the pre-built backing storage
+		 */
+		protected Impl(@NotNull ConcurrentLinkedList.Impl<E> storage) {
+			super(storage);
+		}
+
+		/**
+		 * Returns an immutable snapshot of this {@code ConcurrentDeque.Impl}.
+		 *
+		 * <p>The returned wrapper owns a fresh copy of the current elements - subsequent mutations
+		 * on this deque are not reflected in the snapshot.</p>
+		 *
+		 * @return an unmodifiable {@link ConcurrentDeque.Impl} containing a snapshot of the elements
+		 */
+		@Override
+		public @NotNull ConcurrentUnmodifiableDeque<E> toUnmodifiable() {
+			return new ConcurrentUnmodifiableDeque.Impl<>(this);
+		}
+
 	}
 
 }

@@ -1,5 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentQueue;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ class ConcurrentUnmodifiableQueueTest {
 
 		@Test
 		void directWrites_throwUOE() {
-			ConcurrentQueue<String> src = new ConcurrentQueue<>();
+			ConcurrentQueue<String> src = Concurrent.newQueue();
 			src.offer("a");
 			ConcurrentQueue<String> u = src.toUnmodifiable();
 
@@ -34,7 +35,7 @@ class ConcurrentUnmodifiableQueueTest {
 
 		@Test
 		void sourceMutations_notVisibleThroughWrapper() {
-			ConcurrentQueue<String> src = new ConcurrentQueue<>();
+			ConcurrentQueue<String> src = Concurrent.newQueue();
 			src.offer("a");
 			src.offer("b");
 			ConcurrentQueue<String> u = src.toUnmodifiable();
@@ -47,7 +48,7 @@ class ConcurrentUnmodifiableQueueTest {
 
 		@Test
 		void doubleWrap_returnsSameInstance() {
-			ConcurrentQueue<String> src = new ConcurrentQueue<>();
+			ConcurrentQueue<String> src = Concurrent.newQueue();
 			ConcurrentQueue<String> u = src.toUnmodifiable();
 			assertSame(u, u.toUnmodifiable());
 		}

@@ -1,5 +1,6 @@
 package dev.simplified.collection.atomic;
 
+import dev.simplified.collection.linked.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 *
 	 * @param storage the pre-built backing storage
 	 */
-	protected AtomicDeque(@NotNull dev.simplified.collection.linked.ConcurrentLinkedList<E> storage) {
+	protected AtomicDeque(@NotNull ConcurrentLinkedList.Impl<E> storage) {
 		super(storage);
 	}
 

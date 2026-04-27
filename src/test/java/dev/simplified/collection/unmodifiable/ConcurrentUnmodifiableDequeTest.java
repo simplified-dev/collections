@@ -1,5 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentDeque;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,7 @@ class ConcurrentUnmodifiableDequeTest {
 
 		@Test
 		void directWrites_throwUOE() {
-			ConcurrentDeque<String> src = new ConcurrentDeque<>();
+			ConcurrentDeque<String> src = Concurrent.newDeque();
 			src.offer("a");
 			ConcurrentDeque<String> u = src.toUnmodifiable();
 
@@ -43,7 +44,7 @@ class ConcurrentUnmodifiableDequeTest {
 
 		@Test
 		void sourceMutations_notVisibleThroughWrapper() {
-			ConcurrentDeque<String> src = new ConcurrentDeque<>();
+			ConcurrentDeque<String> src = Concurrent.newDeque();
 			src.offerFirst("a");
 			src.offerLast("b");
 			ConcurrentDeque<String> u = src.toUnmodifiable();
@@ -57,7 +58,7 @@ class ConcurrentUnmodifiableDequeTest {
 
 		@Test
 		void doubleWrap_returnsSameInstance() {
-			ConcurrentDeque<String> src = new ConcurrentDeque<>();
+			ConcurrentDeque<String> src = Concurrent.newDeque();
 			ConcurrentDeque<String> u = src.toUnmodifiable();
 			assertSame(u, u.toUnmodifiable());
 		}

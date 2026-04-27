@@ -2,6 +2,7 @@ package dev.simplified.collection.tuple.single;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
+import dev.simplified.collection.linked.ConcurrentLinkedList;
 import dev.simplified.collection.function.IndexedConsumer;
 import dev.simplified.collection.function.IndexedFunction;
 import dev.simplified.collection.function.IndexedPredicate;
@@ -422,11 +423,11 @@ public interface SingleStream<E> extends Stream<E> {
     }
 
     /**
-     * Accumulates the elements of this stream into a linked {@link ConcurrentList}.
+     * Accumulates the elements of this stream into a {@link ConcurrentLinkedList}.
      *
-     * @return a linked {@code ConcurrentList} containing the stream elements
+     * @return a {@code ConcurrentLinkedList} containing the stream elements
      */
-    default @NotNull ConcurrentList<E> toLinkedList() {
+    default @NotNull ConcurrentLinkedList<E> toLinkedList() {
         return this.collect(Concurrent.toLinkedList());
     }
 

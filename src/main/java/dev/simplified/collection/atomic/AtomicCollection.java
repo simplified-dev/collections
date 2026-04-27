@@ -61,6 +61,21 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
+	 * Invalidates the cached iterator snapshot. Called from the {@code finally} block of every
+	 * mutator on this collection, before the write lock is released.
+	 */
+	protected void invalidateSnapshot() {
+		this.snapshotCache = null;
+		this.onSnapshotInvalidated();
+	}
+
+	/**
+	 * Hook invoked from {@link #invalidateSnapshot()} after the iterator snapshot is cleared.
+	 * Subclasses may override to invalidate additional cached views.
+	 */
+	protected void onSnapshotInvalidated() {}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -69,7 +84,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.add(element);
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -93,7 +108,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.addAll(collection);
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -114,7 +129,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 			return false;
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -136,7 +151,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 			return false;
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -150,7 +165,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			this.ref.clear();
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -339,7 +354,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.remove(element);
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -362,7 +377,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 			return false;
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -376,7 +391,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.removeAll(collection);
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}
@@ -390,7 +405,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			this.lock.writeLock().lock();
 			return this.ref.retainAll(collection);
 		} finally {
-			this.snapshotCache = null;
+			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
 		}
 	}

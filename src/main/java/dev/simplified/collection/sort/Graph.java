@@ -3,6 +3,7 @@ package dev.simplified.collection.sort;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.collection.ConcurrentMap;
+import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +60,7 @@ public class Graph<T> {
      *
      * @return Sorted nodes.
      */
-    public @NotNull ConcurrentList<T> topologicalSort() {
+    public @NotNull ConcurrentUnmodifiableList<T> topologicalSort() {
         Stack<T> stack = new Stack<>();
 
         // iterate through all the nodes and their neighbours if not already visited.

@@ -2,6 +2,7 @@ package dev.simplified.collection.tuple.pair;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
+import dev.simplified.collection.linked.ConcurrentLinkedMap;
 import dev.simplified.collection.function.TriFunction;
 import dev.simplified.collection.tuple.single.SingleStream;
 import dev.simplified.collection.tuple.triple.Triple;
@@ -802,12 +803,12 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     }
 
     /**
-     * Accumulates the entries of this stream into a linked {@link ConcurrentMap}.
+     * Accumulates the entries of this stream into a {@link ConcurrentLinkedMap}.
      *
-     * @return a linked {@code ConcurrentMap} containing the stream entries
+     * @return a {@code ConcurrentLinkedMap} containing the stream entries
      * @throws IllegalStateException on duplicate keys
      */
-    default @NotNull ConcurrentMap<K, V> toLinkedMap() {
+    default @NotNull ConcurrentLinkedMap<K, V> toLinkedMap() {
         return this.collect(Concurrent.toLinkedMap());
     }
 

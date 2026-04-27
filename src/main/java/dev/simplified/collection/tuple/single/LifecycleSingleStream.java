@@ -2,6 +2,7 @@ package dev.simplified.collection.tuple.single;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
+import dev.simplified.collection.linked.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
@@ -294,7 +295,7 @@ public final class LifecycleSingleStream<E> implements SingleStream<E> {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull ConcurrentList<E> toLinkedList() {
+    public @NotNull ConcurrentLinkedList<E> toLinkedList() {
         try {
             return this.underlying.collect(Concurrent.toLinkedList());
         } finally {

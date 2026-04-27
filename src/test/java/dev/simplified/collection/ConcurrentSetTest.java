@@ -1,4 +1,5 @@
 package dev.simplified.collection;
+import dev.simplified.collection.ConcurrentSet;
 
 import lombok.Cleanup;
 import org.junit.jupiter.api.BeforeEach;

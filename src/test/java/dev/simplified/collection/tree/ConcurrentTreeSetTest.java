@@ -1,6 +1,7 @@
 package dev.simplified.collection.tree;
 
 import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.tree.ConcurrentTreeSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +29,7 @@ class ConcurrentTreeSetTest {
 
 		@Test
 		void customComparator_ordersAccordingly() {
-			ConcurrentTreeSet<String> s = new ConcurrentTreeSet<>(Comparator.reverseOrder());
+			ConcurrentTreeSet<String> s = Concurrent.newTreeSet(Comparator.reverseOrder());
 			s.add("a");
 			s.add("c");
 			s.add("b");

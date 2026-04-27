@@ -1,4 +1,5 @@
 package dev.simplified.collection;
+import dev.simplified.collection.ConcurrentDeque;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -22,7 +23,7 @@ class ConcurrentDequeTest {
 
 		@Test
 		void offerFirst_offerLast_iteratesInOrder() {
-			ConcurrentDeque<String> d = new ConcurrentDeque<>();
+			ConcurrentDeque<String> d = Concurrent.newDeque();
 			d.offerLast("b");
 			d.offerFirst("a");
 			d.offerLast("c");
@@ -31,7 +32,7 @@ class ConcurrentDequeTest {
 
 		@Test
 		void pollFirst_pollLast() {
-			ConcurrentDeque<String> d = new ConcurrentDeque<>();
+			ConcurrentDeque<String> d = Concurrent.newDeque();
 			d.offerLast("a");
 			d.offerLast("b");
 			d.offerLast("c");
@@ -43,7 +44,7 @@ class ConcurrentDequeTest {
 
 		@Test
 		void peekFirst_peekLast() {
-			ConcurrentDeque<String> d = new ConcurrentDeque<>();
+			ConcurrentDeque<String> d = Concurrent.newDeque();
 			assertNull(d.peekFirst());
 			assertNull(d.peekLast());
 			d.offerLast("a");
@@ -54,7 +55,7 @@ class ConcurrentDequeTest {
 
 		@Test
 		void descendingIterator_reverseOrder() {
-			ConcurrentDeque<String> d = new ConcurrentDeque<>();
+			ConcurrentDeque<String> d = Concurrent.newDeque();
 			d.offerLast("a");
 			d.offerLast("b");
 			d.offerLast("c");
@@ -67,7 +68,7 @@ class ConcurrentDequeTest {
 
 		@Test
 		void removeFirstOccurrence_removesFirst() {
-			ConcurrentDeque<String> d = new ConcurrentDeque<>();
+			ConcurrentDeque<String> d = Concurrent.newDeque();
 			d.offerLast("a");
 			d.offerLast("b");
 			d.offerLast("a");
@@ -77,7 +78,7 @@ class ConcurrentDequeTest {
 
 		@Test
 		void removeLastOccurrence_removesLast() {
-			ConcurrentDeque<String> d = new ConcurrentDeque<>();
+			ConcurrentDeque<String> d = Concurrent.newDeque();
 			d.offerLast("a");
 			d.offerLast("b");
 			d.offerLast("a");
@@ -87,7 +88,7 @@ class ConcurrentDequeTest {
 
 		@Test
 		void pushPop_lifo() {
-			ConcurrentDeque<String> d = new ConcurrentDeque<>();
+			ConcurrentDeque<String> d = Concurrent.newDeque();
 			d.push("a");
 			d.push("b");
 			d.push("c");
@@ -103,7 +104,7 @@ class ConcurrentDequeTest {
 
 		@Test
 		void concurrent_mixedEndMutation_noExceptions() throws Exception {
-			ConcurrentDeque<Integer> d = new ConcurrentDeque<>();
+			ConcurrentDeque<Integer> d = Concurrent.newDeque();
 			int threadCount = 8;
 			ExecutorService pool = Executors.newFixedThreadPool(threadCount);
 			CountDownLatch latch = new CountDownLatch(threadCount);

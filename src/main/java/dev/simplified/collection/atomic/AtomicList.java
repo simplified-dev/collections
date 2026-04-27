@@ -44,7 +44,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			super.ref.add(index, element);
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -58,7 +58,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			super.ref.addFirst(element);
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -72,7 +72,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			super.ref.addLast(element);
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -86,7 +86,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.addAll(index, collection);
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -266,7 +266,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.remove(index);
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -280,7 +280,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.removeFirst();
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -294,7 +294,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.removeLast();
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -327,7 +327,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			return super.ref.set(index, element);
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}
@@ -450,7 +450,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			super.lock.writeLock().lock();
 			super.ref.sort(comparator);
 		} finally {
-			super.snapshotCache = null;
+			this.invalidateSnapshot();
 			super.lock.writeLock().unlock();
 		}
 	}

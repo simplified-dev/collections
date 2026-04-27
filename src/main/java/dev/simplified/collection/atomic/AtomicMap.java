@@ -40,11 +40,11 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	private transient volatile @Nullable Collection<V> valuesView;
 
 	/** Cached iterator snapshot for the entry set view. */
-	private transient volatile @Nullable Object@Nullable [] entrySetSnapshot;
+	private transient volatile @Nullable Object @Nullable [] entrySetSnapshot;
 	/** Cached iterator snapshot for the key set view. */
-	private transient volatile @Nullable Object@Nullable [] keySetSnapshot;
+	private transient volatile @Nullable Object @Nullable [] keySetSnapshot;
 	/** Cached iterator snapshot for the values collection view. */
-	private transient volatile @Nullable Object@Nullable [] valuesSnapshot;
+	private transient volatile @Nullable Object @Nullable [] valuesSnapshot;
 
 	protected AtomicMap(@NotNull M ref, @Nullable Map<? extends K, ? extends V> items) {
 		if (Objects.nonNull(items)) ref.putAll(items);
@@ -75,11 +75,18 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * Invalidates all cached view iteration snapshots. Must be called from every write path
 	 * while still holding the write lock so the nullify is ordered before the unlock.
 	 */
-	private void invalidateViewSnapshots() {
+	protected void invalidateViewSnapshots() {
 		this.entrySetSnapshot = null;
 		this.keySetSnapshot = null;
 		this.valuesSnapshot = null;
+		this.onSnapshotInvalidated();
 	}
+
+	/**
+	 * Hook invoked from {@link #invalidateViewSnapshots()} after the built-in view caches are
+	 * cleared. Subclasses may override to invalidate additional cached views.
+	 */
+	protected void onSnapshotInvalidated() {}
 
 	/**
 	 * {@inheritDoc}

@@ -1,6 +1,7 @@
 package dev.simplified.collection.linked;
 
 import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.linked.ConcurrentLinkedMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +51,7 @@ class ConcurrentLinkedMapTest {
 
 		@Test
 		void maxSize_evictsEldest() {
-			ConcurrentLinkedMap<String, Integer> m = new ConcurrentLinkedMap<>(2);
+			ConcurrentLinkedMap<String, Integer> m = Concurrent.newLinkedMap(2);
 			m.put("a", 1);
 			m.put("b", 2);
 			m.put("c", 3);

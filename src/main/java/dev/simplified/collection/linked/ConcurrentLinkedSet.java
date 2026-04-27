@@ -14,82 +14,104 @@ import java.util.LinkedHashSet;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
- * A thread-safe set backed by a {@link LinkedHashSet} with concurrent read and write access
- * via {@link java.util.concurrent.locks.ReadWriteLock}. Maintains insertion order while
- * enforcing no-duplicate semantics.
+ * A thread-safe concurrent set variant backed by a {@link LinkedHashSet} that maintains insertion
+ * order while enforcing no-duplicate semantics.
  *
  * @param <E> the type of elements in this set
  */
-public class ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
-
-	/**
-	 * Create a new concurrent set.
-	 */
-	public ConcurrentLinkedSet() {
-		super(new LinkedHashSet<>());
-	}
-
-	/**
-	 * Create a new concurrent set and fill it with the given array.
-	 */
-	@SafeVarargs
-	public ConcurrentLinkedSet(@NotNull E... array) {
-		this(Arrays.asList(array));
-	}
-
-	/**
-	 * Create a new concurrent set and fill it with the given collection.
-	 */
-	public ConcurrentLinkedSet(@Nullable Collection<? extends E> collection) {
-		super(collection == null ? new LinkedHashSet<>() : new LinkedHashSet<>(collection));
-	}
-
-	/**
-	 * Constructs a {@code ConcurrentLinkedSet} with a pre-built backing set and an explicit
-	 * lock. Used by {@link ConcurrentUnmodifiableLinkedSet} to install a snapshot set paired
-	 * with a no-op lock for wait-free reads.
-	 *
-	 * @param backingSet the pre-built backing set
-	 * @param lock the lock guarding {@code backingSet}
-	 */
-	protected ConcurrentLinkedSet(@NotNull LinkedHashSet<E> backingSet, @NotNull ReadWriteLock lock) {
-		super(backingSet, lock);
-	}
-
-	/**
-	 * Creates a new empty {@code ConcurrentLinkedSet} instance, used internally for copy operations.
-	 *
-	 * @return a new empty {@link ConcurrentLinkedSet}
-	 */
-	@Override
-	protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
-		return Concurrent.newLinkedSet();
-	}
+public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 
 	/**
 	 * {@inheritDoc}
-	 *
-	 * <p>Overrides {@link ConcurrentSet#cloneRef()} to produce a {@link LinkedHashSet} snapshot
-	 * preserving the source's insertion-order traversal characteristics.</p>
 	 */
 	@Override
-	protected @NotNull AbstractSet<E> cloneRef() {
-		try {
-			this.lock.readLock().lock();
-			return new LinkedHashSet<>(this.ref);
-		} finally {
-			this.lock.readLock().unlock();
-		}
-	}
+	@NotNull ConcurrentUnmodifiableLinkedSet<E> toUnmodifiable();
 
 	/**
-	 * Returns an immutable snapshot of this {@code ConcurrentLinkedSet} preserving insertion order.
+	 * A thread-safe set backed by a {@link LinkedHashSet} with concurrent read and write access via
+	 * {@link ReadWriteLock}. Maintains insertion order while enforcing no-duplicate semantics.
 	 *
-	 * @return an unmodifiable {@link ConcurrentLinkedSet} containing a snapshot of the elements
+	 * @param <E> the type of elements in this set
 	 */
-	@Override
-	public @NotNull ConcurrentLinkedSet<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiableLinkedSet<>((LinkedHashSet<E>) this.cloneRef());
+	class Impl<E> extends ConcurrentSet.Impl<E> implements ConcurrentLinkedSet<E> {
+
+		/**
+		 * Creates a new concurrent linked set.
+		 */
+		public Impl() {
+			super(new LinkedHashSet<>());
+		}
+
+		/**
+		 * Creates a new concurrent linked set and fills it with the given array.
+		 *
+		 * @param array the elements to include
+		 */
+		@SafeVarargs
+		public Impl(@NotNull E... array) {
+			this(Arrays.asList(array));
+		}
+
+		/**
+		 * Creates a new concurrent linked set and fills it with the given collection.
+		 *
+		 * @param collection the source collection to copy from, or {@code null} for an empty set
+		 */
+		public Impl(@Nullable Collection<? extends E> collection) {
+			super(collection == null ? new LinkedHashSet<>() : new LinkedHashSet<>(collection));
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentLinkedSet.Impl} with a pre-built backing set and an
+		 * explicit lock. Used by {@link ConcurrentUnmodifiableLinkedSet.Impl} to install a snapshot
+		 * set paired with a no-op lock for wait-free reads.
+		 *
+		 * @param backingSet the pre-built backing set
+		 * @param lock the lock guarding {@code backingSet}
+		 */
+		protected Impl(@NotNull LinkedHashSet<E> backingSet, @NotNull ReadWriteLock lock) {
+			super(backingSet, lock);
+		}
+
+		/**
+		 * Creates a new empty {@code ConcurrentLinkedSet.Impl} instance, used internally for copy
+		 * operations.
+		 *
+		 * @return a new empty {@link ConcurrentLinkedSet.Impl}
+		 */
+		@Override
+		protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
+			return (ConcurrentLinkedSet.Impl<E>) Concurrent.newLinkedSet();
+		}
+
+		/**
+		 * {@inheritDoc}
+		 *
+		 * <p>Overrides {@link ConcurrentSet.Impl#cloneRef()} to produce a {@link LinkedHashSet}
+		 * snapshot preserving the source's insertion-order traversal characteristics.</p>
+		 */
+		@Override
+		protected @NotNull AbstractSet<E> cloneRef() {
+			try {
+				this.lock.readLock().lock();
+				return new LinkedHashSet<>(this.ref);
+			} finally {
+				this.lock.readLock().unlock();
+			}
+		}
+
+		/**
+		 * Returns an immutable snapshot of this {@code ConcurrentLinkedSet.Impl} preserving
+		 * insertion order.
+		 *
+		 * @return an unmodifiable {@link ConcurrentLinkedSet.Impl} containing a snapshot of the
+		 *         elements
+		 */
+		@Override
+		public @NotNull ConcurrentUnmodifiableLinkedSet<E> toUnmodifiable() {
+			return new ConcurrentUnmodifiableLinkedSet.Impl<>((LinkedHashSet<E>) this.cloneRef());
+		}
+
 	}
 
 }
