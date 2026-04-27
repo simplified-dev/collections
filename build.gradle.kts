@@ -23,6 +23,11 @@ dependencies {
     // Logging
     api(libs.log4j2.api)
 
+    // Gson (optional - only required by consumers that opt into the
+    // dev.simplified.collection.gson.ConcurrentTypeAdapterFactory SPI)
+    compileOnly(libs.gson)
+    testImplementation(libs.gson)
+
     // Lombok Annotations
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
