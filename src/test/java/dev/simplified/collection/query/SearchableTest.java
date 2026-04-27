@@ -411,22 +411,20 @@ class SearchableTest {
         @Test
         void findAll_combinedNestedExtractor() {
             // SearchFunction.combine traverses Person::department then Department::name.
-            // Use a fixture without null departments since Searchable.findAll does not swallow NPE.
-            ConcurrentList<Person> nonNullDepts = Concurrent.newList();
-            for (Person p : people)
-                if (p.department() != null) nonNullDepts.add(p);
+            // Person 7's null department triggers NPE in the combined extractor and is silently filtered.
             SearchFunction<Person, String> deptName = SearchFunction.combine(DEPT, Department::name);
-            List<Person> list = nonNullDepts.findAll(deptName, "eng").toList();
+            List<Person> list = people.findAll(deptName, "eng").toList();
             // 1, 2, 5, 6, 9 are eng
             assertEquals(5, list.size());
         }
 
         @Test
-        void findAll_combinedNestedExtractor_propagatesNpeOnNullIntermediate() {
+        void findAll_combinedNestedExtractor_swallowsNpeOnNullIntermediate() {
             SearchFunction<Person, String> deptName = SearchFunction.combine(DEPT, Department::name);
             // Person 7 has null department; combine -> Department::name applied to null throws NPE.
-            // Searchable.findAll does not catch NPE; expect propagation.
-            assertThrows(NullPointerException.class, () -> people.findAll(deptName, "sales").toList());
+            // Searchable.findAll silently filters NPE-producing elements rather than propagating.
+            List<Person> list = people.findAll(deptName, "sales").toList();
+            assertTrue(list.stream().noneMatch(p -> p.id() == 7));
         }
     }
 
@@ -496,13 +494,12 @@ class SearchableTest {
         }
 
         @Test
-        void matchAll_skipsNullElements() {
-            // The matchAll terminal predicate guards Objects.nonNull(it) before invoking the user predicate.
-            // A user predicate that would NPE on null tags must not see them.
+        void matchAll_swallowsNpeFromPredicate() {
+            // A user predicate that NPEs on a null field is silently filtered, not propagated.
             Predicate<Person> hasOpsTag = p -> p.tags().contains("ops");
-            // Person 8 has null tags - this would normally NPE, but matchAll skips nulls only
-            // not null-fields. So this should still throw because p is non-null.
-            assertThrows(NullPointerException.class, () -> people.matchAll(hasOpsTag).toList());
+            // Person 8 has null tags; the predicate would NPE on it, so it is filtered out.
+            List<Person> list = people.matchAll(hasOpsTag).toList();
+            assertTrue(list.stream().noneMatch(p -> p.id() == 8));
         }
 
         @Test

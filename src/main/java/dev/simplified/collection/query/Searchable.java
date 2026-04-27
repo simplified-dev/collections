@@ -166,8 +166,12 @@ public interface Searchable<E> {
         return this.contains(
             match,
             (predicate, it, value) -> {
-                List<S> list = predicate.apply(it);
-                return Objects.nonNull(list) && list.contains(value);
+                try {
+                    List<S> list = predicate.apply(it);
+                    return Objects.nonNull(list) && list.contains(value);
+                } catch (NullPointerException nullPointerException) {
+                    return false;
+                }
             },
             predicates
         );
@@ -246,7 +250,13 @@ public interface Searchable<E> {
     default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
         return this.compare(
             match,
-            (predicate, it, value) -> Objects.equals(predicate.apply(it), value),
+            (predicate, it, value) -> {
+                try {
+                    return Objects.equals(predicate.apply(it), value);
+                } catch (NullPointerException nullPointerException) {
+                    return false;
+                }
+            },
             predicates
         );
     }
@@ -295,7 +305,13 @@ public interface Searchable<E> {
     default @NotNull SingleStream<E> matchAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) {
         return this.compare(
             match,
-            (predicate, it, value) -> Objects.nonNull(it) && predicate.apply(it),
+            (predicate, it, value) -> {
+                try {
+                    return predicate.apply(it);
+                } catch (NullPointerException nullPointerException) {
+                    return false;
+                }
+            },
             StreamSupport.stream(predicates.spliterator(), false)
                 .map(predicate -> Pair.<Function<E, Boolean>, Boolean>of(predicate::test, true))
                 .collect(Concurrent.toList())
