@@ -32,7 +32,7 @@ public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 	 * @return a new empty concurrent deque
 	 */
 	static <E> @NotNull ConcurrentDeque<E> empty() {
-		return new Impl<>();
+		return new Impl<E>();
 	}
 
 	/**
@@ -55,7 +55,7 @@ public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 	 * @return a new concurrent deque containing the source's elements
 	 */
 	static <E> @NotNull ConcurrentDeque<E> from(@Nullable Collection<? extends E> collection) {
-		return new Impl<>(collection);
+		return new Impl<E>(collection);
 	}
 
 	/**
@@ -70,7 +70,7 @@ public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 	 * @return a concurrent deque backed by {@code backing}
 	 */
 	static <E> @NotNull ConcurrentDeque<E> adopt(@NotNull LinkedList<E> backing) {
-		return new Impl<>(backing);
+		return new Impl<E>(backing);
 	}
 
 	/**

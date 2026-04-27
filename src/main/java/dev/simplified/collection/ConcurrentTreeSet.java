@@ -6,7 +6,6 @@ import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -37,7 +36,7 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 	 * @return a new empty concurrent tree set
 	 */
 	static <E> @NotNull ConcurrentTreeSet<E> empty() {
-		return new Impl<>();
+		return new Impl<E>();
 	}
 
 	/**
@@ -48,7 +47,7 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 	 * @return a new empty concurrent tree set
 	 */
 	static <E> @NotNull ConcurrentTreeSet<E> withComparator(@NotNull Comparator<? super E> comparator) {
-		return new Impl<>(comparator);
+		return new Impl<E>(comparator);
 	}
 
 	/**
@@ -72,7 +71,7 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 	 * @return a new concurrent tree set containing the source's elements
 	 */
 	static <E> @NotNull ConcurrentTreeSet<E> from(@Nullable Collection<? extends E> collection) {
-		return new Impl<>(collection);
+		return new Impl<E>(collection);
 	}
 
 	/**
@@ -196,6 +195,7 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 		 * {@inheritDoc}
 		 */
 		@Override
+		@SuppressWarnings("DataFlowIssue")
 		protected @NotNull AtomicCollection<E, TreeSet<E>> newEmpty() {
 			return new ConcurrentTreeSet.Impl<>(this.ref.comparator());
 		}

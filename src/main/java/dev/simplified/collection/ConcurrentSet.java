@@ -34,7 +34,7 @@ public interface ConcurrentSet<E> extends ConcurrentCollection<E>, Set<E> {
 	 * @return a new empty concurrent set
 	 */
 	static <E> @NotNull ConcurrentSet<E> empty() {
-		return new Impl<>();
+		return new Impl<E>();
 	}
 
 	/**
@@ -57,7 +57,7 @@ public interface ConcurrentSet<E> extends ConcurrentCollection<E>, Set<E> {
 	 * @return a new concurrent set containing the source's elements
 	 */
 	static <E> @NotNull ConcurrentSet<E> from(@Nullable Collection<? extends E> collection) {
-		return new Impl<>(collection);
+		return new Impl<E>(collection);
 	}
 
 	/**

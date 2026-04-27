@@ -36,7 +36,7 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 	 * @return a new empty concurrent tree map
 	 */
 	static <K, V> @NotNull ConcurrentTreeMap<K, V> empty() {
-		return new Impl<>();
+		return new Impl<K, V>();
 	}
 
 	/**
@@ -48,7 +48,7 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 	 * @return a new empty concurrent tree map
 	 */
 	static <K, V> @NotNull ConcurrentTreeMap<K, V> withComparator(@NotNull Comparator<? super K> comparator) {
-		return new Impl<>(comparator);
+		return new Impl<K, V>(comparator);
 	}
 
 	/**
@@ -75,7 +75,7 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 	 * @return a new concurrent tree map containing the source's entries
 	 */
 	static <K, V> @NotNull ConcurrentTreeMap<K, V> from(@Nullable Map<? extends K, ? extends V> map) {
-		return new Impl<>(map);
+		return new Impl<K, V>(map);
 	}
 
 	/**

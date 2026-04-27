@@ -34,7 +34,6 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 	 * @param collection the elements to be added to this collection
 	 * @return {@code true} if this collection changed as a result of the call
 	 */
-	@SuppressWarnings("unchecked")
 	boolean addAll(@NotNull E... collection);
 
 	/**

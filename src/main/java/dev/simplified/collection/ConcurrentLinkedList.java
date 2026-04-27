@@ -32,7 +32,7 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	 * @return a new empty concurrent linked list
 	 */
 	static <E> @NotNull ConcurrentLinkedList<E> empty() {
-		return new Impl<>();
+		return new Impl<E>();
 	}
 
 	/**
@@ -55,7 +55,7 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	 * @return a new concurrent linked list containing the source's elements
 	 */
 	static <E> @NotNull ConcurrentLinkedList<E> from(@Nullable Collection<? extends E> collection) {
-		return new Impl<>(collection);
+		return new Impl<E>(collection);
 	}
 
 	/**

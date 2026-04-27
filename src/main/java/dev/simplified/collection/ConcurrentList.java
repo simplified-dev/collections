@@ -10,9 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -60,7 +58,6 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @param functions one or more functions used to extract comparable keys for sorting
 	 * @return a new sorted list
 	 */
-	@SuppressWarnings("unchecked")
 	@NotNull ConcurrentList<E> sorted(@NotNull Function<E, ? extends Comparable<?>>... functions);
 
 	/**
@@ -82,7 +79,6 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @param functions one or more functions that extract comparable keys for sorting
 	 * @return a new sorted list
 	 */
-	@SuppressWarnings("unchecked")
 	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable<?>>... functions);
 
 	/**
@@ -131,7 +127,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @return a new empty concurrent list
 	 */
 	static <E> @NotNull ConcurrentList<E> empty() {
-		return new Impl<>();
+		return new Impl<E>();
 	}
 
 	/**
@@ -154,7 +150,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @return a new concurrent list containing the source's elements
 	 */
 	static <E> @NotNull ConcurrentList<E> from(@Nullable Collection<? extends E> collection) {
-		return new Impl<>(collection);
+		return new Impl<E>(collection);
 	}
 
 	/**
@@ -165,7 +161,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @return a new empty concurrent list with the specified initial capacity
 	 */
 	static <E> @NotNull ConcurrentList<E> withCapacity(int initialCapacity) {
-		return new Impl<>(initialCapacity);
+		return new Impl<E>(initialCapacity);
 	}
 
 	/**

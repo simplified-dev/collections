@@ -1,7 +1,5 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentSet;
 import dev.simplified.collection.atomic.AtomicCollection;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedSet;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +32,7 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 	 * @return a new empty concurrent linked set
 	 */
 	static <E> @NotNull ConcurrentLinkedSet<E> empty() {
-		return new Impl<>();
+		return new Impl<E>();
 	}
 
 	/**
@@ -57,7 +55,7 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 	 * @return a new concurrent linked set containing the source's elements
 	 */
 	static <E> @NotNull ConcurrentLinkedSet<E> from(@Nullable Collection<? extends E> collection) {
-		return new Impl<>(collection);
+		return new Impl<E>(collection);
 	}
 
 	/**

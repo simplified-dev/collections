@@ -1,6 +1,5 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +32,7 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	 * @return a new empty concurrent linked map
 	 */
 	static <K, V> @NotNull ConcurrentLinkedMap<K, V> empty() {
-		return new Impl<>();
+		return new Impl<K, V>();
 	}
 
 	/**
@@ -45,7 +44,7 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	 * @return a new concurrent linked map containing the source's entries
 	 */
 	static <K, V> @NotNull ConcurrentLinkedMap<K, V> from(@Nullable Map<? extends K, ? extends V> map) {
-		return new Impl<>(map);
+		return new Impl<K, V>(map);
 	}
 
 	/**
@@ -58,7 +57,7 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	 * @return a new size-capped concurrent linked map
 	 */
 	static <K, V> @NotNull ConcurrentLinkedMap<K, V> withMaxSize(int maxSize) {
-		return new Impl<>(maxSize);
+		return new Impl<K, V>(maxSize);
 	}
 
 	/**

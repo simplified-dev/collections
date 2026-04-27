@@ -40,7 +40,7 @@ public interface ConcurrentQueue<E> extends ConcurrentCollection<E>, Queue<E> {
 	 * @return a new empty concurrent queue
 	 */
 	static <E> @NotNull ConcurrentQueue<E> empty() {
-		return new Impl<>();
+		return new Impl<E>();
 	}
 
 	/**
@@ -63,7 +63,7 @@ public interface ConcurrentQueue<E> extends ConcurrentCollection<E>, Queue<E> {
 	 * @return a new concurrent queue containing the source's elements
 	 */
 	static <E> @NotNull ConcurrentQueue<E> from(@Nullable Collection<? extends E> collection) {
-		return new Impl<>(collection);
+		return new Impl<E>(collection);
 	}
 
 	/**
