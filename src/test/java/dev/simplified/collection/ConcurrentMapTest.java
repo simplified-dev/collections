@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -377,6 +378,125 @@ class ConcurrentMapTest {
                 .collect(Concurrent.toMap(s -> s.substring(0, 1), String::length));
             assertEquals(3, result.size());
             assertEquals(5, result.get("a"));
+        }
+    }
+
+    @Nested
+    class ProjectMethods {
+
+        @Test
+        void put_entry_returnsPreviousNull_whenAbsent() {
+            Integer prev = map.put(Map.entry("a", 1));
+            assertNull(prev);
+            assertEquals(1, map.get("a"));
+        }
+
+        @Test
+        void put_entry_returnsPreviousValue() {
+            map.put("a", 1);
+            Integer prev = map.put(Map.entry("a", 99));
+            assertEquals(1, prev);
+            assertEquals(99, map.get("a"));
+        }
+
+        @Test
+        void getOptional_present() {
+            map.put("a", 7);
+            Optional<Integer> result = map.getOptional("a");
+            assertTrue(result.isPresent());
+            assertEquals(7, result.get());
+        }
+
+        @Test
+        void getOptional_absent() {
+            assertTrue(map.getOptional("missing").isEmpty());
+        }
+
+        @Test
+        void notEmpty_reflectsSize() {
+            assertFalse(map.notEmpty());
+            map.put("a", 1);
+            assertTrue(map.notEmpty());
+        }
+
+        @Test
+        void removeOrGet_present_removes() {
+            map.put("a", 1);
+            Integer removed = map.removeOrGet("a", -1);
+            assertEquals(1, removed);
+            assertFalse(map.containsKey("a"));
+        }
+
+        @Test
+        void removeOrGet_absent_returnsDefault() {
+            Integer fallback = map.removeOrGet("missing", -1);
+            assertEquals(-1, fallback);
+        }
+
+        @Test
+        void putIf_supplier_true_inserts() {
+            assertTrue(map.putIf(() -> true, "a", 1));
+            assertEquals(1, map.get("a"));
+        }
+
+        @Test
+        void putIf_supplier_false_skips() {
+            assertFalse(map.putIf(() -> false, "a", 1));
+            assertFalse(map.containsKey("a"));
+        }
+
+        @Test
+        void putIf_biPredicate_matchingExistingEntry_inserts() {
+            map.put("seed", 1);
+            // true once any entry has key="seed" and value=1
+            assertTrue(map.putIf((k, v) -> k.equals("seed") && v.equals(1), "next", 2));
+            assertEquals(2, map.get("next"));
+        }
+
+        @Test
+        void putIf_biPredicate_noMatch_skips() {
+            map.put("seed", 1);
+            assertFalse(map.putIf((k, v) -> k.equals("missing"), "next", 2));
+            assertFalse(map.containsKey("next"));
+        }
+
+        @Test
+        void removeIf_biPredicate_dropsMatching() {
+            map.put("a", 1);
+            map.put("b", 2);
+            map.put("c", 3);
+            assertTrue(map.removeIf((k, v) -> v >= 2));
+            assertEquals(1, map.size());
+            assertTrue(map.containsKey("a"));
+        }
+
+        @Test
+        void removeIf_entryPredicate_dropsMatching() {
+            map.put("a", 1);
+            map.put("b", 2);
+            assertTrue(map.removeIf(e -> e.getKey().equals("a")));
+            assertEquals(1, map.size());
+            assertFalse(map.containsKey("a"));
+        }
+
+        @Test
+        void removeIf_noMatch_returnsFalse() {
+            map.put("a", 1);
+            assertFalse(map.removeIf((k, v) -> v > 99));
+            assertEquals(1, map.size());
+        }
+
+        @Test
+        void stream_yieldsAllEntries() {
+            map.put("a", 1);
+            map.put("b", 2);
+            assertEquals(2, map.stream().count());
+        }
+
+        @Test
+        void parallelStream_isParallel() {
+            map.put("a", 1);
+            assertTrue(map.parallelStream().isParallel());
         }
     }
 }

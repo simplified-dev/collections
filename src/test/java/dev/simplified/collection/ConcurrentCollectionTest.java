@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,6 +48,105 @@ class ConcurrentCollectionTest {
 			ConcurrentCollection<String> c = Concurrent.newCollection("a", "b");
 			c.clear();
 			assertTrue(c.isEmpty());
+		}
+	}
+
+	@Nested
+	class ProjectMethods {
+
+		@Test
+		void addIf_supplier_true_addsElement() {
+			ConcurrentCollection<String> c = Concurrent.newCollection();
+			assertTrue(c.addIf(() -> true, "a"));
+			assertTrue(c.contains("a"));
+		}
+
+		@Test
+		void addIf_supplier_false_skips() {
+			ConcurrentCollection<String> c = Concurrent.newCollection();
+			assertFalse(c.addIf(() -> false, "a"));
+			assertTrue(c.isEmpty());
+		}
+
+		@Test
+		void replace_swapsExistingElement() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("a", "b");
+			assertTrue(c.replace("a", "z"));
+			assertFalse(c.contains("a"));
+			assertTrue(c.contains("z"));
+		}
+
+		@Test
+		void replace_absent_returnsFalse() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("a");
+			assertFalse(c.replace("missing", "z"));
+			assertFalse(c.contains("z"));
+		}
+
+		@Test
+		void notContains_absent_isTrue() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("a");
+			assertTrue(c.notContains("missing"));
+			assertFalse(c.notContains("a"));
+		}
+
+		@Test
+		void notEmpty_reflectsSize() {
+			ConcurrentCollection<String> c = Concurrent.newCollection();
+			assertFalse(c.notEmpty());
+			c.add("a");
+			assertTrue(c.notEmpty());
+		}
+
+		@Test
+		void contains_byFunction_matchesValue() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("alpha", "bravo", "charlie");
+			assertTrue(c.contains(String::length, 5));   // "alpha", "bravo"
+			assertTrue(c.contains(String::length, 7));   // "charlie"
+			assertFalse(c.contains(String::length, 99));
+		}
+
+		@Test
+		void indexedStream_pairsElementsWithIndexAndSize() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("a", "b", "c");
+			long count = c.indexedStream().count();
+			assertEquals(3, count);
+		}
+
+		@Test
+		void indexedStream_parallelFlag_buildsParallelStream() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("a", "b", "c");
+			assertTrue(c.indexedStream(true).isParallel());
+			assertFalse(c.indexedStream(false).isParallel());
+		}
+
+		@Test
+		void stream_isSnapshotBased() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("a", "b", "c");
+			List<String> snapshot = c.stream().toList();
+			c.clear();
+			assertEquals(3, snapshot.size());
+		}
+
+		@Test
+		void parallelStream_isParallel() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("a", "b", "c");
+			assertTrue(c.parallelStream().isParallel());
+		}
+
+		@Test
+		void addAll_varargs_addsAll() {
+			ConcurrentCollection<String> c = Concurrent.newCollection();
+			assertTrue(c.addAll("a", "b", "c"));
+			assertEquals(3, c.size());
+		}
+
+		@Test
+		void toUnmodifiable_returnsUnmodifiableSnapshot() {
+			ConcurrentCollection<String> c = Concurrent.newCollection("a");
+			ConcurrentCollection<String> u = c.toUnmodifiable();
+			assertEquals(1, u.size());
+			assertThrows(UnsupportedOperationException.class, () -> u.add("b"));
 		}
 	}
 }
