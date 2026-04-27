@@ -18,7 +18,7 @@ class ConcurrentTreeMapTest {
 
 		@Test
 		void put_and_get() {
-			ConcurrentTreeMap<String, Integer> m = Concurrent.newSortedMap();
+			ConcurrentTreeMap<String, Integer> m = Concurrent.newTreeMap();
 			m.put("b", 2);
 			m.put("a", 1);
 			assertEquals(1, m.get("a"));
@@ -27,7 +27,7 @@ class ConcurrentTreeMapTest {
 
 		@Test
 		void naturalOrder_iteratesSortedInEntrySet() {
-			ConcurrentTreeMap<String, Integer> m = Concurrent.newSortedMap();
+			ConcurrentTreeMap<String, Integer> m = Concurrent.newTreeMap();
 			m.put("c", 3);
 			m.put("a", 1);
 			m.put("b", 2);
@@ -50,7 +50,7 @@ class ConcurrentTreeMapTest {
 
 		@Test
 		void firstEntry_inIteration() {
-			ConcurrentTreeMap<String, Integer> m = Concurrent.newSortedMap();
+			ConcurrentTreeMap<String, Integer> m = Concurrent.newTreeMap();
 			m.put("c", 3);
 			m.put("a", 1);
 			m.put("b", 2);

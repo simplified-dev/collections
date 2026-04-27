@@ -103,7 +103,7 @@ public class ConcurrentTreeSet<E> extends ConcurrentSet<E> {
 	 */
 	@Override
 	protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
-		return Concurrent.newSortedSet();
+		return Concurrent.newTreeSet();
 	}
 
 	/**

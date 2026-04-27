@@ -17,7 +17,7 @@ class ConcurrentTreeSetTest {
 
 		@Test
 		void naturalOrder_iteratesSorted() {
-			ConcurrentTreeSet<String> s = Concurrent.newSortedSet();
+			ConcurrentTreeSet<String> s = Concurrent.newTreeSet();
 			s.add("c");
 			s.add("a");
 			s.add("b");
@@ -39,7 +39,7 @@ class ConcurrentTreeSetTest {
 
 		@Test
 		void firstElement_inIteration() {
-			ConcurrentTreeSet<String> s = Concurrent.newSortedSet();
+			ConcurrentTreeSet<String> s = Concurrent.newTreeSet();
 			s.add("c");
 			s.add("a");
 			s.add("b");
