@@ -160,7 +160,7 @@ class ConcurrentUnmodifiableMapTest {
 
 		@Test
 		void wrapsSortedMap_preservesComparatorOrder() {
-			ConcurrentTreeMap<String, Integer> src = Concurrent.newSortedMap();
+			ConcurrentTreeMap<String, Integer> src = Concurrent.newTreeMap();
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);

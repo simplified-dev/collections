@@ -7,17 +7,7 @@ import dev.simplified.collection.linked.ConcurrentLinkedMap;
 import dev.simplified.collection.linked.ConcurrentLinkedSet;
 import dev.simplified.collection.tree.ConcurrentTreeMap;
 import dev.simplified.collection.tree.ConcurrentTreeSet;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableMap;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableQueue;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableSet;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedList;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedMap;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedSet;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeMap;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeSet;
+import dev.simplified.collection.unmodifiable.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -377,9 +367,9 @@ public final class Concurrent {
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a new empty concurrent sorted map
+	 * @return a new empty concurrent tree map
 	 */
-	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newSortedMap() {
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newTreeMap() {
 		return new ConcurrentTreeMap<>();
 	}
 
@@ -389,9 +379,9 @@ public final class Concurrent {
 	 * @param comparator the comparator used to order the keys
 	 * @param <K>        the key type
 	 * @param <V>        the value type
-	 * @return a new empty concurrent sorted map ordered by the given comparator
+	 * @return a new empty concurrent tree map ordered by the given comparator
 	 */
-	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newSortedMap(@NotNull Comparator<? super K> comparator) {
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newTreeMap(@NotNull Comparator<? super K> comparator) {
 		return new ConcurrentTreeMap<>(comparator);
 	}
 
@@ -402,9 +392,9 @@ public final class Concurrent {
 	 * @param map the source map to copy from
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a new concurrent sorted map containing the source entries
+	 * @return a new concurrent tree map containing the source entries
 	 */
-	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newSortedMap(@NotNull Map<? extends K, ? extends V> map) {
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newTreeMap(@NotNull Map<? extends K, ? extends V> map) {
 		return new ConcurrentTreeMap<>(map);
 	}
 
@@ -416,9 +406,9 @@ public final class Concurrent {
 	 * @param map        the source map to copy from
 	 * @param <K>        the key type
 	 * @param <V>        the value type
-	 * @return a new concurrent sorted map containing the source entries ordered by the given comparator
+	 * @return a new concurrent tree map containing the source entries ordered by the given comparator
 	 */
-	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newSortedMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
 		return new ConcurrentTreeMap<>(comparator, map);
 	}
 
@@ -426,9 +416,9 @@ public final class Concurrent {
 	 * Creates a new empty {@link ConcurrentTreeSet} with natural element ordering.
 	 *
 	 * @param <E> the element type
-	 * @return a new empty concurrent sorted set
+	 * @return a new empty concurrent tree set
 	 */
-	public static <E> @NotNull ConcurrentTreeSet<E> newSortedSet() {
+	public static <E> @NotNull ConcurrentTreeSet<E> newTreeSet() {
 		return new ConcurrentTreeSet<>();
 	}
 
@@ -437,9 +427,9 @@ public final class Concurrent {
 	 *
 	 * @param comparator the comparator used to order the elements
 	 * @param <E>        the element type
-	 * @return a new empty concurrent sorted set ordered by the given comparator
+	 * @return a new empty concurrent tree set ordered by the given comparator
 	 */
-	public static <E> @NotNull ConcurrentTreeSet<E> newSortedSet(@NotNull Comparator<? super E> comparator) {
+	public static <E> @NotNull ConcurrentTreeSet<E> newTreeSet(@NotNull Comparator<? super E> comparator) {
 		return new ConcurrentTreeSet<>(comparator);
 	}
 
@@ -449,9 +439,9 @@ public final class Concurrent {
 	 *
 	 * @param collection the source collection to copy from
 	 * @param <E>        the element type
-	 * @return a new concurrent sorted set containing the source elements
+	 * @return a new concurrent tree set containing the source elements
 	 */
-	public static <E> @NotNull ConcurrentTreeSet<E> newSortedSet(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentTreeSet<E> newTreeSet(@NotNull Collection<? extends E> collection) {
 		return new ConcurrentTreeSet<>(collection);
 	}
 
@@ -462,9 +452,9 @@ public final class Concurrent {
 	 * @param comparator the comparator used to order the elements
 	 * @param collection the source collection to copy from
 	 * @param <E>        the element type
-	 * @return a new concurrent sorted set containing the source elements ordered by the given comparator
+	 * @return a new concurrent tree set containing the source elements ordered by the given comparator
 	 */
-	public static <E> @NotNull ConcurrentTreeSet<E> newSortedSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentTreeSet<E> newTreeSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
 		return new ConcurrentTreeSet<>(comparator, collection);
 	}
 
@@ -870,9 +860,9 @@ public final class Concurrent {
 	 * Creates a new empty {@link ConcurrentUnmodifiableTreeSet} with natural element ordering.
 	 *
 	 * @param <E> the element type
-	 * @return a new empty unmodifiable concurrent sorted set
+	 * @return a new empty unmodifiable concurrent tree set
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableSortedSet() {
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet() {
 		return new ConcurrentUnmodifiableTreeSet<>(new java.util.TreeSet<>());
 	}
 
@@ -881,14 +871,14 @@ public final class Concurrent {
 	 *
 	 * @param comparator the comparator used to order the elements
 	 * @param <E>        the element type
-	 * @return a new empty unmodifiable concurrent sorted set
+	 * @return a new empty unmodifiable concurrent tree set
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableSortedSet(@NotNull Comparator<? super E> comparator) {
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator) {
 		return new ConcurrentUnmodifiableTreeSet<>(new java.util.TreeSet<>(comparator));
 	}
 
 	/**
-	 * Creates an immutable snapshot of the given collection as a sorted set with natural
+	 * Creates an immutable snapshot of the given collection as a tree set with natural
 	 * element ordering.
 	 *
 	 * @param collection the source collection
@@ -896,7 +886,7 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableTreeSet}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableSortedSet(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentTreeSet)
 			return (ConcurrentUnmodifiableTreeSet<E>) ((ConcurrentTreeSet<E>) collection).toUnmodifiable();
 
@@ -904,7 +894,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates an immutable snapshot of the given collection as a sorted set ordered by the
+	 * Creates an immutable snapshot of the given collection as a tree set ordered by the
 	 * given comparator.
 	 *
 	 * @param comparator the comparator used to order the elements
@@ -912,7 +902,7 @@ public final class Concurrent {
 	 * @param <E>        the element type
 	 * @return a snapshot {@link ConcurrentUnmodifiableTreeSet}
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableSortedSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
 		java.util.TreeSet<E> snapshot = new java.util.TreeSet<>(comparator);
 		snapshot.addAll(collection);
 		return new ConcurrentUnmodifiableTreeSet<>(snapshot);
@@ -923,9 +913,9 @@ public final class Concurrent {
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a new empty unmodifiable concurrent sorted map
+	 * @return a new empty unmodifiable concurrent tree map
 	 */
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableSortedMap() {
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap() {
 		return new ConcurrentUnmodifiableTreeMap<>(new java.util.TreeMap<>());
 	}
 
@@ -935,14 +925,14 @@ public final class Concurrent {
 	 * @param comparator the comparator used to order the keys
 	 * @param <K>        the key type
 	 * @param <V>        the value type
-	 * @return a new empty unmodifiable concurrent sorted map
+	 * @return a new empty unmodifiable concurrent tree map
 	 */
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator) {
 		return new ConcurrentUnmodifiableTreeMap<>(new java.util.TreeMap<>(comparator));
 	}
 
 	/**
-	 * Creates an immutable snapshot of the given map as a sorted map with natural key ordering.
+	 * Creates an immutable snapshot of the given map as a tree map with natural key ordering.
 	 *
 	 * @param map the source map
 	 * @param <K> the key type
@@ -950,7 +940,7 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableTreeMap}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableSortedMap(@NotNull Map<? extends K, ? extends V> map) {
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Map<? extends K, ? extends V> map) {
 		if (map instanceof ConcurrentTreeMap)
 			return (ConcurrentUnmodifiableTreeMap<K, V>) ((ConcurrentTreeMap<K, V>) map).toUnmodifiable();
 
@@ -958,7 +948,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates an immutable snapshot of the given map as a sorted map ordered by the given
+	 * Creates an immutable snapshot of the given map as a tree map ordered by the given
 	 * comparator.
 	 *
 	 * @param comparator the comparator used to order the keys
@@ -967,7 +957,7 @@ public final class Concurrent {
 	 * @param <V>        the value type
 	 * @return a snapshot {@link ConcurrentUnmodifiableTreeMap}
 	 */
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
 		java.util.TreeMap<K, V> snapshot = new java.util.TreeMap<>(comparator);
 		snapshot.putAll(map);
 		return new ConcurrentUnmodifiableTreeMap<>(snapshot);
@@ -1431,32 +1421,32 @@ public final class Concurrent {
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap} ordered by {@code comparator}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableSortedMap(@NotNull Comparator<? super K> comparator) {
-		return toUnmodifiableSortedMap(
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator) {
+		return toUnmodifiableTreeMap(
 			Map.Entry::getKey,
 			Map.Entry::getValue,
 			throwingMerger(),
-			() -> Concurrent.newSortedMap(comparator)
+			() -> Concurrent.newTreeMap(comparator)
 		);
 	}
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@link ConcurrentUnmodifiableTreeMap} backed by the supplied sorted-map source
+	 * {@link ConcurrentUnmodifiableTreeMap} backed by the supplied tree map source
 	 * (typically a {@link ConcurrentTreeMap}), applying the given key mapper, value
 	 * mapper, and merge function.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
 	 * @param valueMapper the function to extract map values from stream elements
 	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param mapSupplier the supplier providing a new empty sorted map used during accumulation
+	 * @param mapSupplier the supplier providing a new empty tree map used during accumulation
 	 * @param <K>           the key type
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type
 	 * @param <A>           the intermediate map type (extends {@link ConcurrentMap})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap}
 	 */
-	public static <K, V, T, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableSortedMap(
+	public static <K, V, T, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap(
 		@NotNull Function<? super T, ? extends K> keyMapper,
 		@NotNull Function<? super T, ? extends V> valueMapper,
 		@NotNull BinaryOperator<V> mergeFunction,
@@ -1473,7 +1463,7 @@ public final class Concurrent {
 				m2.forEach((key, value) -> m1.merge(key, value, mergeFunction));
 				return m1;
 			},
-			Concurrent::newUnmodifiableSortedMap,
+			Concurrent::newUnmodifiableTreeMap,
 			UNORDERED_FINISHING_CHARACTERISTICS
 		);
 	}

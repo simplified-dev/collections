@@ -75,7 +75,7 @@ class ConcurrentUnmodifiableSetTest {
 
 		@Test
 		void wrapsSortedSet_preservesComparatorOrder() {
-			ConcurrentTreeSet<String> src = Concurrent.newSortedSet();
+			ConcurrentTreeSet<String> src = Concurrent.newTreeSet();
 			src.add("c");
 			src.add("a");
 			src.add("b");
