@@ -2,7 +2,7 @@ package dev.simplified.collection.unmodifiable;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
-import dev.simplified.collection.linked.ConcurrentLinkedMap;
+import dev.simplified.collection.ConcurrentLinkedMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

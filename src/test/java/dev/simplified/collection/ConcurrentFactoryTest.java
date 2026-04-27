@@ -1,9 +1,9 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.linked.ConcurrentLinkedMap;
-import dev.simplified.collection.linked.ConcurrentLinkedSet;
-import dev.simplified.collection.tree.ConcurrentTreeMap;
-import dev.simplified.collection.tree.ConcurrentTreeSet;
+import dev.simplified.collection.ConcurrentLinkedMap;
+import dev.simplified.collection.ConcurrentLinkedSet;
+import dev.simplified.collection.ConcurrentTreeMap;
+import dev.simplified.collection.ConcurrentTreeSet;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedMap;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedSet;

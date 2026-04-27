@@ -1,6 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.tree.ConcurrentTreeMap;
+import dev.simplified.collection.ConcurrentTreeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -99,7 +99,7 @@ public interface ConcurrentUnmodifiableTreeMap<K, V> extends ConcurrentTreeMap<K
 
 		/** {@inheritDoc} */
 		@Override
-		public final boolean putIf(@NotNull Predicate<AbstractMap<K, V>> predicate, K key, V value) {
+		public final boolean putIf(@NotNull Predicate<TreeMap<K, V>> predicate, K key, V value) {
 			throw new UnsupportedOperationException();
 		}
 

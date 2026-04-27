@@ -125,6 +125,42 @@ public interface ConcurrentMap<K, V> extends Map<K, V>, Iterable<Map.Entry<K, V>
 	@NotNull ConcurrentUnmodifiableMap<K, V> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentMap} backed by a {@link HashMap}.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new empty concurrent map
+	 */
+	static <K, V> @NotNull ConcurrentMap<K, V> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentMap} containing the given entries.
+	 *
+	 * @param entries the entries to include
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new concurrent map containing the specified entries
+	 */
+	@SafeVarargs
+	static <K, V> @NotNull ConcurrentMap<K, V> of(@NotNull Entry<K, V>... entries) {
+		return new Impl<>(entries);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentMap} containing all entries of the given map.
+	 *
+	 * @param map the source map to copy from, or {@code null} for an empty map
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new concurrent map containing the source's entries
+	 */
+	static <K, V> @NotNull ConcurrentMap<K, V> from(@Nullable Map<? extends K, ? extends V> map) {
+		return new Impl<>(map);
+	}
+
+	/**
 	 * Wraps {@code backing} as a {@link ConcurrentMap} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to

@@ -4,6 +4,8 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -23,7 +25,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * before reaching {@link #writeLock()}, so the write lock is never actually exercised.</p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-final class NoOpReadWriteLock implements ReadWriteLock {
+final class NoOpReadWriteLock implements ReadWriteLock, Serializable {
 
     public static final @NotNull NoOpReadWriteLock INSTANCE = new NoOpReadWriteLock();
 
@@ -37,6 +39,17 @@ final class NoOpReadWriteLock implements ReadWriteLock {
     @Override
     public @NotNull Lock writeLock() {
         return NO_OP_LOCK;
+    }
+
+    /**
+     * Returns the canonical singleton instance after deserialization, preserving the
+     * {@code INSTANCE == deserialized} invariant that consumers rely on.
+     *
+     * @return the canonical {@link #INSTANCE}
+     */
+    @Serial
+    private Object readResolve() {
+        return INSTANCE;
     }
 
     private static final class NoOpLock implements Lock {

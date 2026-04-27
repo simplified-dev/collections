@@ -1,13 +1,11 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentDeque;
-import dev.simplified.collection.atomic.AtomicDeque;
-import dev.simplified.collection.linked.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * An immutable snapshot view of a {@link ConcurrentDeque}. All mutating operations on
@@ -29,17 +27,13 @@ public interface ConcurrentUnmodifiableDeque<E> extends ConcurrentDeque<E>, Conc
 	class Impl<E> extends ConcurrentDeque.Impl<E> implements ConcurrentUnmodifiableDeque<E> {
 
 		/**
-		 * Wraps a snapshot of the given source deque. The source's contents are copied under its
-		 * own read lock at construction time.
+		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by
+		 * copying a source deque's contents under that source's read lock.
 		 *
-		 * @param source the source deque whose elements are snapshotted
+		 * @param snapshot a freshly cloned backing deque
 		 */
-		public Impl(@NotNull AtomicDeque<E> source) {
-			super(snapshotStorage(source));
-		}
-
-		private static <E> @NotNull ConcurrentLinkedList.Impl<E> snapshotStorage(@NotNull AtomicDeque<E> source) {
-			return (ConcurrentLinkedList.Impl<E>) Concurrent.newLinkedList(source);
+		public Impl(@NotNull LinkedList<E> snapshot) {
+			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
 		/** {@inheritDoc} */

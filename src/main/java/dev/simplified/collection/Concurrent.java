@@ -2,11 +2,11 @@ package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicDeque;
 import dev.simplified.collection.atomic.AtomicQueue;
-import dev.simplified.collection.linked.ConcurrentLinkedList;
-import dev.simplified.collection.linked.ConcurrentLinkedMap;
-import dev.simplified.collection.linked.ConcurrentLinkedSet;
-import dev.simplified.collection.tree.ConcurrentTreeMap;
-import dev.simplified.collection.tree.ConcurrentTreeSet;
+import dev.simplified.collection.ConcurrentLinkedList;
+import dev.simplified.collection.ConcurrentLinkedMap;
+import dev.simplified.collection.ConcurrentLinkedSet;
+import dev.simplified.collection.ConcurrentTreeMap;
+import dev.simplified.collection.ConcurrentTreeSet;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedList;
@@ -769,7 +769,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent queue
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue() {
-		return new ConcurrentUnmodifiableQueue.Impl<>(new ConcurrentQueue.Impl<>());
+		return new ConcurrentUnmodifiableQueue.Impl<>(new java.util.LinkedList<>());
 	}
 
 	/**
@@ -781,7 +781,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue(@NotNull E... array) {
-		return new ConcurrentUnmodifiableQueue.Impl<>(new ConcurrentQueue.Impl<>(array));
+		return new ConcurrentUnmodifiableQueue.Impl<>(new java.util.LinkedList<>(java.util.Arrays.asList(array)));
 	}
 
 	/**
@@ -796,10 +796,10 @@ public final class Concurrent {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue(@NotNull Collection<? extends E> collection) {
-		AtomicQueue<E> source = collection instanceof AtomicQueue
-			? (AtomicQueue<E>) collection
-			: new ConcurrentQueue.Impl<>((Collection<E>) collection);
-		return new ConcurrentUnmodifiableQueue.Impl<>(source);
+		if (collection instanceof ConcurrentQueue)
+			return ((ConcurrentQueue<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableQueue.Impl<>(new java.util.LinkedList<>(collection));
 	}
 
 	/**
@@ -809,7 +809,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent deque
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque() {
-		return new ConcurrentUnmodifiableDeque.Impl<>(new ConcurrentDeque.Impl<>());
+		return new ConcurrentUnmodifiableDeque.Impl<>(new java.util.LinkedList<>());
 	}
 
 	/**
@@ -821,7 +821,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque(@NotNull E... array) {
-		return new ConcurrentUnmodifiableDeque.Impl<>(new ConcurrentDeque.Impl<>(array));
+		return new ConcurrentUnmodifiableDeque.Impl<>(new java.util.LinkedList<>(java.util.Arrays.asList(array)));
 	}
 
 	/**
@@ -836,10 +836,10 @@ public final class Concurrent {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque(@NotNull Collection<? extends E> collection) {
-		AtomicDeque<E> source = collection instanceof AtomicDeque
-			? (AtomicDeque<E>) collection
-			: new ConcurrentDeque.Impl<>((Collection<E>) collection);
-		return new ConcurrentUnmodifiableDeque.Impl<>(source);
+		if (collection instanceof ConcurrentDeque)
+			return ((ConcurrentDeque<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiableDeque.Impl<>(new java.util.LinkedList<>(collection));
 	}
 
 	/**

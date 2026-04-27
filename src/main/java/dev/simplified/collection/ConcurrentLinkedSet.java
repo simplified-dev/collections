@@ -1,4 +1,4 @@
-package dev.simplified.collection.linked;
+package dev.simplified.collection;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentSet;
@@ -106,8 +106,8 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 		 * @return a new empty {@link ConcurrentLinkedSet.Impl}
 		 */
 		@Override
-		protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
-			return (ConcurrentLinkedSet.Impl<E>) Concurrent.newLinkedSet();
+		protected @NotNull AtomicCollection<E, AbstractSet<E>> newEmpty() {
+			return new ConcurrentLinkedSet.Impl<>();
 		}
 
 		/**

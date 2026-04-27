@@ -1,6 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.linked.ConcurrentLinkedSet;
+import dev.simplified.collection.ConcurrentLinkedSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractSet;

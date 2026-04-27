@@ -1,38 +1,42 @@
 package dev.simplified.collection.atomic;
 
-import dev.simplified.collection.linked.ConcurrentLinkedList;
+import dev.simplified.collection.ConcurrentDeque;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
+import java.util.AbstractCollection;
 import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
- * A thread-safe abstract double-ended queue extending {@link AtomicQueue} with {@link Deque} operations.
- * Supports element insertion and removal at both ends with atomic guarantees.
+ * A thread-safe abstract double-ended queue extending {@link AtomicQueue} with {@link Deque}
+ * operations. Supports element insertion and removal at both ends with atomic guarantees.
  *
  * @param <E> the type of elements held in this deque
+ * @param <T> the type of the underlying deque, which must be both an {@link AbstractCollection}
+ *            and a {@link Deque}
  *
  * @apiNote This is a low-level building block for custom concurrent implementations.
  * Most callers should use the corresponding {@code Concurrent*} type instead.
  */
-public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> {
+public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>> extends AtomicQueue<E, T> implements ConcurrentDeque<E> {
 
-	protected AtomicDeque(@NotNull Collection<? extends E> collection) {
-		super(collection);
+	protected AtomicDeque(@NotNull T ref) {
+		super(ref);
 	}
 
 	/**
-	 * Constructs an {@code AtomicDeque} with a pre-built backing storage - the pattern used
-	 * by {@code ConcurrentUnmodifiableDeque} to install a snapshot storage at construction.
+	 * Constructs an {@code AtomicDeque} with an explicit lock - the pattern used by
+	 * {@code ConcurrentUnmodifiableDeque} to install a snapshot deque paired with a no-op lock for
+	 * wait-free reads.
 	 *
-	 * @param storage the pre-built backing storage
+	 * @param ref the underlying deque
+	 * @param lock the lock guarding {@code ref}
 	 */
-	protected AtomicDeque(@NotNull ConcurrentLinkedList.Impl<E> storage) {
-		super(storage);
+	protected AtomicDeque(@NotNull T ref, @NotNull ReadWriteLock lock) {
+		super(ref, lock);
 	}
 
 	/**
@@ -40,7 +44,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public void addFirst(E element) {
-		this.storage.add(0, element);
+		this.withWriteLock(() -> this.ref.addFirst(element));
 	}
 
 	/**
@@ -48,7 +52,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public void addLast(E element) {
-		super.add(element);
+		this.withWriteLock(() -> this.ref.addLast(element));
 	}
 
 	/**
@@ -56,14 +60,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public boolean offerFirst(E element) {
-		try {
-			this.storage.lock.writeLock().lock();
-			int before = this.storage.ref.size();
-			this.storage.ref.add(0, element);
-			return this.storage.ref.size() > before;
-		} finally {
-			this.storage.lock.writeLock().unlock();
-		}
+		return this.withWriteLock(() -> this.ref.offerFirst(element));
 	}
 
 	/**
@@ -71,12 +68,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public boolean offerLast(E element) {
-		try {
-			this.storage.lock.writeLock().lock();
-			return this.storage.ref.add(element);
-		} finally {
-			this.storage.lock.writeLock().unlock();
-		}
+		return this.withWriteLock(() -> this.ref.offerLast(element));
 	}
 
 	/**
@@ -84,7 +76,12 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public E removeFirst() {
-		return super.remove();
+		E head = this.pollFirst();
+
+		if (head == null)
+			throw new NoSuchElementException();
+
+		return head;
 	}
 
 	/**
@@ -92,12 +89,12 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public E removeLast() {
-		E element = this.pollLast();
+		E tail = this.pollLast();
 
-		if (element != null)
-			return element;
-		else
+		if (tail == null)
 			throw new NoSuchElementException();
+
+		return tail;
 	}
 
 	/**
@@ -105,24 +102,15 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public E pollFirst() {
-		return super.poll();
+		return this.withWriteLock((java.util.function.Supplier<E>) this.ref::pollFirst);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public @Nullable E pollLast() {
-		try {
-			this.storage.lock.writeLock().lock();
-
-			if (this.storage.ref.isEmpty())
-				return null;
-
-			return this.storage.ref.remove(this.storage.ref.size() - 1);
-		} finally {
-			this.storage.lock.writeLock().unlock();
-		}
+	public E pollLast() {
+		return this.withWriteLock((java.util.function.Supplier<E>) this.ref::pollLast);
 	}
 
 	/**
@@ -130,12 +118,12 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public final @NotNull E getFirst() {
-		E element = this.peekFirst();
+		E head = this.peekFirst();
 
-		if (element != null)
-			return element;
-		else
+		if (head == null)
 			throw new NoSuchElementException();
+
+		return head;
 	}
 
 	/**
@@ -143,37 +131,28 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public final @NotNull E getLast() {
-		E element = this.peekLast();
+		E tail = this.peekLast();
 
-		if (element != null)
-			return element;
-		else
+		if (tail == null)
 			throw new NoSuchElementException();
+
+		return tail;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @Nullable E peekFirst() {
-		return super.peek();
+	public final E peekFirst() {
+		return this.withReadLock((java.util.function.Supplier<E>) this.ref::peekFirst);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final @Nullable E peekLast() {
-		try {
-			this.storage.lock.readLock().lock();
-
-			if (this.storage.ref.isEmpty())
-				return null;
-
-			return this.storage.ref.get(this.storage.ref.size() - 1);
-		} finally {
-			this.storage.lock.readLock().unlock();
-		}
+	public final E peekLast() {
+		return this.withReadLock((java.util.function.Supplier<E>) this.ref::peekLast);
 	}
 
 	/**
@@ -184,12 +163,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public boolean removeFirstOccurrence(Object obj) {
-		try {
-			this.storage.lock.writeLock().lock();
-			return this.storage.ref.remove(obj);
-		} finally {
-			this.storage.lock.writeLock().unlock();
-		}
+		return this.withWriteLock(() -> this.ref.removeFirstOccurrence(obj));
 	}
 
 	/**
@@ -200,18 +174,7 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	 */
 	@Override
 	public boolean removeLastOccurrence(Object obj) {
-		try {
-			this.storage.lock.writeLock().lock();
-			int index = this.storage.ref.lastIndexOf(obj);
-
-			if (index < 0)
-				return false;
-
-			this.storage.ref.remove(index);
-			return true;
-		} finally {
-			this.storage.lock.writeLock().unlock();
-		}
+		return this.withWriteLock(() -> this.ref.removeLastOccurrence(obj));
 	}
 
 	/**
@@ -233,28 +196,41 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * Returns a snapshot-backed iterator that traverses the elements of this deque in
-	 * reverse order. The snapshot is taken under a read lock at the moment of the call;
-	 * concurrent modifications to the backing deque are not reflected by the iterator.
+	 * Returns a snapshot-backed iterator that traverses the elements of this deque in reverse
+	 * order. The snapshot is taken under a read lock at the moment of the call; concurrent
+	 * modifications to the backing deque are not reflected by the iterator.
 	 * {@link Iterator#remove()} removes the last element returned from the underlying deque.
 	 */
 	@Override
 	public @NotNull Iterator<E> descendingIterator() {
-		final Object[] snapshot;
+		Object[] snapshot;
 
 		try {
-			this.storage.lock.readLock().lock();
-			Object[] forward = this.storage.ref.toArray();
-			int length = forward.length;
-			snapshot = new Object[length];
-
-			for (int i = 0; i < length; i++)
-				snapshot[i] = forward[length - 1 - i];
+			this.lock.readLock().lock();
+			snapshot = this.ref.descendingIterator() != null
+				? toSnapshot(this.ref.descendingIterator(), this.ref.size())
+				: new Object[0];
 		} finally {
-			this.storage.lock.readLock().unlock();
+			this.lock.readLock().unlock();
 		}
 
 		return new DescendingIterator(snapshot);
+	}
+
+	private static <E> Object[] toSnapshot(@NotNull Iterator<E> iterator, int size) {
+		Object[] snapshot = new Object[size];
+		int index = 0;
+
+		while (iterator.hasNext() && index < size)
+			snapshot[index++] = iterator.next();
+
+		if (index < size) {
+			Object[] trimmed = new Object[index];
+			System.arraycopy(snapshot, 0, trimmed, 0, index);
+			return trimmed;
+		}
+
+		return snapshot;
 	}
 
 	private final class DescendingIterator implements Iterator<E> {
@@ -263,23 +239,17 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 		private int cursor;
 		private int last;
 
-		private DescendingIterator(Object[] snapshot) {
+		private DescendingIterator(@NotNull Object[] snapshot) {
 			this.snapshot = snapshot;
 			this.cursor = 0;
 			this.last = -1;
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
 		@Override
 		public boolean hasNext() {
 			return this.cursor < this.snapshot.length;
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
 		@SuppressWarnings("unchecked")
 		@Override
 		public E next() {
@@ -289,16 +259,13 @@ public abstract class AtomicDeque<E> extends AtomicQueue<E> implements Deque<E> 
 			return (E) this.snapshot[this.last = this.cursor++];
 		}
 
-		/**
-		 * {@inheritDoc}
-		 */
 		@Override
 		public void remove() {
 			if (this.last < 0)
 				throw new IllegalStateException();
 
 			try {
-				AtomicDeque.this.storage.remove(this.snapshot[this.last]);
+				AtomicDeque.this.remove(this.snapshot[this.last]);
 				this.last = -1;
 			} catch (IndexOutOfBoundsException ex) {
 				throw new ConcurrentModificationException();

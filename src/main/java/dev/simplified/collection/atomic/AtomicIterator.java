@@ -8,8 +8,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * An abstract iterator that operates over a snapshot of an array, providing
- * thread-safe iteration for concurrent collections.
+ * A snapshot-backed iterator that operates over an immutable array captured at iterator
+ * creation, providing thread-safe iteration for concurrent collections. The default
+ * {@link #remove()} throws {@link UnsupportedOperationException}; subclasses backed by a
+ * mutable collection override it to mutate the source under the appropriate lock.
  *
  * @param <E> the type of elements returned by this iterator
  *
@@ -17,7 +19,7 @@ import java.util.function.Consumer;
  * Most callers should use the corresponding {@code Concurrent*} type instead.
  */
 @SuppressWarnings("unchecked")
-abstract class AtomicIterator<E> implements Iterator<E> {
+class AtomicIterator<E> implements Iterator<E> {
 
 	/** Immutable snapshot of the array captured at iterator creation time. */
 	protected final Object[] snapshot;
@@ -60,8 +62,14 @@ abstract class AtomicIterator<E> implements Iterator<E> {
 
 	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Throws {@link UnsupportedOperationException} by default. Subclasses backed by a mutable
+	 * source override to propagate removal to the source under the appropriate lock.
 	 */
-	public abstract void remove();
+	@Override
+	public void remove() {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * {@inheritDoc}

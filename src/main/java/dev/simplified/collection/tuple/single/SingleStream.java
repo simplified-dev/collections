@@ -6,7 +6,7 @@ import dev.simplified.collection.StreamUtil;
 import dev.simplified.collection.function.IndexedConsumer;
 import dev.simplified.collection.function.IndexedFunction;
 import dev.simplified.collection.function.IndexedPredicate;
-import dev.simplified.collection.linked.ConcurrentLinkedList;
+import dev.simplified.collection.ConcurrentLinkedList;
 import dev.simplified.collection.tuple.pair.Pair;
 import dev.simplified.collection.tuple.pair.PairStream;
 import dev.simplified.collection.tuple.triple.Triple;

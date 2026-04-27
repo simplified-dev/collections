@@ -28,6 +28,39 @@ public interface ConcurrentSet<E> extends ConcurrentCollection<E>, Set<E> {
 	@NotNull ConcurrentUnmodifiableSet<E> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentSet} backed by a {@link HashSet}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty concurrent set
+	 */
+	static <E> @NotNull ConcurrentSet<E> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentSet} containing the given elements.
+	 *
+	 * @param elements the elements to include
+	 * @param <E> the element type
+	 * @return a new concurrent set containing the specified elements
+	 */
+	@SafeVarargs
+	static <E> @NotNull ConcurrentSet<E> of(@NotNull E... elements) {
+		return new Impl<>(elements);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentSet} containing all elements of the given collection.
+	 *
+	 * @param collection the source collection to copy from, or {@code null} for an empty set
+	 * @param <E> the element type
+	 * @return a new concurrent set containing the source's elements
+	 */
+	static <E> @NotNull ConcurrentSet<E> from(@Nullable Collection<? extends E> collection) {
+		return new Impl<>(collection);
+	}
+
+	/**
 	 * Wraps {@code backing} as a {@link ConcurrentSet} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
@@ -104,8 +137,8 @@ public interface ConcurrentSet<E> extends ConcurrentCollection<E>, Set<E> {
 		 * @return a new empty {@link ConcurrentSet.Impl}
 		 */
 		@Override
-		protected @NotNull AtomicCollection<E, AbstractSet<E>> createEmpty() {
-			return (Impl<E>) Concurrent.newSet();
+		protected @NotNull AtomicCollection<E, AbstractSet<E>> newEmpty() {
+			return new ConcurrentSet.Impl<>();
 		}
 
 		/**

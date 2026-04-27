@@ -1,7 +1,6 @@
-package dev.simplified.collection.linked;
+package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
+import dev.simplified.collection.atomic.AtomicList;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -102,11 +101,11 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 		/**
 		 * {@inheritDoc}
 		 *
-		 * <p>Overrides {@link ConcurrentList.Impl#snapshot()} to produce a {@link LinkedList}
-		 * snapshot preserving the source's insertion-order traversal characteristics.</p>
+		 * <p>Produces a {@link LinkedList} snapshot preserving the source's insertion-order
+		 * traversal characteristics.</p>
 		 */
 		@Override
-		public @NotNull List<E> snapshot() {
+		protected @NotNull List<E> snapshot() {
 			try {
 				this.lock.readLock().lock();
 				return new LinkedList<>(this.ref);
@@ -119,8 +118,8 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 		 * {@inheritDoc}
 		 */
 		@Override
-		public @NotNull ConcurrentLinkedList<E> newEmpty() {
-			return Concurrent.newLinkedList();
+		protected @NotNull AtomicList<E, List<E>> newEmpty() {
+			return new ConcurrentLinkedList.Impl<>();
 		}
 
 		/**

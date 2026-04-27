@@ -2,7 +2,7 @@ package dev.simplified.collection.tuple.single;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
-import dev.simplified.collection.linked.ConcurrentLinkedList;
+import dev.simplified.collection.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
