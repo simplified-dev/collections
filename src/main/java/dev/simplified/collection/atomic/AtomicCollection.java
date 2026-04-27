@@ -308,17 +308,16 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 		Object[] snapshot = this.snapshotCache;
 
 		if (snapshot == null) {
-			try {
-				this.lock.readLock().lock();
-				snapshot = this.snapshotCache;
+			snapshot = this.withReadLock(() -> {
+				Object[] cached = this.snapshotCache;
 
-				if (snapshot == null) {
-					snapshot = this.ref.toArray();
-					this.snapshotCache = snapshot;
+				if (cached == null) {
+					cached = this.ref.toArray();
+					this.snapshotCache = cached;
 				}
-			} finally {
-				this.lock.readLock().unlock();
-			}
+
+				return cached;
+			});
 		}
 
 		return new ConcurrentCollectionIterator(snapshot, 0);

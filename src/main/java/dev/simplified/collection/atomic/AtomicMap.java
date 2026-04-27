@@ -542,11 +542,10 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Object[] snapshot = this.entrySetSnapshot;
 
 		if (snapshot == null) {
-			try {
-				this.lock.readLock().lock();
-				snapshot = this.entrySetSnapshot;
+			snapshot = this.withReadLock(() -> {
+				Object[] cached = this.entrySetSnapshot;
 
-				if (snapshot == null) {
+				if (cached == null) {
 					Set<Entry<K, V>> source = this.ref.entrySet();
 					Object[] built = new Object[source.size()];
 					int i = 0;
@@ -554,12 +553,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 					for (Entry<K, V> entry : source)
 						built[i++] = new SnapshotEntry<>(entry.getKey(), entry.getValue());
 
-					snapshot = built;
-					this.entrySetSnapshot = snapshot;
+					cached = built;
+					this.entrySetSnapshot = cached;
 				}
-			} finally {
-				this.lock.readLock().unlock();
-			}
+
+				return cached;
+			});
 		}
 
 		return snapshot;
@@ -573,17 +572,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Object[] snapshot = this.keySetSnapshot;
 
 		if (snapshot == null) {
-			try {
-				this.lock.readLock().lock();
-				snapshot = this.keySetSnapshot;
+			snapshot = this.withReadLock(() -> {
+				Object[] cached = this.keySetSnapshot;
 
-				if (snapshot == null) {
-					snapshot = this.ref.keySet().toArray();
-					this.keySetSnapshot = snapshot;
+				if (cached == null) {
+					cached = this.ref.keySet().toArray();
+					this.keySetSnapshot = cached;
 				}
-			} finally {
-				this.lock.readLock().unlock();
-			}
+
+				return cached;
+			});
 		}
 
 		return snapshot;
@@ -597,17 +595,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Object[] snapshot = this.valuesSnapshot;
 
 		if (snapshot == null) {
-			try {
-				this.lock.readLock().lock();
-				snapshot = this.valuesSnapshot;
+			snapshot = this.withReadLock(() -> {
+				Object[] cached = this.valuesSnapshot;
 
-				if (snapshot == null) {
-					snapshot = this.ref.values().toArray();
-					this.valuesSnapshot = snapshot;
+				if (cached == null) {
+					cached = this.ref.values().toArray();
+					this.valuesSnapshot = cached;
 				}
-			} finally {
-				this.lock.readLock().unlock();
-			}
+
+				return cached;
+			});
 		}
 
 		return snapshot;
@@ -739,12 +736,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			if (!(o instanceof Entry<?, ?>))
 				return false;
 
-			try {
-				AtomicMap.this.lock.readLock().lock();
-				return AtomicMap.this.ref.entrySet().contains(o);
-			} finally {
-				AtomicMap.this.lock.readLock().unlock();
-			}
+			return AtomicMap.this.withReadLock(() -> AtomicMap.this.ref.entrySet().contains(o));
 		}
 
 		@Override
@@ -789,17 +781,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
-			try {
-				AtomicMap.this.lock.writeLock().lock();
-
+			return AtomicMap.this.withWriteLock(() -> {
 				if (!AtomicMap.this.ref.containsKey(o))
 					return false;
 
 				AtomicMap.this.remove(o);
 				return true;
-			} finally {
-				AtomicMap.this.lock.writeLock().unlock();
-			}
+			});
 		}
 
 		@Override
@@ -839,9 +827,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
-			try {
-				AtomicMap.this.lock.writeLock().lock();
-
+			return AtomicMap.this.withWriteLock(() -> {
 				for (Entry<K, V> entry : AtomicMap.this.ref.entrySet()) {
 					if (Objects.equals(entry.getValue(), o)) {
 						AtomicMap.this.remove(entry.getKey());
@@ -850,9 +836,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 				}
 
 				return false;
-			} finally {
-				AtomicMap.this.lock.writeLock().unlock();
-			}
+			});
 		}
 
 		@Override
@@ -958,18 +942,14 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 			Object value = this.snapshot[this.last];
 
-			try {
-				AtomicMap.this.lock.writeLock().lock();
-
+			AtomicMap.this.withWriteLock(() -> {
 				for (Entry<K, V> entry : AtomicMap.this.ref.entrySet()) {
 					if (Objects.equals(entry.getValue(), value)) {
 						AtomicMap.this.remove(entry.getKey());
 						break;
 					}
 				}
-			} finally {
-				AtomicMap.this.lock.writeLock().unlock();
-			}
+			});
 
 			this.last = -1;
 		}

@@ -124,6 +124,39 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 	@NotNull ConcurrentUnmodifiableCollection<E> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentCollection} backed by an {@link ArrayList}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty concurrent collection
+	 */
+	static <E> @NotNull ConcurrentCollection<E> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentCollection} containing the given elements.
+	 *
+	 * @param elements the elements to include
+	 * @param <E> the element type
+	 * @return a new concurrent collection containing the specified elements
+	 */
+	@SafeVarargs
+	static <E> @NotNull ConcurrentCollection<E> of(@NotNull E... elements) {
+		return new Impl<>(elements);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentCollection} containing all elements of the given collection.
+	 *
+	 * @param collection the source collection to copy from, or {@code null} for an empty collection
+	 * @param <E> the element type
+	 * @return a new concurrent collection containing the source's elements
+	 */
+	static <E> @NotNull ConcurrentCollection<E> from(@Nullable Collection<? extends E> collection) {
+		return new Impl<>(collection);
+	}
+
+	/**
 	 * Wraps {@code backing} as a {@link ConcurrentCollection} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
@@ -215,12 +248,7 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 		 * @return a fresh {@link AbstractCollection} containing the current elements
 		 */
 		protected @NotNull AbstractCollection<E> cloneRef() {
-			try {
-				this.lock.readLock().lock();
-				return new ArrayList<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
+			return this.withReadLock(() -> new ArrayList<>(this.ref));
 		}
 
 		/**

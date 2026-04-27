@@ -172,17 +172,16 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 		Object[] snapshot = super.snapshotCache;
 
 		if (snapshot == null) {
-			try {
-				super.lock.readLock().lock();
-				snapshot = super.snapshotCache;
+			snapshot = this.withReadLock(() -> {
+				Object[] cached = super.snapshotCache;
 
-				if (snapshot == null) {
-					snapshot = this.ref.toArray();
-					super.snapshotCache = snapshot;
+				if (cached == null) {
+					cached = this.ref.toArray();
+					super.snapshotCache = cached;
 				}
-			} finally {
-				super.lock.readLock().unlock();
-			}
+
+				return cached;
+			});
 		}
 
 		return new ConcurrentListIterator(snapshot, index);

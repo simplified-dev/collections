@@ -26,6 +26,39 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	@NotNull ConcurrentUnmodifiableLinkedList<E> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentLinkedList} backed by a {@link LinkedList}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty concurrent linked list
+	 */
+	static <E> @NotNull ConcurrentLinkedList<E> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentLinkedList} containing the given elements.
+	 *
+	 * @param elements the elements to include
+	 * @param <E> the element type
+	 * @return a new concurrent linked list containing the specified elements
+	 */
+	@SafeVarargs
+	static <E> @NotNull ConcurrentLinkedList<E> of(@NotNull E... elements) {
+		return new Impl<>(elements);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentLinkedList} containing all elements of the given collection.
+	 *
+	 * @param collection the source collection to copy from, or {@code null} for an empty list
+	 * @param <E> the element type
+	 * @return a new concurrent linked list containing the source's elements
+	 */
+	static <E> @NotNull ConcurrentLinkedList<E> from(@Nullable Collection<? extends E> collection) {
+		return new Impl<>(collection);
+	}
+
+	/**
 	 * Wraps {@code backing} as a {@link ConcurrentLinkedList} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
@@ -106,12 +139,7 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 		 */
 		@Override
 		protected @NotNull List<E> snapshot() {
-			try {
-				this.lock.readLock().lock();
-				return new LinkedList<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
+			return this.withReadLock(() -> new LinkedList<>(this.ref));
 		}
 
 		/**

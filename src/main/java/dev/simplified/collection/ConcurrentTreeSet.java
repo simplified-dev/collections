@@ -30,6 +30,52 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 	@NotNull ConcurrentUnmodifiableTreeSet<E> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentTreeSet} backed by a {@link TreeSet} with natural
+	 * element ordering.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty concurrent tree set
+	 */
+	static <E> @NotNull ConcurrentTreeSet<E> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentTreeSet} ordered by the given comparator.
+	 *
+	 * @param comparator the comparator used to order the elements
+	 * @param <E> the element type
+	 * @return a new empty concurrent tree set
+	 */
+	static <E> @NotNull ConcurrentTreeSet<E> withComparator(@NotNull Comparator<? super E> comparator) {
+		return new Impl<>(comparator);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentTreeSet} containing the given elements with natural ordering.
+	 *
+	 * @param elements the elements to include
+	 * @param <E> the element type
+	 * @return a new concurrent tree set containing the specified elements
+	 */
+	@SafeVarargs
+	static <E> @NotNull ConcurrentTreeSet<E> of(@NotNull E... elements) {
+		return new Impl<>(elements);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentTreeSet} containing all elements of the given collection
+	 * with natural ordering.
+	 *
+	 * @param collection the source collection to copy from, or {@code null} for an empty set
+	 * @param <E> the element type
+	 * @return a new concurrent tree set containing the source's elements
+	 */
+	static <E> @NotNull ConcurrentTreeSet<E> from(@Nullable Collection<? extends E> collection) {
+		return new Impl<>(collection);
+	}
+
+	/**
 	 * Wraps {@code backing} as a {@link ConcurrentTreeSet} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
@@ -162,12 +208,7 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 		 * @return a fresh {@link TreeSet} containing the current elements
 		 */
 		protected @NotNull TreeSet<E> cloneRef() {
-			try {
-				this.lock.readLock().lock();
-				return new TreeSet<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
+			return this.withReadLock(() -> new TreeSet<>(this.ref));
 		}
 
 		/**

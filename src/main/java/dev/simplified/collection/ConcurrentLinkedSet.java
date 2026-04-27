@@ -28,6 +28,39 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 	@NotNull ConcurrentUnmodifiableLinkedSet<E> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentLinkedSet} backed by a {@link LinkedHashSet}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty concurrent linked set
+	 */
+	static <E> @NotNull ConcurrentLinkedSet<E> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentLinkedSet} containing the given elements.
+	 *
+	 * @param elements the elements to include
+	 * @param <E> the element type
+	 * @return a new concurrent linked set containing the specified elements
+	 */
+	@SafeVarargs
+	static <E> @NotNull ConcurrentLinkedSet<E> of(@NotNull E... elements) {
+		return new Impl<>(elements);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentLinkedSet} containing all elements of the given collection.
+	 *
+	 * @param collection the source collection to copy from, or {@code null} for an empty set
+	 * @param <E> the element type
+	 * @return a new concurrent linked set containing the source's elements
+	 */
+	static <E> @NotNull ConcurrentLinkedSet<E> from(@Nullable Collection<? extends E> collection) {
+		return new Impl<>(collection);
+	}
+
+	/**
 	 * Wraps {@code backing} as a {@link ConcurrentLinkedSet} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
@@ -118,12 +151,7 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 		 */
 		@Override
 		protected @NotNull AbstractSet<E> cloneRef() {
-			try {
-				this.lock.readLock().lock();
-				return new LinkedHashSet<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
+			return this.withReadLock(() -> new LinkedHashSet<>(this.ref));
 		}
 
 		/**
