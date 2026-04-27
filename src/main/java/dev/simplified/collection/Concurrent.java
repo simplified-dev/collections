@@ -396,6 +396,35 @@ public final class Concurrent {
 	}
 
 	/**
+	 * Creates a new {@link ConcurrentTreeMap.Impl} containing the given entries, with natural
+	 * key ordering.
+	 *
+	 * @param pairs the entries to include
+	 * @param <K>   the key type
+	 * @param <V>   the value type
+	 * @return a new concurrent tree map containing the specified entries
+	 */
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newTreeMap(@NotNull Map.Entry<K, V>... pairs) {
+		return new ConcurrentTreeMap.Impl<>(pairs);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentTreeMap.Impl} containing the given entries, ordered by the
+	 * specified comparator.
+	 *
+	 * @param comparator the comparator used to order the keys
+	 * @param pairs      the entries to include
+	 * @param <K>        the key type
+	 * @param <V>        the value type
+	 * @return a new concurrent tree map containing the specified entries ordered by the given comparator
+	 */
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Map.Entry<K, V>... pairs) {
+		return new ConcurrentTreeMap.Impl<>(comparator, pairs);
+	}
+
+	/**
 	 * Creates a new {@link ConcurrentTreeMap.Impl} containing all entries from the given map,
 	 * with natural key ordering.
 	 *
@@ -441,6 +470,33 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull ConcurrentTreeSet<E> newTreeSet(@NotNull Comparator<? super E> comparator) {
 		return new ConcurrentTreeSet.Impl<>(comparator);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentTreeSet.Impl} containing the given elements, with natural
+	 * element ordering.
+	 *
+	 * @param array the elements to include
+	 * @param <E>   the element type
+	 * @return a new concurrent tree set containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentTreeSet<E> newTreeSet(@NotNull E... array) {
+		return new ConcurrentTreeSet.Impl<>(array);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentTreeSet.Impl} containing the given elements, ordered by the
+	 * specified comparator.
+	 *
+	 * @param comparator the comparator used to order the elements
+	 * @param array      the elements to include
+	 * @param <E>        the element type
+	 * @return a new concurrent tree set containing the specified elements ordered by the given comparator
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentTreeSet<E> newTreeSet(@NotNull Comparator<? super E> comparator, @NotNull E... array) {
+		return new ConcurrentTreeSet.Impl<>(comparator, array);
 	}
 
 	/**
@@ -850,6 +906,24 @@ public final class Concurrent {
 	}
 
 	/**
+	 * Creates a new {@link ConcurrentUnmodifiableLinkedMap.Impl} containing the given entries,
+	 * preserving insertion order.
+	 *
+	 * @param pairs the entries to include
+	 * @param <K>   the key type
+	 * @param <V>   the value type
+	 * @return a new unmodifiable concurrent linked map containing the specified entries
+	 */
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentUnmodifiableLinkedMap<K, V> newUnmodifiableLinkedMap(@NotNull Map.Entry<K, V>... pairs) {
+		java.util.LinkedHashMap<K, V> snapshot = new java.util.LinkedHashMap<>();
+		for (Map.Entry<K, V> entry : pairs) {
+			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
+		}
+		return new ConcurrentUnmodifiableLinkedMap.Impl<>(snapshot);
+	}
+
+	/**
 	 * Creates an immutable snapshot of the given map as a linked map, preserving insertion
 	 * order.
 	 *
@@ -885,6 +959,37 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator) {
 		return new ConcurrentUnmodifiableTreeSet.Impl<>(new java.util.TreeSet<>(comparator));
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentUnmodifiableTreeSet.Impl} containing the given elements,
+	 * with natural element ordering.
+	 *
+	 * @param array the elements to include
+	 * @param <E>   the element type
+	 * @return a new unmodifiable concurrent tree set containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull E... array) {
+		java.util.TreeSet<E> snapshot = new java.util.TreeSet<>();
+		java.util.Collections.addAll(snapshot, array);
+		return new ConcurrentUnmodifiableTreeSet.Impl<>(snapshot);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentUnmodifiableTreeSet.Impl} containing the given elements,
+	 * ordered by the specified comparator.
+	 *
+	 * @param comparator the comparator used to order the elements
+	 * @param array      the elements to include
+	 * @param <E>        the element type
+	 * @return a new unmodifiable concurrent tree set containing the specified elements ordered by the given comparator
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator, @NotNull E... array) {
+		java.util.TreeSet<E> snapshot = new java.util.TreeSet<>(comparator);
+		java.util.Collections.addAll(snapshot, array);
+		return new ConcurrentUnmodifiableTreeSet.Impl<>(snapshot);
 	}
 
 	/**
@@ -942,6 +1047,43 @@ public final class Concurrent {
 	}
 
 	/**
+	 * Creates a new {@link ConcurrentUnmodifiableTreeMap.Impl} containing the given entries, with
+	 * natural key ordering.
+	 *
+	 * @param pairs the entries to include
+	 * @param <K>   the key type
+	 * @param <V>   the value type
+	 * @return a new unmodifiable concurrent tree map containing the specified entries
+	 */
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Map.Entry<K, V>... pairs) {
+		java.util.TreeMap<K, V> snapshot = new java.util.TreeMap<>();
+		for (Map.Entry<K, V> entry : pairs) {
+			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
+		}
+		return new ConcurrentUnmodifiableTreeMap.Impl<>(snapshot);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentUnmodifiableTreeMap.Impl} containing the given entries,
+	 * ordered by the specified comparator.
+	 *
+	 * @param comparator the comparator used to order the keys
+	 * @param pairs      the entries to include
+	 * @param <K>        the key type
+	 * @param <V>        the value type
+	 * @return a new unmodifiable concurrent tree map containing the specified entries ordered by the given comparator
+	 */
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Map.Entry<K, V>... pairs) {
+		java.util.TreeMap<K, V> snapshot = new java.util.TreeMap<>(comparator);
+		for (Map.Entry<K, V> entry : pairs) {
+			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
+		}
+		return new ConcurrentUnmodifiableTreeMap.Impl<>(snapshot);
+	}
+
+	/**
 	 * Creates an immutable snapshot of the given map as a tree map with natural key ordering.
 	 *
 	 * @param map the source map
@@ -981,6 +1123,58 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull Collector<E, ?, ConcurrentCollection<E>> toCollection() {
 		return new StreamCollector<>(ConcurrentCollection.Impl::new, ConcurrentCollection.Impl::addAll, (left, right) -> { left.addAll(right); return left; }, ORDERED_CHARACTERISTICS);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentDeque.Impl}.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentDeque.Impl}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentDeque<E>> toDeque() {
+		return new StreamCollector<>(ConcurrentDeque.Impl::new, ConcurrentDeque.Impl::addAll, (left, right) -> { left.addAll(right); return left; }, ORDERED_CHARACTERISTICS);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentUnmodifiableDeque.Impl}.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent deque
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableDeque<E>> toUnmodifiableDeque() {
+		return new StreamCollector<E, ConcurrentDeque.Impl<E>, ConcurrentUnmodifiableDeque<E>>(
+			ConcurrentDeque.Impl::new,
+			ConcurrentDeque.Impl::addAll,
+			(left, right) -> { left.addAll(right); return left; },
+			ConcurrentUnmodifiableDeque.Impl::new,
+			ORDERED_FINISHING_CHARACTERISTICS
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentQueue.Impl}.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentQueue.Impl}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentQueue<E>> toQueue() {
+		return new StreamCollector<>(ConcurrentQueue.Impl::new, ConcurrentQueue.Impl::addAll, (left, right) -> { left.addAll(right); return left; }, ORDERED_CHARACTERISTICS);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentUnmodifiableQueue.Impl}.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent queue
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableQueue<E>> toUnmodifiableQueue() {
+		return new StreamCollector<E, ConcurrentQueue.Impl<E>, ConcurrentUnmodifiableQueue<E>>(
+			ConcurrentQueue.Impl::new,
+			ConcurrentQueue.Impl::addAll,
+			(left, right) -> { left.addAll(right); return left; },
+			ConcurrentUnmodifiableQueue.Impl::new,
+			ORDERED_FINISHING_CHARACTERISTICS
+		);
 	}
 
 	/**
@@ -1502,6 +1696,304 @@ public final class Concurrent {
 			ConcurrentSet.Impl::addAll,
 			(left, right) -> { left.addAll(right); return left; },
 			list -> (A) list.toUnmodifiable(),
+			UNORDERED_FINISHING_CHARACTERISTICS
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentLinkedSet.Impl},
+	 * preserving insertion order.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentLinkedSet.Impl}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentLinkedSet<E>> toLinkedSet() {
+		return new StreamCollector<>(ConcurrentLinkedSet.Impl::new, ConcurrentLinkedSet.Impl::addAll, (left, right) -> { left.addAll(right); return left; }, ORDERED_CHARACTERISTICS);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new
+	 * {@link ConcurrentUnmodifiableLinkedSet.Impl}, preserving insertion order.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent linked set
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableLinkedSet<E>> toUnmodifiableLinkedSet() {
+		return new StreamCollector<E, java.util.LinkedHashSet<E>, ConcurrentUnmodifiableLinkedSet<E>>(
+			java.util.LinkedHashSet::new,
+			java.util.LinkedHashSet::add,
+			(left, right) -> { left.addAll(right); return left; },
+			ConcurrentUnmodifiableLinkedSet.Impl::new,
+			ORDERED_FINISHING_CHARACTERISTICS
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentTreeSet.Impl}
+	 * with natural element ordering.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentTreeSet.Impl}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentTreeSet<E>> toTreeSet() {
+		return new StreamCollector<>(ConcurrentTreeSet.Impl::new, ConcurrentTreeSet.Impl::addAll, (left, right) -> { left.addAll(right); return left; }, UNORDERED_CHARACTERISTICS);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new {@link ConcurrentTreeSet.Impl}
+	 * ordered by the specified comparator.
+	 *
+	 * @param comparator the comparator used to order the elements
+	 * @param <E>        the element type
+	 * @return a collector producing a {@link ConcurrentTreeSet.Impl} ordered by {@code comparator}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentTreeSet<E>> toTreeSet(@NotNull Comparator<? super E> comparator) {
+		return new StreamCollector<>(() -> new ConcurrentTreeSet.Impl<>(comparator), ConcurrentTreeSet.Impl::addAll, (left, right) -> { left.addAll(right); return left; }, UNORDERED_CHARACTERISTICS);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new
+	 * {@link ConcurrentUnmodifiableTreeSet.Impl} with natural element ordering.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent tree set
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableTreeSet<E>> toUnmodifiableTreeSet() {
+		return new StreamCollector<E, java.util.TreeSet<E>, ConcurrentUnmodifiableTreeSet<E>>(
+			java.util.TreeSet::new,
+			java.util.TreeSet::add,
+			(left, right) -> { left.addAll(right); return left; },
+			ConcurrentUnmodifiableTreeSet.Impl::new,
+			UNORDERED_FINISHING_CHARACTERISTICS
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a new
+	 * {@link ConcurrentUnmodifiableTreeSet.Impl} ordered by the specified comparator.
+	 *
+	 * @param comparator the comparator used to order the elements
+	 * @param <E>        the element type
+	 * @return a collector producing an unmodifiable concurrent tree set ordered by {@code comparator}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableTreeSet<E>> toUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator) {
+		return new StreamCollector<E, java.util.TreeSet<E>, ConcurrentUnmodifiableTreeSet<E>>(
+			() -> new java.util.TreeSet<>(comparator),
+			java.util.TreeSet::add,
+			(left, right) -> { left.addAll(right); return left; },
+			ConcurrentUnmodifiableTreeSet.Impl::new,
+			UNORDERED_FINISHING_CHARACTERISTICS
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@link ConcurrentTreeMap.Impl} ordered by the specified comparator. Throws on duplicate keys.
+	 *
+	 * @param comparator the comparator used to order the keys
+	 * @param <K>        the key type
+	 * @param <V>        the value type
+	 * @param <T>        the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentTreeMap.Impl} ordered by {@code comparator}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentTreeMap<K, V>> toTreeMap(@NotNull Comparator<? super K> comparator) {
+		return toTreeMap(comparator, Map.Entry::getKey, Map.Entry::getValue, throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentTreeMap.Impl}
+	 * with natural key ordering, using the given key and value mappers. Throws on duplicate keys.
+	 *
+	 * @param keyMapper   the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param <K>         the key type
+	 * @param <V>         the value type
+	 * @param <T>         the stream element type
+	 * @return a collector producing a {@link ConcurrentTreeMap.Impl}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentTreeMap<K, V>> toTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+		return toTreeMapInternal(ConcurrentTreeMap.Impl::new, keyMapper, valueMapper, throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentTreeMap.Impl}
+	 * with natural key ordering, using the given key mapper, value mapper, and merge function for
+	 * duplicate keys.
+	 *
+	 * @param keyMapper     the function to extract map keys from stream elements
+	 * @param valueMapper   the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K>           the key type
+	 * @param <V>           the value type
+	 * @param <T>           the stream element type
+	 * @return a collector producing a {@link ConcurrentTreeMap.Impl}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentTreeMap<K, V>> toTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+		return toTreeMapInternal(ConcurrentTreeMap.Impl::new, keyMapper, valueMapper, mergeFunction);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentTreeMap.Impl}
+	 * ordered by the specified comparator, using the given key mapper, value mapper, and merge function
+	 * for duplicate keys.
+	 *
+	 * @param comparator    the comparator used to order the keys
+	 * @param keyMapper     the function to extract map keys from stream elements
+	 * @param valueMapper   the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K>           the key type
+	 * @param <V>           the value type
+	 * @param <T>           the stream element type
+	 * @return a collector producing a {@link ConcurrentTreeMap.Impl} ordered by {@code comparator}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentTreeMap<K, V>> toTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+		return toTreeMapInternal(() -> new ConcurrentTreeMap.Impl<>(comparator), keyMapper, valueMapper, mergeFunction);
+	}
+
+	/**
+	 * Builds a {@link Collector} that merges stream elements into the supplier-provided
+	 * {@link ConcurrentTreeMap.Impl} using the given key/value mappers and merge function.
+	 *
+	 * @param mapSupplier   the supplier providing the empty backing tree map
+	 * @param keyMapper     the function to extract map keys from stream elements
+	 * @param valueMapper   the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K>           the key type
+	 * @param <V>           the value type
+	 * @param <T>           the stream element type
+	 * @return a collector producing a {@link ConcurrentTreeMap.Impl}
+	 */
+	private static <K, V, T> @NotNull Collector<T, ?, ConcurrentTreeMap<K, V>> toTreeMapInternal(
+		@NotNull Supplier<ConcurrentTreeMap<K, V>> mapSupplier,
+		@NotNull Function<? super T, ? extends K> keyMapper,
+		@NotNull Function<? super T, ? extends V> valueMapper,
+		@NotNull BinaryOperator<V> mergeFunction
+	) {
+		return new StreamCollector<>(
+			mapSupplier,
+			(map, element) -> map.merge(keyMapper.apply(element), valueMapper.apply(element), mergeFunction),
+			(m1, m2) -> { m2.forEach((key, value) -> m1.merge(key, value, mergeFunction)); return m1; },
+			ORDERED_CHARACTERISTICS
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@link ConcurrentUnmodifiableLinkedMap.Impl}, preserving insertion order. Throws on
+	 * duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableLinkedMap<K, V>> toUnmodifiableLinkedMap() {
+		return toUnmodifiableLinkedMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@link ConcurrentUnmodifiableLinkedMap.Impl}, preserving insertion order, using the
+	 * specified merge function for duplicate keys.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K>           the key type
+	 * @param <V>           the value type
+	 * @param <T>           the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return toUnmodifiableLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a
+	 * {@link ConcurrentUnmodifiableLinkedMap.Impl} using the given key and value mappers,
+	 * preserving insertion order. Throws on duplicate keys.
+	 *
+	 * @param keyMapper   the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param <K>         the key type
+	 * @param <V>         the value type
+	 * @param <T>         the stream element type
+	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+		return toUnmodifiableLinkedMap(keyMapper, valueMapper, throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a
+	 * {@link ConcurrentUnmodifiableLinkedMap.Impl} using the given key mapper, value mapper, and
+	 * merge function for duplicate keys, preserving insertion order.
+	 *
+	 * @param keyMapper     the function to extract map keys from stream elements
+	 * @param valueMapper   the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K>           the key type
+	 * @param <V>           the value type
+	 * @param <T>           the stream element type
+	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+		return new StreamCollector<T, java.util.LinkedHashMap<K, V>, ConcurrentUnmodifiableLinkedMap<K, V>>(
+			java.util.LinkedHashMap::new,
+			(map, element) -> map.merge(keyMapper.apply(element), valueMapper.apply(element), mergeFunction),
+			(m1, m2) -> { m2.forEach((key, value) -> m1.merge(key, value, mergeFunction)); return m1; },
+			ConcurrentUnmodifiableLinkedMap.Impl::new,
+			ORDERED_FINISHING_CHARACTERISTICS
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@link ConcurrentUnmodifiableTreeMap.Impl} with natural key ordering. Throws on
+	 * duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap() {
+		return toUnmodifiableTreeMap(Map.Entry::getKey, Map.Entry::getValue, throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a
+	 * {@link ConcurrentUnmodifiableTreeMap.Impl} with natural key ordering, using the given key
+	 * and value mappers. Throws on duplicate keys.
+	 *
+	 * @param keyMapper   the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param <K>         the key type
+	 * @param <V>         the value type
+	 * @param <T>         the stream element type
+	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+		return toUnmodifiableTreeMap(keyMapper, valueMapper, throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a
+	 * {@link ConcurrentUnmodifiableTreeMap.Impl} with natural key ordering, using the given key
+	 * mapper, value mapper, and merge function for duplicate keys.
+	 *
+	 * @param keyMapper     the function to extract map keys from stream elements
+	 * @param valueMapper   the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K>           the key type
+	 * @param <V>           the value type
+	 * @param <T>           the stream element type
+	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+		return new StreamCollector<T, java.util.TreeMap<K, V>, ConcurrentUnmodifiableTreeMap<K, V>>(
+			java.util.TreeMap::new,
+			(map, element) -> map.merge(keyMapper.apply(element), valueMapper.apply(element), mergeFunction),
+			(m1, m2) -> { m2.forEach((key, value) -> m1.merge(key, value, mergeFunction)); return m1; },
+			ConcurrentUnmodifiableTreeMap.Impl::new,
 			UNORDERED_FINISHING_CHARACTERISTICS
 		);
 	}
