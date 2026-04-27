@@ -1,13 +1,16 @@
 package dev.simplified.collection;
 import dev.simplified.collection.ConcurrentList;
 
+import dev.simplified.collection.query.SortOrder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -305,6 +308,55 @@ class ConcurrentListTest {
             ConcurrentList<Integer> unmod = Concurrent.newUnmodifiableList(source);
             assertEquals(3, unmod.size());
             assertThrows(UnsupportedOperationException.class, () -> unmod.add(4));
+        }
+    }
+
+    @Nested
+    class SortedVariants {
+
+        @Test
+        void sorted_functions_descendingByDefault() {
+            list.addAll(List.of("ab", "abcd", "abc"));
+            ConcurrentList<String> sorted = list.sorted(String::length);
+            // Descending by default per javadoc
+            assertEquals(List.of("abcd", "abc", "ab"), sorted);
+        }
+
+        @Test
+        void sorted_iterableFunctions_descendingByDefault() {
+            list.addAll(List.of("ab", "abcd", "abc"));
+            Function<String, ? extends Comparable> byLen = String::length;
+            ConcurrentList<String> sorted = list.sorted(List.of(byLen));
+            assertEquals(List.of("abcd", "abc", "ab"), sorted);
+        }
+
+        @Test
+        void sorted_sortOrder_ascending_functions() {
+            list.addAll(List.of("c", "a", "b"));
+            ConcurrentList<String> sorted = list.sorted(SortOrder.ASCENDING, Function.identity());
+            assertEquals(List.of("a", "b", "c"), sorted);
+        }
+
+        @Test
+        void sorted_sortOrder_descending_functions() {
+            list.addAll(List.of("a", "c", "b"));
+            ConcurrentList<String> sorted = list.sorted(SortOrder.DESCENDING, Function.identity());
+            assertEquals(List.of("c", "b", "a"), sorted);
+        }
+
+        @Test
+        void sorted_sortOrder_iterableFunctions() {
+            list.addAll(List.of("ab", "a", "abc"));
+            Function<String, ? extends Comparable> byLen = String::length;
+            ConcurrentList<String> sorted = list.sorted(SortOrder.ASCENDING, List.of(byLen));
+            assertEquals(List.of("a", "ab", "abc"), sorted);
+        }
+
+        @Test
+        void sorted_nullComparator_naturalOrder() {
+            list.addAll(List.of("b", "a", "c"));
+            ConcurrentList<String> sorted = list.sorted((Comparator<? super String>) null);
+            assertEquals(List.of("a", "b", "c"), sorted);
         }
     }
 }
