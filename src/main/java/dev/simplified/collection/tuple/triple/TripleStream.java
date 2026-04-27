@@ -10,6 +10,7 @@ import dev.simplified.collection.function.TriPredicate;
 import dev.simplified.collection.tuple.pair.Pair;
 import dev.simplified.collection.tuple.pair.PairStream;
 import dev.simplified.collection.tuple.single.SingleStream;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -111,6 +112,7 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      *
      * @return the underlying triple stream
      */
+    @ApiStatus.Internal
     @NotNull Stream<Triple<L, M, R>> underlying();
 
     /**
