@@ -1,6 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.tree.ConcurrentTreeSet;
+import dev.simplified.collection.ConcurrentTreeSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractSet;
@@ -63,7 +63,7 @@ public interface ConcurrentUnmodifiableTreeSet<E> extends ConcurrentTreeSet<E>, 
 
 		/** {@inheritDoc} */
 		@Override
-		public final boolean addIf(@NotNull Predicate<AbstractSet<E>> predicate, @NotNull E element) {
+		public final boolean addIf(@NotNull Predicate<TreeSet<E>> predicate, @NotNull E element) {
 			throw new UnsupportedOperationException();
 		}
 

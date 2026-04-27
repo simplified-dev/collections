@@ -1,10 +1,12 @@
 package dev.simplified.collection.atomic;
 
-import dev.simplified.collection.query.Sortable;
+import dev.simplified.collection.ConcurrentList;
+import dev.simplified.collection.query.SortOrder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Function;
 
 /**
  * A thread-safe abstract list backed by a {@link ReadWriteLock} for concurrent access.
@@ -16,7 +18,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @apiNote This is a low-level building block for custom concurrent implementations.
  * Most callers should use the corresponding {@code Concurrent*} type instead.
  */
-public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<E, T> implements Sortable<E>, List<E> {
+public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<E, T> implements ConcurrentList<E> {
 
 	protected AtomicList(@NotNull T type) {
 		super(type);
@@ -38,13 +40,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * {@inheritDoc}
 	 */
 	public void add(int index, @NotNull E element) {
-		try {
-			super.lock.writeLock().lock();
-			super.ref.add(index, element);
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
-		}
+		this.withWriteLock(() -> super.ref.add(index, element));
 	}
 
 	/**
@@ -52,13 +48,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public void addFirst(@NotNull E element) {
-		try {
-			super.lock.writeLock().lock();
-			super.ref.addFirst(element);
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
-		}
+		this.withWriteLock(() -> super.ref.addFirst(element));
 	}
 
 	/**
@@ -66,13 +56,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public void addLast(@NotNull E element) {
-		try {
-			super.lock.writeLock().lock();
-			super.ref.addLast(element);
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
-		}
+		this.withWriteLock(() -> super.ref.addLast(element));
 	}
 
 	/**
@@ -80,13 +64,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public boolean addAll(int index, @NotNull Collection<? extends E> collection) {
-		try {
-			super.lock.writeLock().lock();
-			return super.ref.addAll(index, collection);
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
-		}
+		return this.withWriteLock(() -> super.ref.addAll(index, collection));
 	}
 
 	/**
@@ -94,12 +72,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public final E get(int index) {
-		try {
-			super.lock.readLock().lock();
-			return super.ref.get(index);
-		} finally {
-			super.lock.readLock().unlock();
-		}
+		return this.withReadLock(() -> super.ref.get(index));
 	}
 
 	/**
@@ -107,16 +80,12 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E getFirst() {
-		try {
-			this.lock.readLock().lock();
-
+		return this.withReadLock(() -> {
 			if (this.ref.isEmpty())
 				throw new NoSuchElementException();
 
 			return this.ref.getFirst();
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		});
 	}
 
 	/**
@@ -124,16 +93,12 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E getLast() {
-		try {
-			this.lock.readLock().lock();
-
+		return this.withReadLock(() -> {
 			if (this.ref.isEmpty())
 				throw new NoSuchElementException();
 
 			return this.ref.getLast();
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		});
 	}
 
 	/**
@@ -143,12 +108,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return an {@code Optional} describing the first element, or an empty {@code Optional}
 	 */
 	public final @NotNull Optional<E> findFirst() {
-		try {
-			this.lock.readLock().lock();
-			return Optional.ofNullable(!this.ref.isEmpty() ? this.ref.getFirst() : null);
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		return this.withReadLock(() -> Optional.ofNullable(!this.ref.isEmpty() ? this.ref.getFirst() : null));
 	}
 
 	/**
@@ -158,12 +118,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return an {@code Optional} describing the last element, or an empty {@code Optional}
 	 */
 	public final @NotNull Optional<E> findLast() {
-		try {
-			this.lock.readLock().lock();
-			return Optional.ofNullable(!this.ref.isEmpty() ? this.ref.getLast() : null);
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		return this.withReadLock(() -> Optional.ofNullable(!this.ref.isEmpty() ? this.ref.getLast() : null));
 	}
 
 	/**
@@ -174,12 +129,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return the element at the specified index, or {@code defaultValue} if the index is out of range
 	 */
 	public final E getOrDefault(int index, E defaultValue) {
-		try {
-			this.lock.readLock().lock();
-			return index < this.ref.size() ? this.ref.get(index) : defaultValue;
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		return this.withReadLock(() -> index < this.ref.size() ? this.ref.get(index) : defaultValue);
 	}
 
 	/**
@@ -187,12 +137,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public final int indexOf(Object item) {
-		try {
-			this.lock.readLock().lock();
-			return this.ref.indexOf(item);
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		return this.withReadLock(() -> this.ref.indexOf(item));
 	}
 
 	/**
@@ -208,12 +153,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public final int lastIndexOf(Object item) {
-		try {
-			this.lock.readLock().lock();
-			return this.ref.lastIndexOf(item);
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		return this.withReadLock(() -> this.ref.lastIndexOf(item));
 	}
 
 	/**
@@ -253,13 +193,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E remove(int index) {
-		try {
-			super.lock.writeLock().lock();
-			return super.ref.remove(index);
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
-		}
+		return this.withWriteLock(() -> super.ref.remove(index));
 	}
 
 	/**
@@ -267,13 +201,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E removeFirst() {
-		try {
-			super.lock.writeLock().lock();
-			return super.ref.removeFirst();
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
-		}
+		return this.withWriteLock((java.util.function.Supplier<E>) super.ref::removeFirst);
 	}
 
 	/**
@@ -281,13 +209,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E removeLast() {
-		try {
-			super.lock.writeLock().lock();
-			return super.ref.removeLast();
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
-		}
+		return this.withWriteLock((java.util.function.Supplier<E>) super.ref::removeLast);
 	}
 
 	/**
@@ -295,13 +217,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E set(int index, E element) {
-		try {
-			super.lock.writeLock().lock();
-			return super.ref.set(index, element);
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
-		}
+		return this.withWriteLock(() -> super.ref.set(index, element));
 	}
 
 	/**
@@ -312,13 +228,150 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public void sort(Comparator<? super E> comparator) {
-		try {
-			super.lock.writeLock().lock();
-			super.ref.sort(comparator);
-		} finally {
-			this.invalidateSnapshot();
-			super.lock.writeLock().unlock();
+		this.withWriteLock(() -> super.ref.sort(comparator));
+	}
+
+	/**
+	 * Returns a fresh mutable {@link List} containing the current contents of this list, captured
+	 * atomically under the read lock. Subclasses backed by a different concrete {@link List}
+	 * implementation override this to return an instance of that type so iteration order and
+	 * structural characteristics are preserved on the snapshot.
+	 *
+	 * @return a fresh {@link List} containing the current elements
+	 */
+	protected @NotNull List<E> snapshot() {
+		return this.withReadLock(() -> new ArrayList<>(this.ref));
+	}
+
+	/**
+	 * Returns a new empty instance of this list's runtime type. Used by {@link #sorted},
+	 * {@link #reversed}, and {@link #subList} to materialize their result.
+	 *
+	 * @return a new empty {@code AtomicList} of the same concrete type
+	 */
+	protected abstract @NotNull AtomicList<E, T> newEmpty();
+
+	/**
+	 * Returns a new list containing all elements from this list, sorted in descending order
+	 * according to the specified comparison functions. The original list is not modified.
+	 *
+	 * @param functions one or more functions used to extract comparable keys for sorting
+	 * @return a new sorted list
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public @NotNull AtomicList<E, T> sorted(@NotNull Function<E, ? extends Comparable<?>>... functions) {
+		return this.sorted(SortOrder.DESCENDING, Arrays.asList(functions));
+	}
+
+	/**
+	 * Returns a new list containing all elements from this list, sorted in descending order
+	 * according to the specified collection of comparison functions. The original list is not
+	 * modified.
+	 *
+	 * @param functions an iterable collection of functions used to extract comparable keys for
+	 *                  sorting
+	 * @return a new sorted list
+	 */
+	@Override
+	public @NotNull AtomicList<E, T> sorted(@NotNull Iterable<Function<E, ? extends Comparable<?>>> functions) {
+		return this.sorted(SortOrder.DESCENDING, functions);
+	}
+
+	/**
+	 * Returns a new list containing all elements from this list, sorted according to the
+	 * specified sort order and comparison functions. The original list is not modified.
+	 *
+	 * @param sortOrder the sort order ({@code ASCENDING} or {@code DESCENDING})
+	 * @param functions one or more functions that extract comparable keys for sorting
+	 * @return a new sorted list
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public @NotNull AtomicList<E, T> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable<?>>... functions) {
+		return this.sorted(sortOrder, Arrays.asList(functions));
+	}
+
+	/**
+	 * Returns a new list containing all elements from this list, sorted according to the
+	 * specified sort order and comparison functions. The original list is not modified.
+	 *
+	 * @param sortOrder the sort order ({@code ASCENDING} or {@code DESCENDING})
+	 * @param functions an iterable collection of functions that extract comparable keys for
+	 *                  sorting
+	 * @return a new sorted list
+	 */
+	@Override
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public @NotNull AtomicList<E, T> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable<?>>> functions) {
+		Iterator<Function<E, ? extends Comparable<?>>> iterator = functions.iterator();
+
+		if (!iterator.hasNext())
+			return this;
+
+		Comparator<E> comparator = Comparator.comparing((Function) iterator.next());
+
+		while (iterator.hasNext()) {
+			Function<E, ? extends Comparable> next = iterator.next();
+			comparator = comparator.thenComparing(next);
 		}
+
+		List<E> snapshot = this.snapshot();
+		snapshot.sort(sortOrder == SortOrder.ASCENDING ? comparator : comparator.reversed());
+
+		AtomicList<E, T> result = this.newEmpty();
+		result.addAll(snapshot);
+		return result;
+	}
+
+	/**
+	 * Returns a new list containing all elements from this list, sorted according to the given
+	 * comparator. The original list is not modified.
+	 *
+	 * @param comparator the comparator used to order the elements; {@code null} requests natural
+	 *                   ordering
+	 * @return a new sorted list
+	 */
+	@Override
+	public @NotNull AtomicList<E, T> sorted(Comparator<? super E> comparator) {
+		List<E> snapshot = this.snapshot();
+		snapshot.sort(comparator);
+		AtomicList<E, T> result = this.newEmpty();
+		result.addAll(snapshot);
+		return result;
+	}
+
+	/**
+	 * Returns a new list containing all elements of this list in reverse order. The original list
+	 * is not modified.
+	 *
+	 * @return a new reversed list
+	 */
+	@Override
+	public @NotNull AtomicList<E, T> reversed() {
+		List<E> snapshot = this.snapshot();
+		Collections.reverse(snapshot);
+		AtomicList<E, T> result = this.newEmpty();
+		result.addAll(snapshot);
+		return result;
+	}
+
+	/**
+	 * Returns a snapshot view of the portion of this list between the specified {@code fromIndex},
+	 * inclusive, and {@code toIndex}, exclusive. The returned sublist is a fresh list and does not
+	 * reflect subsequent modifications to the original.
+	 *
+	 * @param fromIndex the starting index of the sublist (inclusive)
+	 * @param toIndex the ending index of the sublist (exclusive)
+	 * @return a new list representing the specified range
+	 * @throws IndexOutOfBoundsException if either index is out of range
+	 */
+	@Override
+	public @NotNull AtomicList<E, T> subList(int fromIndex, int toIndex) {
+		List<E> snapshot = this.snapshot();
+		AtomicList<E, T> result = this.newEmpty();
+		result.addAll(snapshot.subList(fromIndex, toIndex));
+		return result;
 	}
 
 	/**

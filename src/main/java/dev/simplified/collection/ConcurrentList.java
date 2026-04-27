@@ -54,34 +54,14 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	E getOrDefault(int index, E defaultValue);
 
 	/**
-	 * Returns a fresh mutable {@link List} containing the current contents of this list, captured
-	 * atomically under the read lock. Subclasses may override to choose the snapshot's concrete
-	 * {@link List} type; the snapshot is the working buffer used by {@link #sorted}, {@link #reversed},
-	 * and {@link #subList}.
-	 *
-	 * @return a fresh {@link List} containing the current elements
-	 */
-	@NotNull List<E> snapshot();
-
-	/**
-	 * Returns a new empty instance of this list's runtime type. Used by {@link #sorted},
-	 * {@link #reversed}, and {@link #subList} to materialize their result so the result preserves
-	 * the source's backing-list characteristics.
-	 *
-	 * @return a new empty {@link ConcurrentList} of the same concrete type
-	 */
-	@NotNull ConcurrentList<E> newEmpty();
-
-	/**
 	 * Returns a new list containing all elements from this list, sorted in descending order
 	 * according to the specified comparison functions. The original list is not modified.
 	 *
 	 * @param functions one or more functions used to extract comparable keys for sorting
 	 * @return a new sorted list
 	 */
-	default @NotNull ConcurrentList<E> sorted(@NotNull Function<E, ? extends Comparable<?>>... functions) {
-		return this.sorted(SortOrder.DESCENDING, Arrays.asList(functions));
-	}
+	@SuppressWarnings("unchecked")
+	@NotNull ConcurrentList<E> sorted(@NotNull Function<E, ? extends Comparable<?>>... functions);
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted in descending order
@@ -92,9 +72,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *                  sorting
 	 * @return a new sorted list
 	 */
-	default @NotNull ConcurrentList<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable<?>>> functions) {
-		return this.sorted(SortOrder.DESCENDING, functions);
-	}
+	@NotNull ConcurrentList<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable<?>>> functions);
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the
@@ -104,9 +82,8 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @param functions one or more functions that extract comparable keys for sorting
 	 * @return a new sorted list
 	 */
-	default @NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable<?>>... functions) {
-		return this.sorted(sortOrder, Arrays.asList(functions));
-	}
+	@SuppressWarnings("unchecked")
+	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable<?>>... functions);
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the
@@ -117,27 +94,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *                  sorting
 	 * @return a new sorted list
 	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	default @NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable<?>>> functions) {
-		Iterator<Function<E, ? extends Comparable<?>>> iterator = functions.iterator();
-
-		if (!iterator.hasNext())
-			return this;
-
-		Comparator<E> comparator = Comparator.comparing((Function) iterator.next());
-
-		while (iterator.hasNext()) {
-			Function<E, ? extends Comparable> next = iterator.next();
-			comparator = comparator.thenComparing(next);
-		}
-
-		List<E> snapshot = this.snapshot();
-		snapshot.sort(sortOrder == SortOrder.ASCENDING ? comparator : comparator.reversed());
-
-		ConcurrentList<E> result = this.newEmpty();
-		result.addAll(snapshot);
-		return result;
-	}
+	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable<?>>> functions);
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the given
@@ -147,42 +104,69 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *                   ordering
 	 * @return a new sorted list
 	 */
-	default @NotNull ConcurrentList<E> sorted(Comparator<? super E> comparator) {
-		List<E> snapshot = this.snapshot();
-		snapshot.sort(comparator);
-		ConcurrentList<E> result = this.newEmpty();
-		result.addAll(snapshot);
-		return result;
-	}
+	@NotNull ConcurrentList<E> sorted(Comparator<? super E> comparator);
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	default @NotNull ConcurrentList<E> reversed() {
-		List<E> snapshot = this.snapshot();
-		Collections.reverse(snapshot);
-		ConcurrentList<E> result = this.newEmpty();
-		result.addAll(snapshot);
-		return result;
-	}
+	@NotNull ConcurrentList<E> reversed();
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	default @NotNull ConcurrentList<E> subList(int fromIndex, int toIndex) {
-		List<E> snapshot = this.snapshot();
-		ConcurrentList<E> result = this.newEmpty();
-		result.addAll(snapshot.subList(fromIndex, toIndex));
-		return result;
-	}
+	@NotNull ConcurrentList<E> subList(int fromIndex, int toIndex);
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	@NotNull ConcurrentUnmodifiableList<E> toUnmodifiable();
+
+	/**
+	 * Creates a new empty {@link ConcurrentList} backed by an {@link ArrayList}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty concurrent list
+	 */
+	static <E> @NotNull ConcurrentList<E> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentList} containing the given elements.
+	 *
+	 * @param elements the elements to include
+	 * @param <E> the element type
+	 * @return a new concurrent list containing the specified elements
+	 */
+	@SafeVarargs
+	static <E> @NotNull ConcurrentList<E> of(@NotNull E... elements) {
+		return new Impl<>(elements);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentList} containing all elements of the given collection.
+	 *
+	 * @param collection the source collection to copy from, or {@code null} for an empty list
+	 * @param <E> the element type
+	 * @return a new concurrent list containing the source's elements
+	 */
+	static <E> @NotNull ConcurrentList<E> from(@Nullable Collection<? extends E> collection) {
+		return new Impl<>(collection);
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentList} with the given initial capacity.
+	 *
+	 * @param initialCapacity the initial capacity of the backing list
+	 * @param <E> the element type
+	 * @return a new empty concurrent list with the specified initial capacity
+	 */
+	static <E> @NotNull ConcurrentList<E> withCapacity(int initialCapacity) {
+		return new Impl<>(initialCapacity);
+	}
 
 	/**
 	 * Wraps {@code backing} as a {@link ConcurrentList} without copying.
@@ -267,30 +251,8 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 		 * {@inheritDoc}
 		 */
 		@Override
-		@SuppressWarnings("unchecked")
-		protected @NotNull AtomicList<E, List<E>> createEmpty() {
-			return (ConcurrentList.Impl<E>) Concurrent.newList();
-		}
-
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public @NotNull List<E> snapshot() {
-			try {
-				this.lock.readLock().lock();
-				return new ArrayList<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
-		}
-
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public @NotNull ConcurrentList<E> newEmpty() {
-			return Concurrent.newList();
+		protected @NotNull AtomicList<E, List<E>> newEmpty() {
+			return new ConcurrentList.Impl<>();
 		}
 
 		/**

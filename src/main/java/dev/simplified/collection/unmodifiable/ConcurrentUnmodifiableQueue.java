@@ -1,13 +1,11 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentQueue;
-import dev.simplified.collection.atomic.AtomicQueue;
-import dev.simplified.collection.linked.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.function.Supplier;
 
 /**
@@ -30,17 +28,13 @@ public interface ConcurrentUnmodifiableQueue<E> extends ConcurrentQueue<E>, Conc
 	class Impl<E> extends ConcurrentQueue.Impl<E> implements ConcurrentUnmodifiableQueue<E> {
 
 		/**
-		 * Wraps a snapshot of the given source queue. The source's contents are copied under its
-		 * own read lock at construction time.
+		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by
+		 * copying a source queue's contents under that source's read lock.
 		 *
-		 * @param source the source queue whose elements are snapshotted
+		 * @param snapshot a freshly cloned backing queue
 		 */
-		public Impl(@NotNull AtomicQueue<E> source) {
-			super(snapshotStorage(source));
-		}
-
-		private static <E> @NotNull ConcurrentLinkedList.Impl<E> snapshotStorage(@NotNull AtomicQueue<E> source) {
-			return (ConcurrentLinkedList.Impl<E>) Concurrent.newLinkedList(source);
+		public Impl(@NotNull LinkedList<E> snapshot) {
+			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
 		/** {@inheritDoc} */
@@ -52,13 +46,6 @@ public interface ConcurrentUnmodifiableQueue<E> extends ConcurrentQueue<E>, Conc
 		/** {@inheritDoc} */
 		@Override
 		public final boolean addAll(@NotNull Collection<? extends E> collection) {
-			throw new UnsupportedOperationException();
-		}
-
-		/** {@inheritDoc} */
-		@SafeVarargs
-		@Override
-		public final boolean addAll(@NotNull E... collection) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -101,12 +88,6 @@ public interface ConcurrentUnmodifiableQueue<E> extends ConcurrentQueue<E>, Conc
 		/** {@inheritDoc} */
 		@Override
 		public final boolean removeAll(@NotNull Collection<?> collection) {
-			throw new UnsupportedOperationException();
-		}
-
-		/** {@inheritDoc} */
-		@Override
-		public final boolean replace(@NotNull E existingElement, @NotNull E replaceWith) {
 			throw new UnsupportedOperationException();
 		}
 

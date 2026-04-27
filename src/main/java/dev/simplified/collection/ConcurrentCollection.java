@@ -204,8 +204,8 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 		 * @return a new empty {@link ConcurrentCollection.Impl}
 		 */
 		@Override
-		protected final @NotNull AtomicCollection<E, AbstractCollection<E>> createEmpty() {
-			return (Impl<E>) Concurrent.newCollection();
+		protected final @NotNull AtomicCollection<E, AbstractCollection<E>> newEmpty() {
+			return new ConcurrentCollection.Impl<>();
 		}
 
 		/**

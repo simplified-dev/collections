@@ -1,6 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
-import dev.simplified.collection.linked.ConcurrentLinkedList;
+import dev.simplified.collection.ConcurrentLinkedList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;

@@ -1,4 +1,4 @@
-package dev.simplified.collection.linked;
+package dev.simplified.collection;
 
 import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedMap;

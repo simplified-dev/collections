@@ -1,9 +1,9 @@
 package dev.simplified.collection.atomic;
 
+import dev.simplified.collection.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractSet;
-import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @apiNote This is a low-level building block for custom concurrent implementations.
  * Most callers should use the corresponding {@code Concurrent*} type instead.
  */
-public abstract class AtomicSet<E, T extends AbstractSet<E>> extends AtomicCollection<E, T> implements Set<E> {
+public abstract class AtomicSet<E, T extends AbstractSet<E>> extends AtomicCollection<E, T> implements ConcurrentSet<E> {
 
 	protected AtomicSet(@NotNull T type) {
 		super(type);

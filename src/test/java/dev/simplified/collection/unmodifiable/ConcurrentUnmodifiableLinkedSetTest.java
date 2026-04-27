@@ -2,7 +2,7 @@ package dev.simplified.collection.unmodifiable;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentSet;
-import dev.simplified.collection.linked.ConcurrentLinkedSet;
+import dev.simplified.collection.ConcurrentLinkedSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicQueue;
-import dev.simplified.collection.linked.ConcurrentLinkedList;
 import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * A thread-safe {@link Queue} extension exposing the project-specific concurrent surface for
@@ -34,12 +34,12 @@ public interface ConcurrentQueue<E> extends ConcurrentCollection<E>, Queue<E> {
 	@NotNull ConcurrentUnmodifiableQueue<E> toUnmodifiable();
 
 	/**
-	 * A thread-safe FIFO queue backed by a {@link ConcurrentLinkedList.Impl} with concurrent
-	 * access. Supports standard queue operations: offer, peek, poll, and element retrieval.
+	 * A thread-safe FIFO queue backed by a {@link LinkedList} with concurrent access. Supports
+	 * standard queue operations: offer, peek, poll, and element retrieval.
 	 *
 	 * @param <E> the type of elements in this queue
 	 */
-	class Impl<E> extends AtomicQueue<E> implements ConcurrentQueue<E> {
+	class Impl<E> extends AtomicQueue<E, LinkedList<E>> {
 
 		/**
 		 * Creates a new concurrent queue.
@@ -68,13 +68,33 @@ public interface ConcurrentQueue<E> extends ConcurrentCollection<E>, Queue<E> {
 		}
 
 		/**
-		 * Constructs a {@code ConcurrentQueue.Impl} with a pre-built backing storage. Used by
-		 * {@link ConcurrentUnmodifiableQueue.Impl} to install snapshot storage.
+		 * Constructs a {@code ConcurrentQueue.Impl} that adopts {@code backingQueue} as its storage
+		 * with a fresh lock.
 		 *
-		 * @param storage the pre-built backing storage
+		 * @param backingQueue the backing queue to adopt
 		 */
-		protected Impl(@NotNull ConcurrentLinkedList.Impl<E> storage) {
-			super(storage);
+		protected Impl(@NotNull LinkedList<E> backingQueue) {
+			super(backingQueue);
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentQueue.Impl} with a pre-built backing queue and an explicit
+		 * lock. Used by {@link ConcurrentUnmodifiableQueue.Impl} to install a snapshot queue paired
+		 * with a no-op lock for wait-free reads.
+		 *
+		 * @param backingQueue the pre-built backing queue
+		 * @param lock the lock guarding {@code backingQueue}
+		 */
+		protected Impl(@NotNull LinkedList<E> backingQueue, @NotNull ReadWriteLock lock) {
+			super(backingQueue, lock);
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		@Override
+		protected @NotNull AtomicQueue<E, LinkedList<E>> newEmpty() {
+			return new ConcurrentQueue.Impl<>();
 		}
 
 		/**
@@ -87,7 +107,16 @@ public interface ConcurrentQueue<E> extends ConcurrentCollection<E>, Queue<E> {
 		 */
 		@Override
 		public @NotNull ConcurrentUnmodifiableQueue<E> toUnmodifiable() {
-			return new ConcurrentUnmodifiableQueue.Impl<>(this);
+			LinkedList<E> snapshot;
+
+			try {
+				this.lock.readLock().lock();
+				snapshot = new LinkedList<>(this.ref);
+			} finally {
+				this.lock.readLock().unlock();
+			}
+
+			return new ConcurrentUnmodifiableQueue.Impl<>(snapshot);
 		}
 
 	}
