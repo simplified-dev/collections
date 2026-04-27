@@ -26,6 +26,42 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	@NotNull ConcurrentUnmodifiableLinkedMap<K, V> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentLinkedMap} backed by a {@link LinkedHashMap}.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new empty concurrent linked map
+	 */
+	static <K, V> @NotNull ConcurrentLinkedMap<K, V> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentLinkedMap} containing all entries of the given map.
+	 *
+	 * @param map the source map to copy from, or {@code null} for an empty map
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new concurrent linked map containing the source's entries
+	 */
+	static <K, V> @NotNull ConcurrentLinkedMap<K, V> from(@Nullable Map<? extends K, ? extends V> map) {
+		return new Impl<>(map);
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentLinkedMap} with the given maximum size; entries
+	 * exceeding that size evict the eldest insertion-ordered entry.
+	 *
+	 * @param maxSize the maximum number of entries to retain
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new size-capped concurrent linked map
+	 */
+	static <K, V> @NotNull ConcurrentLinkedMap<K, V> withMaxSize(int maxSize) {
+		return new Impl<>(maxSize);
+	}
+
+	/**
 	 * Wraps {@code backing} as a {@link ConcurrentLinkedMap} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
@@ -120,12 +156,7 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 		 */
 		@Override
 		protected @NotNull AbstractMap<K, V> cloneRef() {
-			try {
-				this.lock.readLock().lock();
-				return new LinkedHashMap<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
+			return this.withReadLock(() -> new LinkedHashMap<>(this.ref));
 		}
 
 		/**

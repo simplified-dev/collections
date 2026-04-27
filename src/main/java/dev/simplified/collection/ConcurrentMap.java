@@ -264,12 +264,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V>, Iterable<Map.Entry<K, V>
 		 * @return a fresh {@link AbstractMap} containing the current entries
 		 */
 		protected @NotNull AbstractMap<K, V> cloneRef() {
-			try {
-				this.lock.readLock().lock();
-				return new HashMap<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
+			return this.withReadLock(() -> new HashMap<>(this.ref));
 		}
 
 		/**

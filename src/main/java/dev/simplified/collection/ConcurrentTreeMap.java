@@ -28,6 +28,57 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 	@NotNull ConcurrentUnmodifiableTreeMap<K, V> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentTreeMap} backed by a {@link TreeMap} with natural
+	 * key ordering.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new empty concurrent tree map
+	 */
+	static <K, V> @NotNull ConcurrentTreeMap<K, V> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new empty {@link ConcurrentTreeMap} ordered by the given key comparator.
+	 *
+	 * @param comparator the comparator used to order the keys
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new empty concurrent tree map
+	 */
+	static <K, V> @NotNull ConcurrentTreeMap<K, V> withComparator(@NotNull Comparator<? super K> comparator) {
+		return new Impl<>(comparator);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentTreeMap} containing the given entries with natural key
+	 * ordering.
+	 *
+	 * @param entries the entries to include
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new concurrent tree map containing the specified entries
+	 */
+	@SafeVarargs
+	static <K, V> @NotNull ConcurrentTreeMap<K, V> of(@NotNull Map.Entry<K, V>... entries) {
+		return new Impl<>(entries);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentTreeMap} containing all entries of the given map with
+	 * natural key ordering.
+	 *
+	 * @param map the source map to copy from, or {@code null} for an empty map
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new concurrent tree map containing the source's entries
+	 */
+	static <K, V> @NotNull ConcurrentTreeMap<K, V> from(@Nullable Map<? extends K, ? extends V> map) {
+		return new Impl<>(map);
+	}
+
+	/**
 	 * Wraps {@code backing} as a {@link ConcurrentTreeMap} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to

@@ -618,7 +618,7 @@ public final class Concurrent {
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentCollection)
-			return (ConcurrentUnmodifiableCollection<E>) ((ConcurrentCollection<E>) collection).toUnmodifiable();
+			return ((ConcurrentCollection<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableCollection.Impl<>(new java.util.ArrayList<>(collection));
 	}
@@ -666,7 +666,7 @@ public final class Concurrent {
 		// ConcurrentUnmodifiableLinkedList.Impl (a sibling, not a subtype, of ConcurrentUnmodifiableList.Impl),
 		// so let LinkedList variants fall through to the ArrayList-backed snapshot copy.
 		if (collection instanceof ConcurrentList && !(collection instanceof ConcurrentLinkedList))
-			return (ConcurrentUnmodifiableList<E>) ((ConcurrentList<E>) collection).toUnmodifiable();
+			return ((ConcurrentList<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableList.Impl<>(new java.util.ArrayList<>(collection));
 	}
@@ -709,7 +709,7 @@ public final class Concurrent {
 		// (siblings, not subtypes, of ConcurrentUnmodifiableMap.Impl), so let those variants
 		// fall through to the HashMap-backed snapshot copy.
 		if (map instanceof ConcurrentMap && !(map instanceof ConcurrentTreeMap) && !(map instanceof ConcurrentLinkedMap))
-			return (ConcurrentUnmodifiableMap<K, V>) ((ConcurrentMap<K, V>) map).toUnmodifiable();
+			return ((ConcurrentMap<K, V>) map).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableMap.Impl<>(new java.util.HashMap<>(map));
 	}
@@ -757,7 +757,7 @@ public final class Concurrent {
 		// (siblings, not subtypes, of ConcurrentUnmodifiableSet.Impl), so let those variants
 		// fall through to the HashSet-backed snapshot copy.
 		if (collection instanceof ConcurrentSet && !(collection instanceof ConcurrentTreeSet) && !(collection instanceof ConcurrentLinkedSet))
-			return (ConcurrentUnmodifiableSet<E>) ((ConcurrentSet<E>) collection).toUnmodifiable();
+			return ((ConcurrentSet<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableSet.Impl<>(new java.util.HashSet<>(collection));
 	}
@@ -875,7 +875,7 @@ public final class Concurrent {
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentLinkedList)
-			return (ConcurrentUnmodifiableLinkedList<E>) ((ConcurrentLinkedList<E>) collection).toUnmodifiable();
+			return ((ConcurrentLinkedList<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableLinkedList.Impl<>(new java.util.LinkedList<>(collection));
 	}
@@ -913,7 +913,7 @@ public final class Concurrent {
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableLinkedSet<E> newUnmodifiableLinkedSet(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentLinkedSet)
-			return (ConcurrentUnmodifiableLinkedSet<E>) ((ConcurrentLinkedSet<E>) collection).toUnmodifiable();
+			return ((ConcurrentLinkedSet<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableLinkedSet.Impl<>(new java.util.LinkedHashSet<>(collection));
 	}
@@ -959,7 +959,7 @@ public final class Concurrent {
 	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentUnmodifiableLinkedMap<K, V> newUnmodifiableLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
 		if (map instanceof ConcurrentLinkedMap)
-			return (ConcurrentUnmodifiableLinkedMap<K, V>) ((ConcurrentLinkedMap<K, V>) map).toUnmodifiable();
+			return ((ConcurrentLinkedMap<K, V>) map).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableLinkedMap.Impl<>(new java.util.LinkedHashMap<>(map));
 	}
@@ -1027,7 +1027,7 @@ public final class Concurrent {
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentTreeSet)
-			return (ConcurrentUnmodifiableTreeSet<E>) ((ConcurrentTreeSet<E>) collection).toUnmodifiable();
+			return ((ConcurrentTreeSet<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableTreeSet.Impl<>(new java.util.TreeSet<>(collection));
 	}
@@ -1118,7 +1118,7 @@ public final class Concurrent {
 	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Map<? extends K, ? extends V> map) {
 		if (map instanceof ConcurrentTreeMap)
-			return (ConcurrentUnmodifiableTreeMap<K, V>) ((ConcurrentTreeMap<K, V>) map).toUnmodifiable();
+			return ((ConcurrentTreeMap<K, V>) map).toUnmodifiable();
 
 		return new ConcurrentUnmodifiableTreeMap.Impl<>(new java.util.TreeMap<>(map));
 	}

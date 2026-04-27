@@ -150,12 +150,7 @@ public interface ConcurrentSet<E> extends ConcurrentCollection<E>, Set<E> {
 		 * @return a fresh {@link AbstractSet} containing the current elements
 		 */
 		protected @NotNull AbstractSet<E> cloneRef() {
-			try {
-				this.lock.readLock().lock();
-				return new HashSet<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
+			return this.withReadLock(() -> new HashSet<>(this.ref));
 		}
 
 		/**

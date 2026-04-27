@@ -26,6 +26,54 @@ public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 	@NotNull ConcurrentUnmodifiableDeque<E> toUnmodifiable();
 
 	/**
+	 * Creates a new empty {@link ConcurrentDeque} backed by a {@link LinkedList}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty concurrent deque
+	 */
+	static <E> @NotNull ConcurrentDeque<E> empty() {
+		return new Impl<>();
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentDeque} containing the given elements.
+	 *
+	 * @param elements the elements to include
+	 * @param <E> the element type
+	 * @return a new concurrent deque containing the specified elements
+	 */
+	@SafeVarargs
+	static <E> @NotNull ConcurrentDeque<E> of(@NotNull E... elements) {
+		return new Impl<>(elements);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentDeque} containing all elements of the given collection.
+	 *
+	 * @param collection the source collection to copy from, or {@code null} for an empty deque
+	 * @param <E> the element type
+	 * @return a new concurrent deque containing the source's elements
+	 */
+	static <E> @NotNull ConcurrentDeque<E> from(@Nullable Collection<? extends E> collection) {
+		return new Impl<>(collection);
+	}
+
+	/**
+	 * Wraps {@code backing} as a {@link ConcurrentDeque} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results.
+	 *
+	 * @param backing the deque to adopt
+	 * @param <E> the element type
+	 * @return a concurrent deque backed by {@code backing}
+	 */
+	static <E> @NotNull ConcurrentDeque<E> adopt(@NotNull LinkedList<E> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe double-ended queue backed by a {@link LinkedList} with concurrent access.
 	 * Supports element insertion and removal at both ends with FIFO and LIFO semantics.
 	 *
@@ -99,16 +147,7 @@ public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 		 */
 		@Override
 		public @NotNull ConcurrentUnmodifiableDeque<E> toUnmodifiable() {
-			LinkedList<E> snapshot;
-
-			try {
-				this.lock.readLock().lock();
-				snapshot = new LinkedList<>(this.ref);
-			} finally {
-				this.lock.readLock().unlock();
-			}
-
-			return new ConcurrentUnmodifiableDeque.Impl<>(snapshot);
+			return new ConcurrentUnmodifiableDeque.Impl<>(this.withReadLock(() -> new LinkedList<>(this.ref)));
 		}
 
 	}

@@ -203,16 +203,9 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public @NotNull Iterator<E> descendingIterator() {
-		Object[] snapshot;
-
-		try {
-			this.lock.readLock().lock();
-			snapshot = this.ref.descendingIterator() != null
-				? toSnapshot(this.ref.descendingIterator(), this.ref.size())
-				: new Object[0];
-		} finally {
-			this.lock.readLock().unlock();
-		}
+		Object[] snapshot = this.withReadLock(() -> this.ref.descendingIterator() != null
+			? toSnapshot(this.ref.descendingIterator(), this.ref.size())
+			: new Object[0]);
 
 		return new DescendingIterator(snapshot);
 	}
