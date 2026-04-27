@@ -325,7 +325,7 @@ class ConcurrentListTest {
         @Test
         void sorted_iterableFunctions_descendingByDefault() {
             list.addAll(List.of("ab", "abcd", "abc"));
-            Function<String, ? extends Comparable> byLen = String::length;
+            Function<String, ? extends Comparable<?>> byLen = String::length;
             ConcurrentList<String> sorted = list.sorted(List.of(byLen));
             assertEquals(List.of("abcd", "abc", "ab"), sorted);
         }
@@ -347,7 +347,7 @@ class ConcurrentListTest {
         @Test
         void sorted_sortOrder_iterableFunctions() {
             list.addAll(List.of("ab", "a", "abc"));
-            Function<String, ? extends Comparable> byLen = String::length;
+            Function<String, ? extends Comparable<?>> byLen = String::length;
             ConcurrentList<String> sorted = list.sorted(SortOrder.ASCENDING, List.of(byLen));
             assertEquals(List.of("a", "ab", "abc"), sorted);
         }

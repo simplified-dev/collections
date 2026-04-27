@@ -10,7 +10,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -22,7 +24,6 @@ import java.util.function.Function;
  *
  * @param <E> the type of elements in this list
  */
-@SuppressWarnings("unchecked")
 public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>, List<E> {
 
 	/**
@@ -53,13 +54,34 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	E getOrDefault(int index, E defaultValue);
 
 	/**
+	 * Returns a fresh mutable {@link List} containing the current contents of this list, captured
+	 * atomically under the read lock. Subclasses may override to choose the snapshot's concrete
+	 * {@link List} type; the snapshot is the working buffer used by {@link #sorted}, {@link #reversed},
+	 * and {@link #subList}.
+	 *
+	 * @return a fresh {@link List} containing the current elements
+	 */
+	@NotNull List<E> snapshot();
+
+	/**
+	 * Returns a new empty instance of this list's runtime type. Used by {@link #sorted},
+	 * {@link #reversed}, and {@link #subList} to materialize their result so the result preserves
+	 * the source's backing-list characteristics.
+	 *
+	 * @return a new empty {@link ConcurrentList} of the same concrete type
+	 */
+	@NotNull ConcurrentList<E> newEmpty();
+
+	/**
 	 * Returns a new list containing all elements from this list, sorted in descending order
 	 * according to the specified comparison functions. The original list is not modified.
 	 *
 	 * @param functions one or more functions used to extract comparable keys for sorting
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(@NotNull Function<E, ? extends Comparable>... functions);
+	default @NotNull ConcurrentList<E> sorted(@NotNull Function<E, ? extends Comparable<?>>... functions) {
+		return this.sorted(SortOrder.DESCENDING, Arrays.asList(functions));
+	}
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted in descending order
@@ -70,7 +92,9 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *                  sorting
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable>> functions);
+	default @NotNull ConcurrentList<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable<?>>> functions) {
+		return this.sorted(SortOrder.DESCENDING, functions);
+	}
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the
@@ -80,7 +104,9 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @param functions one or more functions that extract comparable keys for sorting
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable>... functions);
+	default @NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable<?>>... functions) {
+		return this.sorted(sortOrder, Arrays.asList(functions));
+	}
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the
@@ -91,7 +117,27 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *                  sorting
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable>> functions);
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	default @NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable<?>>> functions) {
+		Iterator<Function<E, ? extends Comparable<?>>> iterator = functions.iterator();
+
+		if (!iterator.hasNext())
+			return this;
+
+		Comparator<E> comparator = Comparator.comparing((Function) iterator.next());
+
+		while (iterator.hasNext()) {
+			Function<E, ? extends Comparable> next = iterator.next();
+			comparator = comparator.thenComparing(next);
+		}
+
+		List<E> snapshot = this.snapshot();
+		snapshot.sort(sortOrder == SortOrder.ASCENDING ? comparator : comparator.reversed());
+
+		ConcurrentList<E> result = this.newEmpty();
+		result.addAll(snapshot);
+		return result;
+	}
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the given
@@ -101,19 +147,36 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *                   ordering
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(Comparator<? super E> comparator);
+	default @NotNull ConcurrentList<E> sorted(Comparator<? super E> comparator) {
+		List<E> snapshot = this.snapshot();
+		snapshot.sort(comparator);
+		ConcurrentList<E> result = this.newEmpty();
+		result.addAll(snapshot);
+		return result;
+	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentList<E> reversed();
+	default @NotNull ConcurrentList<E> reversed() {
+		List<E> snapshot = this.snapshot();
+		Collections.reverse(snapshot);
+		ConcurrentList<E> result = this.newEmpty();
+		result.addAll(snapshot);
+		return result;
+	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentList<E> subList(int fromIndex, int toIndex);
+	default @NotNull ConcurrentList<E> subList(int fromIndex, int toIndex) {
+		List<E> snapshot = this.snapshot();
+		ConcurrentList<E> result = this.newEmpty();
+		result.addAll(snapshot.subList(fromIndex, toIndex));
+		return result;
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -127,7 +190,6 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *
 	 * @param <E> the type of elements in this list
 	 */
-	@SuppressWarnings("all")
 	class Impl<E> extends AtomicList<E, List<E>> implements ConcurrentList<E> {
 
 		/**
@@ -187,25 +249,19 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 		}
 
 		/**
-		 * Creates a new empty {@code ConcurrentList.Impl} instance, used internally for copy and
-		 * sort operations.
-		 *
-		 * @return a new empty {@link ConcurrentList.Impl}
+		 * {@inheritDoc}
 		 */
 		@Override
+		@SuppressWarnings("unchecked")
 		protected @NotNull AtomicList<E, List<E>> createEmpty() {
-			return (Impl<E>) Concurrent.newList();
+			return (ConcurrentList.Impl<E>) Concurrent.newList();
 		}
 
 		/**
-		 * Returns a type-preserving snapshot of this list's backing reference, captured under the
-		 * read lock. Subclasses backed by a different concrete {@link List} implementation override
-		 * this to return an instance of that type so iteration order and structural characteristics
-		 * are preserved on the snapshot.
-		 *
-		 * @return a fresh {@link List} containing the current elements
+		 * {@inheritDoc}
 		 */
-		protected @NotNull List<E> cloneRef() {
+		@Override
+		public @NotNull List<E> snapshot() {
 			try {
 				this.lock.readLock().lock();
 				return new ArrayList<>(this.ref);
@@ -215,95 +271,11 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 		}
 
 		/**
-		 * Returns a new {@code ConcurrentList.Impl} with elements in reverse order.
-		 * The original list is not modified.
-		 *
-		 * @return a new reversed {@link ConcurrentList.Impl}
+		 * {@inheritDoc}
 		 */
 		@Override
-		public @NotNull Impl<E> reversed() {
-			return (Impl<E>) super.reversed();
-		}
-
-		/**
-		 * Returns a snapshot view of the portion of this {@code ConcurrentList.Impl} between the
-		 * specified {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.
-		 *
-		 * @param fromIndex the starting index of the sublist (inclusive)
-		 * @param toIndex the ending index of the sublist (exclusive)
-		 * @return a new {@code ConcurrentList.Impl} representing the specified range within the list
-		 * @throws IndexOutOfBoundsException if either {@code fromIndex} or {@code toIndex} is out of
-		 *         range ({@code fromIndex < 0}, {@code toIndex > size()} or
-		 *         {@code fromIndex > toIndex})
-		 */
-		@Override
-		public @NotNull Impl<E> subList(int fromIndex, int toIndex) {
-			return (Impl<E>) super.subList(fromIndex, toIndex);
-		}
-
-		/**
-		 * Returns a new {@code ConcurrentList.Impl} containing all elements sorted in descending
-		 * order according to the given comparison functions.
-		 *
-		 * @param sortFunctions one or more functions used to extract comparable keys for sorting
-		 * @return a new sorted {@link ConcurrentList.Impl}
-		 */
-		@Override
-		public @NotNull Impl<E> sorted(@NotNull Function<E, ? extends Comparable>... sortFunctions) {
-			return (Impl<E>) super.sorted(sortFunctions);
-		}
-
-		/**
-		 * Returns a new {@code ConcurrentList.Impl} containing all elements sorted according to the
-		 * specified sort order and comparison functions.
-		 *
-		 * @param sortOrder the sort order ({@code ASCENDING} or {@code DESCENDING}) to apply
-		 * @param functions one or more functions that extract comparable keys for sorting
-		 * @return a new sorted {@link ConcurrentList.Impl}
-		 */
-		@Override
-		public @NotNull Impl<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable>... functions) {
-			return (Impl<E>) super.sorted(sortOrder, functions);
-		}
-
-		/**
-		 * Returns a new {@code ConcurrentList.Impl} containing all elements sorted in descending
-		 * order according to the given collection of comparison functions.
-		 *
-		 * @param functions an iterable collection of functions used to extract comparable keys for
-		 *                  sorting
-		 * @return a new sorted {@link ConcurrentList.Impl}
-		 */
-		@Override
-		public @NotNull Impl<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable>> functions) {
-			return (Impl<E>) super.sorted(functions);
-		}
-
-		/**
-		 * Returns a new {@code ConcurrentList.Impl} containing all elements sorted according to the
-		 * specified sort order and comparison functions.
-		 *
-		 * @param sortOrder the sort order ({@code ASCENDING} or {@code DESCENDING}) to apply
-		 * @param functions an iterable collection of functions that extract comparable keys for
-		 *                  sorting
-		 * @return a new sorted {@link ConcurrentList.Impl}
-		 */
-		@Override
-		public @NotNull Impl<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable>> functions) {
-			return (Impl<E>) super.sorted(sortOrder, functions);
-		}
-
-		/**
-		 * Returns a new {@code ConcurrentList.Impl} containing all elements sorted according to the
-		 * specified {@link Comparator}.
-		 *
-		 * @param comparator the comparator used to determine the order of elements; {@code null}
-		 *                   requests natural ordering
-		 * @return a new sorted {@link ConcurrentList.Impl}
-		 */
-		@Override
-		public @NotNull Impl<E> sorted(Comparator<? super E> comparator) {
-			return (Impl<E>) super.sorted(comparator);
+		public @NotNull ConcurrentList<E> newEmpty() {
+			return Concurrent.newList();
 		}
 
 		/**
@@ -319,7 +291,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 		 */
 		@Override
 		public @NotNull ConcurrentUnmodifiableList<E> toUnmodifiable() {
-			return new ConcurrentUnmodifiableList.Impl<>(this.cloneRef());
+			return new ConcurrentUnmodifiableList.Impl<>(this.snapshot());
 		}
 
 	}
