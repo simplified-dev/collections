@@ -185,6 +185,21 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	@NotNull ConcurrentUnmodifiableList<E> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentList} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results.
+	 *
+	 * @param backing the list to adopt
+	 * @param <E> the element type
+	 * @return a concurrent list backed by {@code backing}
+	 */
+	static <E> @NotNull ConcurrentList<E> adopt(@NotNull List<E> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe list backed by an {@link ArrayList} with concurrent read and write access
 	 * via {@link ReadWriteLock}. Supports indexed access, sorting, and snapshot-based iteration.
 	 *

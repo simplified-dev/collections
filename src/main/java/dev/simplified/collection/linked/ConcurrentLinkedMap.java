@@ -26,6 +26,23 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	@NotNull ConcurrentUnmodifiableLinkedMap<K, V> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentLinkedMap} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results. The eldest-entry eviction cap of
+	 * the in-class {@code MaxSizeLinkedMap} is not applied to externally adopted backing maps.
+	 *
+	 * @param backing the linked hash map to adopt
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a concurrent linked map backed by {@code backing}
+	 */
+	static <K, V> @NotNull ConcurrentLinkedMap<K, V> adopt(@NotNull LinkedHashMap<K, V> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe map backed by an insertion-ordered {@link LinkedHashMap} with concurrent read
 	 * and write access via {@link ReadWriteLock}. Supports an optional maximum size with
 	 * eldest-entry eviction.
@@ -68,6 +85,17 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 		 */
 		public Impl(@Nullable Map<? extends K, ? extends V> map, int maxSize) {
 			super(new MaxSizeLinkedMap<>(maxSize), map);
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentLinkedMap.Impl} that adopts {@code backingMap} as its
+		 * storage with a fresh lock. Public callers should go through
+		 * {@link ConcurrentLinkedMap#adopt(LinkedHashMap)}.
+		 *
+		 * @param backingMap the backing linked hash map to adopt
+		 */
+		protected Impl(@NotNull LinkedHashMap<K, V> backingMap) {
+			super(backingMap);
 		}
 
 		/**

@@ -27,6 +27,21 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	@NotNull ConcurrentUnmodifiableLinkedList<E> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentLinkedList} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results.
+	 *
+	 * @param backing the linked list to adopt
+	 * @param <E> the element type
+	 * @return a concurrent linked list backed by {@code backing}
+	 */
+	static <E> @NotNull ConcurrentLinkedList<E> adopt(@NotNull LinkedList<E> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe list backed by a {@link LinkedList} with concurrent read and write access via
 	 * {@link ReadWriteLock}. Supports indexed access, sorting, and snapshot-based iteration with
 	 * linked-list insertion characteristics.
@@ -59,6 +74,17 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 		 */
 		public Impl(@Nullable Collection<? extends E> collection) {
 			super(collection == null ? new LinkedList<>() : new LinkedList<>(collection));
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentLinkedList.Impl} that adopts {@code backingList} as its
+		 * storage with a fresh lock. Public callers should go through
+		 * {@link ConcurrentLinkedList#adopt(LinkedList)}.
+		 *
+		 * @param backingList the backing linked list to adopt
+		 */
+		protected Impl(@NotNull LinkedList<E> backingList) {
+			super(backingList);
 		}
 
 		/**

@@ -28,6 +28,21 @@ public interface ConcurrentSet<E> extends ConcurrentCollection<E>, Set<E> {
 	@NotNull ConcurrentUnmodifiableSet<E> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentSet} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results.
+	 *
+	 * @param backing the set to adopt
+	 * @param <E> the element type
+	 * @return a concurrent set backed by {@code backing}
+	 */
+	static <E> @NotNull ConcurrentSet<E> adopt(@NotNull AbstractSet<E> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe set backed by a {@link HashSet} with concurrent read and write access via
 	 * {@link ReadWriteLock}. Enforces no-duplicate semantics with snapshot-based iteration.
 	 *

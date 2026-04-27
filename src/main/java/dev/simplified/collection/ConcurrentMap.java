@@ -125,6 +125,22 @@ public interface ConcurrentMap<K, V> extends Map<K, V>, Iterable<Map.Entry<K, V>
 	@NotNull ConcurrentUnmodifiableMap<K, V> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentMap} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results.
+	 *
+	 * @param backing the map to adopt
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a concurrent map backed by {@code backing}
+	 */
+	static <K, V> @NotNull ConcurrentMap<K, V> adopt(@NotNull AbstractMap<K, V> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe map backed by a {@link HashMap} with concurrent read and write access via
 	 * {@link ReadWriteLock}. Supports snapshot-based iteration over entries, keys, and values.
 	 *
@@ -157,6 +173,16 @@ public interface ConcurrentMap<K, V> extends Map<K, V>, Iterable<Map.Entry<K, V>
 		 */
 		public Impl(@Nullable Map<? extends K, ? extends V> map) {
 			super(new HashMap<>(), map);
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentMap.Impl} that adopts {@code backingMap} as its storage
+		 * with a fresh lock. Public callers should go through {@link ConcurrentMap#adopt(AbstractMap)}.
+		 *
+		 * @param backingMap the backing map to adopt
+		 */
+		protected Impl(@NotNull AbstractMap<K, V> backingMap) {
+			super(backingMap);
 		}
 
 		/**

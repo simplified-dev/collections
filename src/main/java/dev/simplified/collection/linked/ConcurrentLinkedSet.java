@@ -28,6 +28,21 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 	@NotNull ConcurrentUnmodifiableLinkedSet<E> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentLinkedSet} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results.
+	 *
+	 * @param backing the linked hash set to adopt
+	 * @param <E> the element type
+	 * @return a concurrent linked set backed by {@code backing}
+	 */
+	static <E> @NotNull ConcurrentLinkedSet<E> adopt(@NotNull LinkedHashSet<E> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe set backed by a {@link LinkedHashSet} with concurrent read and write access via
 	 * {@link ReadWriteLock}. Maintains insertion order while enforcing no-duplicate semantics.
 	 *
@@ -59,6 +74,17 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 		 */
 		public Impl(@Nullable Collection<? extends E> collection) {
 			super(collection == null ? new LinkedHashSet<>() : new LinkedHashSet<>(collection));
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentLinkedSet.Impl} that adopts {@code backingSet} as its
+		 * storage with a fresh lock. Public callers should go through
+		 * {@link ConcurrentLinkedSet#adopt(LinkedHashSet)}.
+		 *
+		 * @param backingSet the backing linked hash set to adopt
+		 */
+		protected Impl(@NotNull LinkedHashSet<E> backingSet) {
+			super(backingSet);
 		}
 
 		/**

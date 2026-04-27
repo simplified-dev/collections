@@ -34,6 +34,22 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 	@NotNull ConcurrentUnmodifiableTreeSet<E> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentTreeSet} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results. The adopted set's comparator is
+	 * preserved.
+	 *
+	 * @param backing the tree set to adopt
+	 * @param <E> the element type
+	 * @return a concurrent tree set backed by {@code backing}
+	 */
+	static <E> @NotNull ConcurrentTreeSet<E> adopt(@NotNull TreeSet<E> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe set backed by a {@link TreeSet} with concurrent read and write access via
 	 * {@link ReadWriteLock}. Maintains element ordering defined by a {@link Comparator} or the
 	 * elements' natural ordering.
@@ -102,6 +118,17 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 		 */
 		public Impl(@NotNull Comparator<? super E> comparator, @Nullable Collection<? extends E> collection) {
 			super(newTreeSet(comparator, collection));
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentTreeSet.Impl} that adopts {@code backingSet} as its
+		 * storage with a fresh lock. Public callers should go through
+		 * {@link ConcurrentTreeSet#adopt(TreeSet)}.
+		 *
+		 * @param backingSet the backing tree set to adopt
+		 */
+		protected Impl(@NotNull TreeSet<E> backingSet) {
+			super(backingSet);
 		}
 
 		/**

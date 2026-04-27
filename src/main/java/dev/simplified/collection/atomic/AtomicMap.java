@@ -46,6 +46,17 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	/** Cached iterator snapshot for the values collection view. */
 	private transient volatile @Nullable Object @Nullable [] valuesSnapshot;
 
+	/**
+	 * Constructs an {@code AtomicMap} that adopts {@code ref} as its backing storage with a
+	 * fresh {@link ReentrantReadWriteLock}. No copy is made; the caller relinquishes exclusive
+	 * ownership of {@code ref}.
+	 *
+	 * @param ref the backing map to adopt
+	 */
+	protected AtomicMap(@NotNull M ref) {
+		this(ref, new ReentrantReadWriteLock());
+	}
+
 	protected AtomicMap(@NotNull M ref, @Nullable Map<? extends K, ? extends V> items) {
 		if (Objects.nonNull(items)) ref.putAll(items);
 		this.ref = ref;

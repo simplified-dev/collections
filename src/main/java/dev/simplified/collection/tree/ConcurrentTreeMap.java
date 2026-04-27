@@ -25,6 +25,23 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 	@NotNull ConcurrentUnmodifiableTreeMap<K, V> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentTreeMap} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results. The adopted map's comparator is
+	 * preserved.
+	 *
+	 * @param backing the tree map to adopt
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a concurrent tree map backed by {@code backing}
+	 */
+	static <K, V> @NotNull ConcurrentTreeMap<K, V> adopt(@NotNull TreeMap<K, V> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe map backed by a {@link TreeMap} with concurrent read and write access via
 	 * {@link ReadWriteLock}. Maintains key ordering defined by a {@link Comparator} or the keys'
 	 * natural ordering.
@@ -96,6 +113,17 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 		 */
 		public Impl(@NotNull Comparator<? super K> comparator, @Nullable Map<? extends K, ? extends V> map) {
 			super(new TreeMap<>(comparator), map);
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentTreeMap.Impl} that adopts {@code backingMap} as its
+		 * storage with a fresh lock. Public callers should go through
+		 * {@link ConcurrentTreeMap#adopt(TreeMap)}.
+		 *
+		 * @param backingMap the backing tree map to adopt
+		 */
+		protected Impl(@NotNull TreeMap<K, V> backingMap) {
+			super(backingMap);
 		}
 
 		/**

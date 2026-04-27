@@ -124,6 +124,21 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 	@NotNull ConcurrentUnmodifiableCollection<E> toUnmodifiable();
 
 	/**
+	 * Wraps {@code backing} as a {@link ConcurrentCollection} without copying.
+	 * <p>
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
+	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
+	 * zero-copy publication of single-threaded build results.
+	 *
+	 * @param backing the collection to adopt
+	 * @param <E> the element type
+	 * @return a concurrent collection backed by {@code backing}
+	 */
+	static <E> @NotNull ConcurrentCollection<E> adopt(@NotNull AbstractCollection<E> backing) {
+		return new Impl<>(backing);
+	}
+
+	/**
 	 * A thread-safe collection backed by an {@link AbstractCollection} with concurrent read and
 	 * write access via {@link ReadWriteLock}. Provides the base concrete implementation of
 	 * {@link AtomicCollection}.
@@ -157,6 +172,17 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 		 */
 		public Impl(@Nullable Collection<? extends E> collection) {
 			super(collection == null ? new ArrayList<>() : new ArrayList<>(collection));
+		}
+
+		/**
+		 * Constructs a {@code ConcurrentCollection.Impl} that adopts {@code backingCollection} as
+		 * its storage with a fresh lock. Public callers should go through
+		 * {@link ConcurrentCollection#adopt(AbstractCollection)}.
+		 *
+		 * @param backingCollection the backing collection to adopt
+		 */
+		protected Impl(@NotNull AbstractCollection<E> backingCollection) {
+			super(backingCollection);
 		}
 
 		/**
