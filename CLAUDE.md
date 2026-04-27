@@ -12,6 +12,7 @@ Thread-safe concurrent collection library using ReadWriteLock-based atomic opera
 - `dev.simplified.collection.query` - Searchable, SearchFunction, Sortable, SortOrder
 - `dev.simplified.collection.sort` - Graph
 - `dev.simplified.collection.function` - TriConsumer, TriFunction, TriPredicate
+- `dev.simplified.collection.gson` - ConcurrentTypeAdapterFactory; opt-in Gson SPI shipped via `META-INF/services/com.google.gson.TypeAdapterFactory` (gson is `compileOnly`, only loaded when consumers have it on the classpath)
 
 ## Architecture
 - `Atomic*` classes directly implement their corresponding `Concurrent*` interface; covariant returns let bulk operations live on the abstract base while still satisfying the interface contract.
@@ -29,6 +30,7 @@ Thread-safe concurrent collection library using ReadWriteLock-based atomic opera
 
 ## Dependencies
 - JetBrains annotations, Log4j2, Lombok
+- Gson (`compileOnly`, opt-in) - powers `ConcurrentTypeAdapterFactory`; absent from runtime unless the consumer pulls in Gson themselves
 - JUnit 5, Hamcrest (test), JMH (benchmarks)
 - No Simplified-Dev dependencies (foundational library)
 
@@ -42,5 +44,5 @@ Thread-safe concurrent collection library using ReadWriteLock-based atomic opera
 
 ## Stats
 - Java 21, group `dev.simplified`, version `1.0.0`
-- 60 source files, 28 test files, 4 JMH benchmarks
+- 61 source files, 29 test files, 4 JMH benchmarks
 - Published via JitPack: `com.github.simplified-dev:collections:master-SNAPSHOT`
