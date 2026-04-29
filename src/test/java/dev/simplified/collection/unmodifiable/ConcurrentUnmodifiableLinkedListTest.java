@@ -51,7 +51,7 @@ class ConcurrentUnmodifiableLinkedListTest {
 		@Test
 		void allMutators_throwUOE() {
 			ConcurrentLinkedList<String> src = Concurrent.newLinkedList("a", "b");
-			ConcurrentUnmodifiableLinkedList<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedList<String> u = (ConcurrentUnmodifiableLinkedList<String>) src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.add(0, "c"));
@@ -89,7 +89,7 @@ class ConcurrentUnmodifiableLinkedListTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentLinkedList<String> src = Concurrent.newLinkedList();
 			src.add("a");
-			ConcurrentUnmodifiableLinkedList<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedList<String> u = (ConcurrentUnmodifiableLinkedList<String>) src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.add("b");
@@ -107,7 +107,7 @@ class ConcurrentUnmodifiableLinkedListTest {
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentUnmodifiableLinkedList<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedList<String> u = (ConcurrentUnmodifiableLinkedList<String>) src.toUnmodifiable();
 			assertEquals(List.of("c", "a", "b"), new ArrayList<>(u));
 		}
 	}

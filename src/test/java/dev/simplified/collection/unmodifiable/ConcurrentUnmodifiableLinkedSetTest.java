@@ -50,7 +50,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 		@Test
 		void allMutators_throwUOE() {
 			ConcurrentLinkedSet<String> src = Concurrent.newLinkedSet("a");
-			ConcurrentUnmodifiableLinkedSet<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedSet<String> u = (ConcurrentUnmodifiableLinkedSet<String>) src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.addAll(List.of("c")));
@@ -78,7 +78,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentLinkedSet<String> src = Concurrent.newLinkedSet();
 			src.add("a");
-			ConcurrentUnmodifiableLinkedSet<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedSet<String> u = (ConcurrentUnmodifiableLinkedSet<String>) src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.add("b");
@@ -97,7 +97,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentUnmodifiableLinkedSet<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedSet<String> u = (ConcurrentUnmodifiableLinkedSet<String>) src.toUnmodifiable();
 			assertEquals(List.of("c", "a", "b"), new ArrayList<>(u));
 		}
 	}
