@@ -57,7 +57,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 		void allMutators_throwUOE() {
 			ConcurrentLinkedMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedMap<String, Integer> u = (ConcurrentUnmodifiableLinkedMap<String, Integer>) src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.put("b", 2));
 			assertThrows(UnsupportedOperationException.class, () -> u.putAll(Map.of("c", 3)));
@@ -88,7 +88,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentLinkedMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedMap<String, Integer> u = (ConcurrentUnmodifiableLinkedMap<String, Integer>) src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.put("b", 2);
@@ -106,7 +106,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableLinkedMap<String, Integer> u = (ConcurrentUnmodifiableLinkedMap<String, Integer>) src.toUnmodifiable();
 
 			List<String> keys = new ArrayList<>();
 			for (Map.Entry<String, Integer> e : u.entrySet()) keys.add(e.getKey());

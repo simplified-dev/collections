@@ -82,7 +82,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 		void allMutators_throwUOE() {
 			ConcurrentTreeMap<String, Integer> src = Concurrent.newTreeMap();
 			src.put("a", 1);
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableTreeMap<String, Integer> u = (ConcurrentUnmodifiableTreeMap<String, Integer>) src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.put("b", 2));
 			assertThrows(UnsupportedOperationException.class, () -> u.putAll(Map.of("c", 3)));
@@ -117,7 +117,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentTreeMap<String, Integer> src = Concurrent.newTreeMap();
 			src.put("a", 1);
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableTreeMap<String, Integer> u = (ConcurrentUnmodifiableTreeMap<String, Integer>) src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.put("b", 2);
@@ -135,7 +135,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableTreeMap<String, Integer> u = (ConcurrentUnmodifiableTreeMap<String, Integer>) src.toUnmodifiable();
 
 			List<String> keys = new ArrayList<>();
 			for (Map.Entry<String, Integer> e : u.entrySet()) keys.add(e.getKey());
@@ -148,7 +148,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 			src.put("a", 1);
 			src.put("c", 3);
 			src.put("b", 2);
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableTreeMap<String, Integer> u = (ConcurrentUnmodifiableTreeMap<String, Integer>) src.toUnmodifiable();
 			List<String> keys = new ArrayList<>(u.keySet());
 			assertEquals(List.of("c", "b", "a"), keys);
 		}

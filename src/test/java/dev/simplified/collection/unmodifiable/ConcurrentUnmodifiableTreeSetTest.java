@@ -70,7 +70,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 		@Test
 		void allMutators_throwUOE() {
 			ConcurrentTreeSet<String> src = Concurrent.newTreeSet("a");
-			ConcurrentUnmodifiableTreeSet<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableTreeSet<String> u = (ConcurrentUnmodifiableTreeSet<String>) src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.addAll(List.of("c")));
@@ -100,7 +100,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentTreeSet<String> src = Concurrent.newTreeSet();
 			src.add("a");
-			ConcurrentUnmodifiableTreeSet<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableTreeSet<String> u = (ConcurrentUnmodifiableTreeSet<String>) src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.add("b");
@@ -119,7 +119,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentUnmodifiableTreeSet<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableTreeSet<String> u = (ConcurrentUnmodifiableTreeSet<String>) src.toUnmodifiable();
 			assertEquals(List.of("a", "b", "c"), new ArrayList<>(u));
 		}
 
@@ -129,7 +129,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 			src.add("a");
 			src.add("c");
 			src.add("b");
-			ConcurrentUnmodifiableTreeSet<String> u = src.toUnmodifiable();
+			ConcurrentUnmodifiableTreeSet<String> u = (ConcurrentUnmodifiableTreeSet<String>) src.toUnmodifiable();
 			assertEquals(List.of("c", "b", "a"), new ArrayList<>(u));
 		}
 	}
