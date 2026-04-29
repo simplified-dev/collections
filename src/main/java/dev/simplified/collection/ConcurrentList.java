@@ -118,7 +118,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableList<E> toUnmodifiable();
+	@NotNull ConcurrentList<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentList} backed by an {@link ArrayList}.

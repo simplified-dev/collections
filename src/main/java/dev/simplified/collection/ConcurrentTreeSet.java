@@ -26,7 +26,7 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableTreeSet<E> toUnmodifiable();
+	@NotNull ConcurrentTreeSet<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentTreeSet} backed by a {@link TreeSet} with natural

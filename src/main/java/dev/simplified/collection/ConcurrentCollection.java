@@ -120,7 +120,7 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 	 *
 	 * @return an immutable snapshot of this collection
 	 */
-	@NotNull ConcurrentUnmodifiableCollection<E> toUnmodifiable();
+	@NotNull ConcurrentCollection<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentCollection} backed by an {@link ArrayList}.

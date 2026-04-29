@@ -23,7 +23,7 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableLinkedSet<E> toUnmodifiable();
+	@NotNull ConcurrentLinkedSet<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentLinkedSet} backed by a {@link LinkedHashSet}.

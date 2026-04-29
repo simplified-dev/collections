@@ -122,7 +122,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V>, Iterable<Map.Entry<K, V>
 	 *
 	 * @return an immutable snapshot of this map
 	 */
-	@NotNull ConcurrentUnmodifiableMap<K, V> toUnmodifiable();
+	@NotNull ConcurrentMap<K, V> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentMap} backed by a {@link HashMap}.
