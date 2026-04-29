@@ -25,7 +25,7 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableTreeMap<K, V> toUnmodifiable();
+	@NotNull ConcurrentTreeMap<K, V> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentTreeMap} backed by a {@link TreeMap} with natural

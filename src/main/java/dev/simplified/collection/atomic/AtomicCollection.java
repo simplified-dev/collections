@@ -1,14 +1,12 @@
 package dev.simplified.collection.atomic;
 
 import dev.simplified.collection.ConcurrentCollection;
+import dev.simplified.collection.StreamUtil;
 import dev.simplified.collection.tuple.single.SingleStream;
 import dev.simplified.collection.tuple.triple.TripleStream;
-import dev.simplified.collection.StreamUtil;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.Arrays;
 import java.util.Collection;
@@ -407,7 +405,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * {@inheritDoc}
 	 */
 	@Override
-	public abstract @NotNull ConcurrentUnmodifiableCollection<E> toUnmodifiable();
+	public abstract @NotNull ConcurrentCollection<E> toUnmodifiable();
 
 	/**
 	 * {@inheritDoc}

@@ -23,7 +23,7 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableLinkedList<E> toUnmodifiable();
+	@NotNull ConcurrentLinkedList<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentLinkedList} backed by a {@link LinkedList}.

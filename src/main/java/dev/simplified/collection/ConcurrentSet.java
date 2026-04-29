@@ -25,7 +25,7 @@ public interface ConcurrentSet<E> extends ConcurrentCollection<E>, Set<E> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableSet<E> toUnmodifiable();
+	@NotNull ConcurrentSet<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentSet} backed by a {@link HashSet}.

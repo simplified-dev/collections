@@ -23,7 +23,7 @@ public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableDeque<E> toUnmodifiable();
+	@NotNull ConcurrentDeque<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentDeque} backed by a {@link LinkedList}.
@@ -70,7 +70,7 @@ public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 	 * @return a concurrent deque backed by {@code backing}
 	 */
 	static <E> @NotNull ConcurrentDeque<E> adopt(@NotNull LinkedList<E> backing) {
-		return new Impl<E>(backing);
+		return new Impl<>(backing);
 	}
 
 	/**

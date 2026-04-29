@@ -22,7 +22,7 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableLinkedMap<K, V> toUnmodifiable();
+	@NotNull ConcurrentLinkedMap<K, V> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentLinkedMap} backed by a {@link LinkedHashMap}.

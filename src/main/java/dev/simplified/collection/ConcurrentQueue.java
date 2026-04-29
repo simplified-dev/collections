@@ -31,7 +31,7 @@ public interface ConcurrentQueue<E> extends ConcurrentCollection<E>, Queue<E> {
 	 * @return an immutable snapshot of this queue
 	 */
 	@Override
-	@NotNull ConcurrentUnmodifiableQueue<E> toUnmodifiable();
+	@NotNull ConcurrentQueue<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentQueue} backed by a {@link LinkedList}.
