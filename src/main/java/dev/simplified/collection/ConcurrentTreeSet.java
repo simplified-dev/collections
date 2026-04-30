@@ -2,7 +2,6 @@ package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicCollection;
 import dev.simplified.collection.atomic.AtomicNavigableSet;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,12 +20,6 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @param <E> the type of elements in this set
  */
 public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> {
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	@NotNull ConcurrentTreeSet<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentTreeSet} backed by a {@link TreeSet} with natural
@@ -172,7 +165,7 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 
 		/**
 		 * Constructs a {@code ConcurrentTreeSet.Impl} with a pre-built backing set and an explicit
-		 * lock. Used by {@link ConcurrentUnmodifiableTreeSet.Impl} to install a snapshot set paired
+		 * lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet} to install a snapshot set paired
 		 * with a no-op lock for wait-free reads.
 		 *
 		 * @param backingSet the pre-built backing set
@@ -218,8 +211,8 @@ public interface ConcurrentTreeSet<E> extends ConcurrentSet<E>, NavigableSet<E> 
 		 * @return an unmodifiable {@link ConcurrentTreeSet.Impl} containing a snapshot of the elements
 		 */
 		@Override
-		public @NotNull ConcurrentUnmodifiableTreeSet<E> toUnmodifiable() {
-			return new ConcurrentUnmodifiableTreeSet.Impl<>(this.cloneRef());
+		public @NotNull ConcurrentSet<E> toUnmodifiable() {
+			return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet<>(this.cloneRef());
 		}
 
 	}

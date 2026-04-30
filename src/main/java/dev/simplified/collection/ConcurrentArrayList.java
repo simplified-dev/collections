@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicList;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -67,8 +66,8 @@ public class ConcurrentArrayList<E> extends AtomicList<E, List<E>> implements Co
 
 	/**
 	 * Constructs a {@code ConcurrentArrayList} with a pre-built backing list and an explicit lock.
-	 * Used by {@link ConcurrentUnmodifiableList.Impl} (and its variants) to install a snapshot list
-	 * paired with a no-op lock for wait-free reads.
+	 * Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList} (and its variants) to
+	 * install a snapshot list paired with a no-op lock for wait-free reads.
 	 *
 	 * @param backingList the pre-built backing list
 	 * @param lock the lock guarding {@code backingList}
@@ -110,7 +109,7 @@ public class ConcurrentArrayList<E> extends AtomicList<E, List<E>> implements Co
 	 */
 	@Override
 	public @NotNull ConcurrentList<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiableList.Impl<>(this.snapshot());
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(this.snapshot());
 	}
 
 }

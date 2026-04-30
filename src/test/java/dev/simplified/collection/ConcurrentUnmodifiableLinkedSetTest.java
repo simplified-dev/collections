@@ -1,8 +1,5 @@
-package dev.simplified.collection.unmodifiable;
+package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentLinkedSet;
-import dev.simplified.collection.ConcurrentSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -19,28 +16,28 @@ class ConcurrentUnmodifiableLinkedSetTest {
 
 		@Test
 		void factory_empty_isLinkedSetSnapshot() {
-			ConcurrentUnmodifiableLinkedSet<String> u = Concurrent.newUnmodifiableLinkedSet();
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableLinkedSet();
 			assertEquals(0, u.size());
-			assertTrue(u instanceof ConcurrentLinkedSet);
+			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet);
 		}
 
 		@Test
 		void factory_varargs_keepsContents() {
-			ConcurrentUnmodifiableLinkedSet<String> u = Concurrent.newUnmodifiableLinkedSet("a", "b", "c");
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableLinkedSet("a", "b", "c");
 			assertEquals(3, u.size());
 			assertEquals(List.of("a", "b", "c"), new ArrayList<>(u));
 		}
 
 		@Test
 		void factory_collection_keepsContents() {
-			ConcurrentUnmodifiableLinkedSet<String> u = Concurrent.newUnmodifiableLinkedSet(List.of("x", "y"));
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableLinkedSet(List.of("x", "y"));
 			assertEquals(2, u.size());
 		}
 
 		@Test
 		void toUnmodifiable_fromLinkedSet_returnsLinkedSetUnmodifiable() {
 			ConcurrentSet<String> src = Concurrent.newLinkedSet("a", "b");
-			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiableLinkedSet);
+			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet);
 		}
 	}
 
@@ -50,7 +47,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 		@Test
 		void allMutators_throwUOE() {
 			ConcurrentSet<String> src = Concurrent.newLinkedSet("a");
-			ConcurrentUnmodifiableLinkedSet<String> u = (ConcurrentUnmodifiableLinkedSet<String>) src.toUnmodifiable();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.addAll(List.of("c")));
@@ -64,7 +61,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 
 		@Test
 		void iterator_remove_throwsUOE() {
-			ConcurrentUnmodifiableLinkedSet<String> u = Concurrent.newUnmodifiableLinkedSet("a", "b");
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableLinkedSet("a", "b");
 			Iterator<String> it = u.iterator();
 			it.next();
 			assertThrows(UnsupportedOperationException.class, it::remove);
@@ -78,7 +75,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentSet<String> src = Concurrent.newLinkedSet();
 			src.add("a");
-			ConcurrentUnmodifiableLinkedSet<String> u = (ConcurrentUnmodifiableLinkedSet<String>) src.toUnmodifiable();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.add("b");
@@ -97,7 +94,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentUnmodifiableLinkedSet<String> u = (ConcurrentUnmodifiableLinkedSet<String>) src.toUnmodifiable();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 			assertEquals(List.of("c", "a", "b"), new ArrayList<>(u));
 		}
 	}
@@ -106,15 +103,14 @@ class ConcurrentUnmodifiableLinkedSetTest {
 	class Assignability {
 
 		@Test
-		void isAlsoConcurrentSetAndUnmodifiableSet() {
-			ConcurrentUnmodifiableLinkedSet<String> u = Concurrent.newUnmodifiableLinkedSet();
+		void isAlsoConcurrentSet() {
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableLinkedSet();
 			assertTrue(u instanceof ConcurrentSet);
-			assertTrue(u instanceof ConcurrentUnmodifiableSet);
 		}
 
 		@Test
 		void doubleWrap_returnsSameInstance() {
-			ConcurrentUnmodifiableLinkedSet<String> u = Concurrent.newUnmodifiableLinkedSet();
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableLinkedSet();
 			assertSame(u, u.toUnmodifiable());
 		}
 	}

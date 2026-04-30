@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicMap;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,8 +78,8 @@ public class ConcurrentHashMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> 
 
 	/**
 	 * Constructs a {@code ConcurrentHashMap} with a pre-built backing map and an explicit lock.
-	 * Used by {@link ConcurrentUnmodifiableMap.Impl} (and its variants) to install a snapshot map
-	 * paired with a no-op lock for wait-free reads.
+	 * Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap} (and its variants) to
+	 * install a snapshot map paired with a no-op lock for wait-free reads.
 	 *
 	 * @param backingMap the pre-built backing map
 	 * @param lock the lock guarding {@code backingMap}
@@ -126,7 +125,7 @@ public class ConcurrentHashMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> 
 	 */
 	@Override
 	public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
-		return new ConcurrentUnmodifiableMap.Impl<>(this.cloneRef());
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap<>(this.cloneRef());
 	}
 
 }

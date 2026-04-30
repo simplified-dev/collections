@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicCollection;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,12 +17,6 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @param <E> the type of elements in this set
  */
 public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	@NotNull ConcurrentLinkedSet<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentLinkedSet} backed by a {@link LinkedHashSet}.
@@ -120,7 +113,7 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 
 		/**
 		 * Constructs a {@code ConcurrentLinkedSet.Impl} with a pre-built backing set and an
-		 * explicit lock. Used by {@link ConcurrentUnmodifiableLinkedSet.Impl} to install a snapshot
+		 * explicit lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet} to install a snapshot
 		 * set paired with a no-op lock for wait-free reads.
 		 *
 		 * @param backingSet the pre-built backing set
@@ -160,8 +153,8 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 		 *         elements
 		 */
 		@Override
-		public @NotNull ConcurrentUnmodifiableLinkedSet<E> toUnmodifiable() {
-			return new ConcurrentUnmodifiableLinkedSet.Impl<>((LinkedHashSet<E>) this.cloneRef());
+		public @NotNull ConcurrentSet<E> toUnmodifiable() {
+			return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>((LinkedHashSet<E>) this.cloneRef());
 		}
 
 	}

@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicNavigableMap;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,12 +19,6 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @param <V> the type of mapped values
  */
 public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableMap<K, V> {
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	@NotNull ConcurrentTreeMap<K, V> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentTreeMap} backed by a {@link TreeMap} with natural
@@ -178,7 +171,7 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 
 		/**
 		 * Constructs a {@code ConcurrentTreeMap.Impl} with a pre-built backing map and an explicit
-		 * lock. Used by {@link ConcurrentUnmodifiableTreeMap.Impl} to install a snapshot map paired
+		 * lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} to install a snapshot map paired
 		 * with a no-op lock for wait-free reads.
 		 *
 		 * @param backingMap the pre-built backing map
@@ -206,8 +199,8 @@ public interface ConcurrentTreeMap<K, V> extends ConcurrentMap<K, V>, NavigableM
 		 * @return an unmodifiable {@link ConcurrentTreeMap.Impl} containing a snapshot of the entries
 		 */
 		@Override
-		public @NotNull ConcurrentUnmodifiableTreeMap<K, V> toUnmodifiable() {
-			return new ConcurrentUnmodifiableTreeMap.Impl<>(this.cloneRef());
+		public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
+			return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap<>(this.cloneRef());
 		}
 
 	}

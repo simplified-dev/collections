@@ -2,7 +2,6 @@ package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicCollection;
 import dev.simplified.collection.atomic.AtomicSet;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,8 +58,8 @@ public class ConcurrentHashSet<E> extends AtomicSet<E, AbstractSet<E>> implement
 
 	/**
 	 * Constructs a {@code ConcurrentHashSet} with a pre-built backing set and an explicit lock.
-	 * Used by {@link ConcurrentUnmodifiableSet.Impl} (and its variants) to install a snapshot set
-	 * paired with a no-op lock for wait-free reads.
+	 * Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet} (and its variants) to
+	 * install a snapshot set paired with a no-op lock for wait-free reads.
 	 *
 	 * @param backingSet the pre-built backing set
 	 * @param lock the lock guarding {@code backingSet}
@@ -113,7 +112,7 @@ public class ConcurrentHashSet<E> extends AtomicSet<E, AbstractSet<E>> implement
 	 */
 	@Override
 	public @NotNull ConcurrentSet<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiableSet.Impl<>(this.cloneRef());
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(this.cloneRef());
 	}
 
 }

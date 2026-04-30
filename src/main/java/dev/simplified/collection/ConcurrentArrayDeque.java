@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicDeque;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,8 +61,8 @@ public class ConcurrentArrayDeque<E> extends AtomicDeque<E, ArrayDeque<E>> imple
 
 	/**
 	 * Constructs a {@code ConcurrentArrayDeque} with a pre-built backing deque and an explicit
-	 * lock. Used by {@link ConcurrentUnmodifiableDeque.Impl} to install a snapshot deque paired
-	 * with a no-op lock for wait-free reads.
+	 * lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque} to install a
+	 * snapshot deque paired with a no-op lock for wait-free reads.
 	 *
 	 * @param backingDeque the pre-built backing deque
 	 * @param lock the lock guarding {@code backingDeque}
@@ -105,7 +104,7 @@ public class ConcurrentArrayDeque<E> extends AtomicDeque<E, ArrayDeque<E>> imple
 	 */
 	@Override
 	public @NotNull ConcurrentDeque<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiableDeque.Impl<>(this.withReadLock(() -> new ArrayDeque<>(this.ref)));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque<>(this.withReadLock(() -> new ArrayDeque<>(this.ref)));
 	}
 
 }

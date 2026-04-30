@@ -1,6 +1,5 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -66,8 +65,8 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 
 	/**
 	 * Constructs a {@code ConcurrentLinkedHashMap} with a pre-built backing map and an explicit
-	 * lock. Used by {@link ConcurrentUnmodifiableLinkedMap.Impl} to install a snapshot map paired
-	 * with a no-op lock for wait-free reads.
+	 * lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap} to install
+	 * a snapshot map paired with a no-op lock for wait-free reads.
 	 *
 	 * @param backingMap the pre-built backing map
 	 * @param lock the lock guarding {@code backingMap}
@@ -114,7 +113,7 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 */
 	@Override
 	public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
-		return new ConcurrentUnmodifiableLinkedMap.Impl<>((LinkedHashMap<K, V>) this.cloneRef());
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap<>((LinkedHashMap<K, V>) this.cloneRef());
 	}
 
 	/**

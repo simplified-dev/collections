@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicList;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableLinkedList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,12 +17,6 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @param <E> the type of elements in this list
  */
 public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	@NotNull ConcurrentLinkedList<E> toUnmodifiable();
 
 	/**
 	 * Creates a new empty {@link ConcurrentLinkedList} backed by a {@link LinkedList}.
@@ -121,7 +114,7 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 
 		/**
 		 * Constructs a {@code ConcurrentLinkedList.Impl} with a pre-built backing list and an
-		 * explicit lock. Used by {@link ConcurrentUnmodifiableLinkedList.Impl} to install a
+		 * explicit lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList} to install a
 		 * snapshot list paired with a no-op lock for wait-free reads.
 		 *
 		 * @param backingList the pre-built backing list
@@ -158,8 +151,8 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 		 *         elements
 		 */
 		@Override
-		public @NotNull ConcurrentUnmodifiableLinkedList<E> toUnmodifiable() {
-			return new ConcurrentUnmodifiableLinkedList.Impl<>((LinkedList<E>) this.snapshot());
+		public @NotNull ConcurrentList<E> toUnmodifiable() {
+			return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>((LinkedList<E>) this.snapshot());
 		}
 
 	}
