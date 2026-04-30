@@ -556,8 +556,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent collection
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection() {
-		return new ConcurrentUnmodifiableCollection.Impl<>(new ArrayList<>());
+	public static <E> @NotNull ConcurrentCollection<E> newUnmodifiableCollection() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>());
 	}
 
 	/**
@@ -568,8 +568,8 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent collection containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection(@NotNull E... array) {
-		return new ConcurrentUnmodifiableCollection.Impl<>(new ArrayList<>(Arrays.asList(array)));
+	public static <E> @NotNull ConcurrentCollection<E> newUnmodifiableCollection(@NotNull E... array) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -584,11 +584,11 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableCollection.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableCollection<E> newUnmodifiableCollection(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentCollection<E> newUnmodifiableCollection(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentCollection)
-			return (ConcurrentUnmodifiableCollection<E>) ((ConcurrentCollection<E>) collection).toUnmodifiable();
+			return ((ConcurrentCollection<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableCollection.Impl<>(new ArrayList<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>(collection));
 	}
 
 	/**
@@ -598,8 +598,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent list
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList() {
-		return new ConcurrentUnmodifiableList.Impl<>(new ArrayList<>());
+	public static <E> @NotNull ConcurrentList<E> newUnmodifiableList() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>());
 	}
 
 	/**
@@ -610,8 +610,8 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent list containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@NotNull E... array) {
-		return new ConcurrentUnmodifiableList.Impl<>(new ArrayList<>(Arrays.asList(array)));
+	public static <E> @NotNull ConcurrentList<E> newUnmodifiableList(@NotNull E... array) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -629,15 +629,15 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableList.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableList<E> newUnmodifiableList(@Nullable Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentList<E> newUnmodifiableList(@Nullable Collection<? extends E> collection) {
 		if (collection == null) return newUnmodifiableList();
-		// ConcurrentLinkedList.Impl.toUnmodifiable() yields a LinkedList-backed
-		// ConcurrentUnmodifiableLinkedList.Impl; route those sources to the ArrayList-backed
-		// fallback so this factory keeps returning a ConcurrentUnmodifiableList.Impl as documented.
+		// ConcurrentLinkedList.Impl.toUnmodifiable() yields a LinkedList-backed wrapper; route
+		// those sources to the ArrayList-backed fallback so this factory keeps returning an
+		// UnmodifiableConcurrentArrayList as documented.
 		if (collection instanceof ConcurrentList && !(collection instanceof ConcurrentLinkedList))
-			return (ConcurrentUnmodifiableList<E>) ((ConcurrentList<E>) collection).toUnmodifiable();
+			return ((ConcurrentList<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableList.Impl<>(new ArrayList<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>(collection));
 	}
 
 	/**
@@ -649,12 +649,12 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent map containing the specified entries
 	 */
 	@SafeVarargs
-	public static <K, V> @NotNull ConcurrentUnmodifiableMap<K, V> newUnmodifiableMap(@NotNull Map.Entry<K, V>... entries) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableMap(@NotNull Map.Entry<K, V>... entries) {
 		HashMap<K, V> snapshot = new HashMap<>();
 		for (Map.Entry<K, V> entry : entries) {
 			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
 		}
-		return new ConcurrentUnmodifiableMap.Impl<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap<>(snapshot);
 	}
 
 	/**
@@ -674,14 +674,14 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableMap.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K, V> @NotNull ConcurrentUnmodifiableMap<K, V> newUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
 		// ConcurrentTreeMap.Impl and ConcurrentLinkedMap.Impl override toUnmodifiable() to
 		// yield TreeMap/LinkedHashMap-backed siblings; route those sources to the HashMap-backed
 		// fallback so this factory keeps returning a ConcurrentUnmodifiableMap.Impl as documented.
 		if (map instanceof ConcurrentMap && !(map instanceof ConcurrentTreeMap) && !(map instanceof ConcurrentLinkedMap))
-			return (ConcurrentUnmodifiableMap<K, V>) ((ConcurrentMap<K, V>) map).toUnmodifiable();
+			return ((ConcurrentMap<K, V>) map).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableMap.Impl<>(new HashMap<>(map));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap<>(new HashMap<>(map));
 	}
 
 	/**
@@ -691,8 +691,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent set
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet() {
-		return new ConcurrentUnmodifiableSet.Impl<>(new HashSet<>());
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableSet() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>());
 	}
 
 	/**
@@ -703,8 +703,8 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent set containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet(@NotNull E... array) {
-		return new ConcurrentUnmodifiableSet.Impl<>(new HashSet<>(Arrays.asList(array)));
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableSet(@NotNull E... array) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -723,14 +723,14 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableSet.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableSet<E> newUnmodifiableSet(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableSet(@NotNull Collection<? extends E> collection) {
 		// ConcurrentTreeSet.Impl and ConcurrentLinkedSet.Impl override toUnmodifiable() to
 		// yield TreeSet/LinkedHashSet-backed siblings; route those sources to the HashSet-backed
 		// fallback so this factory keeps returning a ConcurrentUnmodifiableSet.Impl as documented.
 		if (collection instanceof ConcurrentSet && !(collection instanceof ConcurrentTreeSet) && !(collection instanceof ConcurrentLinkedSet))
-			return (ConcurrentUnmodifiableSet<E>) ((ConcurrentSet<E>) collection).toUnmodifiable();
+			return ((ConcurrentSet<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableSet.Impl<>(new HashSet<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>(collection));
 	}
 
 	/**
@@ -739,8 +739,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent queue
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue() {
-		return new ConcurrentUnmodifiableQueue.Impl<>(new ArrayDeque<>());
+	public static <E> @NotNull ConcurrentQueue<E> newUnmodifiableQueue() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue<>(new ArrayDeque<>());
 	}
 
 	/**
@@ -751,8 +751,8 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent queue containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue(@NotNull E... array) {
-		return new ConcurrentUnmodifiableQueue.Impl<>(new ArrayDeque<>(Arrays.asList(array)));
+	public static <E> @NotNull ConcurrentQueue<E> newUnmodifiableQueue(@NotNull E... array) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue<>(new ArrayDeque<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -766,11 +766,11 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableQueue.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentQueue<E> newUnmodifiableQueue(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentQueue)
-			return (ConcurrentUnmodifiableQueue<E>) ((ConcurrentQueue<E>) collection).toUnmodifiable();
+			return ((ConcurrentQueue<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableQueue.Impl<>(new ArrayDeque<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue<>(new ArrayDeque<>(collection));
 	}
 
 	/**
@@ -779,8 +779,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent deque
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque() {
-		return new ConcurrentUnmodifiableDeque.Impl<>(new ArrayDeque<>());
+	public static <E> @NotNull ConcurrentDeque<E> newUnmodifiableDeque() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque<>(new ArrayDeque<>());
 	}
 
 	/**
@@ -791,8 +791,8 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent deque containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque(@NotNull E... array) {
-		return new ConcurrentUnmodifiableDeque.Impl<>(new ArrayDeque<>(Arrays.asList(array)));
+	public static <E> @NotNull ConcurrentDeque<E> newUnmodifiableDeque(@NotNull E... array) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque<>(new ArrayDeque<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -806,11 +806,11 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableDeque.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentDeque<E> newUnmodifiableDeque(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentDeque)
-			return (ConcurrentUnmodifiableDeque<E>) ((ConcurrentDeque<E>) collection).toUnmodifiable();
+			return ((ConcurrentDeque<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableDeque.Impl<>(new ArrayDeque<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque<>(new ArrayDeque<>(collection));
 	}
 
 	/**
@@ -819,8 +819,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent linked list
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList() {
-		return new ConcurrentUnmodifiableLinkedList.Impl<>(new LinkedList<>());
+	public static <E> @NotNull ConcurrentList<E> newUnmodifiableLinkedList() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>());
 	}
 
 	/**
@@ -831,8 +831,8 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent linked list containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList(@NotNull E... array) {
-		return new ConcurrentUnmodifiableLinkedList.Impl<>(new LinkedList<>(Arrays.asList(array)));
+	public static <E> @NotNull ConcurrentList<E> newUnmodifiableLinkedList(@NotNull E... array) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -844,11 +844,11 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedList.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedList<E> newUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentList<E> newUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentLinkedList)
-			return (ConcurrentUnmodifiableLinkedList<E>) ((ConcurrentLinkedList<E>) collection).toUnmodifiable();
+			return ((ConcurrentLinkedList<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableLinkedList.Impl<>(new LinkedList<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>(collection));
 	}
 
 	/**
@@ -857,8 +857,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent linked set
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedSet<E> newUnmodifiableLinkedSet() {
-		return new ConcurrentUnmodifiableLinkedSet.Impl<>(new LinkedHashSet<>());
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableLinkedSet() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>(new LinkedHashSet<>());
 	}
 
 	/**
@@ -869,8 +869,8 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent linked set containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedSet<E> newUnmodifiableLinkedSet(@NotNull E... array) {
-		return new ConcurrentUnmodifiableLinkedSet.Impl<>(new LinkedHashSet<>(Arrays.asList(array)));
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableLinkedSet(@NotNull E... array) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>(new LinkedHashSet<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -882,11 +882,11 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedSet.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableLinkedSet<E> newUnmodifiableLinkedSet(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableLinkedSet(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentLinkedSet)
-			return (ConcurrentUnmodifiableLinkedSet<E>) ((ConcurrentLinkedSet<E>) collection).toUnmodifiable();
+			return ((ConcurrentLinkedSet<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableLinkedSet.Impl<>(new LinkedHashSet<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>(new LinkedHashSet<>(collection));
 	}
 
 	/**
@@ -896,8 +896,8 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a new empty unmodifiable concurrent linked map
 	 */
-	public static <K, V> @NotNull ConcurrentUnmodifiableLinkedMap<K, V> newUnmodifiableLinkedMap() {
-		return new ConcurrentUnmodifiableLinkedMap.Impl<>(new LinkedHashMap<>());
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableLinkedMap() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap<>(new LinkedHashMap<>());
 	}
 
 	/**
@@ -910,12 +910,12 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent linked map containing the specified entries
 	 */
 	@SafeVarargs
-	public static <K, V> @NotNull ConcurrentUnmodifiableLinkedMap<K, V> newUnmodifiableLinkedMap(@NotNull Map.Entry<K, V>... pairs) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableLinkedMap(@NotNull Map.Entry<K, V>... pairs) {
 		LinkedHashMap<K, V> snapshot = new LinkedHashMap<>();
 		for (Map.Entry<K, V> entry : pairs) {
 			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
 		}
-		return new ConcurrentUnmodifiableLinkedMap.Impl<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap<>(snapshot);
 	}
 
 	/**
@@ -928,11 +928,11 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedMap.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K, V> @NotNull ConcurrentUnmodifiableLinkedMap<K, V> newUnmodifiableLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
 		if (map instanceof ConcurrentLinkedMap)
-			return (ConcurrentUnmodifiableLinkedMap<K, V>) ((ConcurrentLinkedMap<K, V>) map).toUnmodifiable();
+			return ((ConcurrentLinkedMap<K, V>) map).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableLinkedMap.Impl<>(new LinkedHashMap<>(map));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap<>(new LinkedHashMap<>(map));
 	}
 
 	/**
@@ -941,8 +941,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent tree set
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet() {
-		return new ConcurrentUnmodifiableTreeSet.Impl<>(new TreeSet<>());
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableTreeSet() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet<>(new TreeSet<>());
 	}
 
 	/**
@@ -952,8 +952,8 @@ public final class Concurrent {
 	 * @param <E>        the element type
 	 * @return a new empty unmodifiable concurrent tree set
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator) {
-		return new ConcurrentUnmodifiableTreeSet.Impl<>(new TreeSet<>(comparator));
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet<>(new TreeSet<>(comparator));
 	}
 
 	/**
@@ -965,10 +965,10 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent tree set containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull E... array) {
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableTreeSet(@NotNull E... array) {
 		TreeSet<E> snapshot = new TreeSet<>();
 		Collections.addAll(snapshot, array);
-		return new ConcurrentUnmodifiableTreeSet.Impl<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet<>(snapshot);
 	}
 
 	/**
@@ -981,10 +981,10 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent tree set containing the specified elements ordered by the given comparator
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator, @NotNull E... array) {
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator, @NotNull E... array) {
 		TreeSet<E> snapshot = new TreeSet<>(comparator);
 		Collections.addAll(snapshot, array);
-		return new ConcurrentUnmodifiableTreeSet.Impl<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet<>(snapshot);
 	}
 
 	/**
@@ -996,11 +996,11 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableTreeSet.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableTreeSet(@NotNull Collection<? extends E> collection) {
 		if (collection instanceof ConcurrentTreeSet)
-			return (ConcurrentUnmodifiableTreeSet<E>) ((ConcurrentTreeSet<E>) collection).toUnmodifiable();
+			return ((ConcurrentTreeSet<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableTreeSet.Impl<>(new TreeSet<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet<>(new TreeSet<>(collection));
 	}
 
 	/**
@@ -1012,10 +1012,10 @@ public final class Concurrent {
 	 * @param <E>        the element type
 	 * @return a snapshot {@link ConcurrentUnmodifiableTreeSet.Impl}
 	 */
-	public static <E> @NotNull ConcurrentUnmodifiableTreeSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
 		TreeSet<E> snapshot = new TreeSet<>(comparator);
 		snapshot.addAll(collection);
-		return new ConcurrentUnmodifiableTreeSet.Impl<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet<>(snapshot);
 	}
 
 	/**
@@ -1025,8 +1025,8 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a new empty unmodifiable concurrent tree map
 	 */
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap() {
-		return new ConcurrentUnmodifiableTreeMap.Impl<>(new TreeMap<>());
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableTreeMap() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap<>(new TreeMap<>());
 	}
 
 	/**
@@ -1037,8 +1037,8 @@ public final class Concurrent {
 	 * @param <V>        the value type
 	 * @return a new empty unmodifiable concurrent tree map
 	 */
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator) {
-		return new ConcurrentUnmodifiableTreeMap.Impl<>(new TreeMap<>(comparator));
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap<>(new TreeMap<>(comparator));
 	}
 
 	/**
@@ -1051,7 +1051,7 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent tree map containing the specified entries
 	 */
 	@SafeVarargs
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(Map.Entry<K, V> @NotNull ... pairs) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableTreeMap(Map.Entry<K, V> @NotNull ... pairs) {
 		TreeMap<K, V> snapshot = new TreeMap<>();
 
 		for (Map.Entry<K, V> entry : pairs) {
@@ -1059,7 +1059,7 @@ public final class Concurrent {
 				snapshot.put(entry.getKey(), entry.getValue());
 		}
 
-		return new ConcurrentUnmodifiableTreeMap.Impl<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap<>(snapshot);
 	}
 
 	/**
@@ -1073,7 +1073,7 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent tree map containing the specified entries ordered by the given comparator
 	 */
 	@SafeVarargs
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator, Map.Entry<K, V> @NotNull ... pairs) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator, Map.Entry<K, V> @NotNull ... pairs) {
 		TreeMap<K, V> snapshot = new TreeMap<>(comparator);
 
 		for (Map.Entry<K, V> entry : pairs) {
@@ -1081,7 +1081,7 @@ public final class Concurrent {
 				snapshot.put(entry.getKey(), entry.getValue());
 		}
 
-		return new ConcurrentUnmodifiableTreeMap.Impl<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap<>(snapshot);
 	}
 
 	/**
@@ -1093,11 +1093,11 @@ public final class Concurrent {
 	 * @return a snapshot {@link ConcurrentUnmodifiableTreeMap.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Map<? extends K, ? extends V> map) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableTreeMap(@NotNull Map<? extends K, ? extends V> map) {
 		if (map instanceof ConcurrentTreeMap)
-			return (ConcurrentUnmodifiableTreeMap<K, V>) ((ConcurrentTreeMap<K, V>) map).toUnmodifiable();
+			return ((ConcurrentTreeMap<K, V>) map).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableTreeMap.Impl<>(new TreeMap<>(map));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap<>(new TreeMap<>(map));
 	}
 
 	/**
@@ -1110,10 +1110,10 @@ public final class Concurrent {
 	 * @param <V>        the value type
 	 * @return a snapshot {@link ConcurrentUnmodifiableTreeMap.Impl}
 	 */
-	public static <K, V> @NotNull ConcurrentUnmodifiableTreeMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
 		TreeMap<K, V> snapshot = new TreeMap<>(comparator);
 		snapshot.putAll(map);
-		return new ConcurrentUnmodifiableTreeMap.Impl<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap<>(snapshot);
 	}
 
 	/**
@@ -1287,10 +1287,10 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent deque
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableDeque<E>> toUnmodifiableDeque() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentDeque<E>> toUnmodifiableDeque() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, ArrayDeque<E>>toCollection(ArrayDeque::new),
-			ConcurrentUnmodifiableDeque.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque::new
 		);
 	}
 
@@ -1316,10 +1316,10 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent queue
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableQueue<E>> toUnmodifiableQueue() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentQueue<E>> toUnmodifiableQueue() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, ArrayDeque<E>>toCollection(ArrayDeque::new),
-			ConcurrentUnmodifiableQueue.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue::new
 		);
 	}
 
@@ -1347,10 +1347,10 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent linked list
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableLinkedList<E>> toUnmodifiableLinkedList() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentList<E>> toUnmodifiableLinkedList() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
-			ConcurrentUnmodifiableLinkedList.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList::new
 		);
 	}
 
@@ -1378,10 +1378,10 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent list
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableList<E>> toUnmodifiableList() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentList<E>> toUnmodifiableList() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, ArrayList<E>>toCollection(ArrayList::new),
-			ConcurrentUnmodifiableList.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList::new
 		);
 	}
 
@@ -1655,7 +1655,7 @@ public final class Concurrent {
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toWeakUnmodifiableMap() {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakUnmodifiableMap() {
 		return toUnmodifiableMap(entry -> ((Map.Entry<K, V>) entry).getKey(), entry -> ((Map.Entry<K, V>) entry).getValue(), throwingMerger());
 	}
 
@@ -1668,7 +1668,7 @@ public final class Concurrent {
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableMap() {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap() {
 		return toUnmodifiableMap(throwingMerger());
 	}
 
@@ -1682,7 +1682,7 @@ public final class Concurrent {
 	 * @param <T>           the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableMap(@NotNull BinaryOperator<V> mergeFunction) {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap(@NotNull BinaryOperator<V> mergeFunction) {
 		return toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
 	}
 
@@ -1697,7 +1697,7 @@ public final class Concurrent {
 	 * @param <T>         the stream element type
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
 		return toUnmodifiableMap(keyMapper, valueMapper, throwingMerger());
 	}
 
@@ -1713,10 +1713,10 @@ public final class Concurrent {
 	 * @param <T>           the stream element type
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return Collectors.collectingAndThen(
 			Collectors.<T, K, V, HashMap<K, V>>toMap(keyMapper, valueMapper, mergeFunction, HashMap::new),
-			ConcurrentUnmodifiableMap.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap::new
 		);
 	}
 
@@ -1737,12 +1737,12 @@ public final class Concurrent {
 	 * @param <M> the raw backing map type
 	 * @return a collector producing a {@link ConcurrentUnmodifiableMap}
 	 */
-	public static <K, V, T, M extends Map<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableMap<K, V>> toUnmodifiableMap(
+	public static <K, V, T, M extends Map<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap(
 		@NotNull Function<? super T, ? extends K> keyMapper,
 		@NotNull Function<? super T, ? extends V> valueMapper,
 		@NotNull BinaryOperator<V> mergeFunction,
 		@NotNull Supplier<M> rawMapSupplier,
-		@NotNull Function<M, ConcurrentUnmodifiableMap<K, V>> finisher
+		@NotNull Function<M, ConcurrentMap<K, V>> finisher
 	) {
 		return Collectors.collectingAndThen(
 			Collectors.toMap(keyMapper, valueMapper, mergeFunction, rawMapSupplier),
@@ -1761,7 +1761,7 @@ public final class Concurrent {
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl} ordered by {@code comparator}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator) {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator) {
 		return toUnmodifiableTreeMap(
 			Map.Entry::getKey,
 			Map.Entry::getValue,
@@ -1784,7 +1784,7 @@ public final class Concurrent {
 	 * @param <T> the stream element type
 	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap(
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap(
 		@NotNull Function<? super T, ? extends K> keyMapper,
 		@NotNull Function<? super T, ? extends V> valueMapper,
 		@NotNull BinaryOperator<V> mergeFunction,
@@ -1792,7 +1792,7 @@ public final class Concurrent {
 	) {
 		return Collectors.collectingAndThen(
 			Collectors.toMap(keyMapper, valueMapper, mergeFunction, rawMapSupplier),
-			ConcurrentUnmodifiableTreeMap.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap::new
 		);
 	}
 
@@ -1818,10 +1818,10 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent set
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableSet<E>> toUnmodifiableSet() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toUnmodifiableSet() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
-			ConcurrentUnmodifiableSet.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet::new
 		);
 	}
 
@@ -1848,10 +1848,10 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent linked set
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableLinkedSet<E>> toUnmodifiableLinkedSet() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toUnmodifiableLinkedSet() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
-			ConcurrentUnmodifiableLinkedSet.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet::new
 		);
 	}
 
@@ -1893,10 +1893,10 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent tree set
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableTreeSet<E>> toUnmodifiableTreeSet() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toUnmodifiableTreeSet() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, TreeSet<E>>toCollection(TreeSet::new),
-			ConcurrentUnmodifiableTreeSet.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet::new
 		);
 	}
 
@@ -1909,10 +1909,10 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent tree set ordered by {@code comparator}
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableTreeSet<E>> toUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator) {
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator) {
 		return Collectors.collectingAndThen(
 			Collectors.<E, TreeSet<E>>toCollection(() -> new TreeSet<>(comparator)),
-			ConcurrentUnmodifiableTreeSet.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet::new
 		);
 	}
 
@@ -2018,7 +2018,7 @@ public final class Concurrent {
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableLinkedMap<K, V>> toUnmodifiableLinkedMap() {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap() {
 		return toUnmodifiableLinkedMap(throwingMerger());
 	}
 
@@ -2033,7 +2033,7 @@ public final class Concurrent {
 	 * @param <T>           the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
 		return toUnmodifiableLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
 	}
 
@@ -2049,7 +2049,7 @@ public final class Concurrent {
 	 * @param <T>         the stream element type
 	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
 		return toUnmodifiableLinkedMap(keyMapper, valueMapper, throwingMerger());
 	}
 
@@ -2066,10 +2066,10 @@ public final class Concurrent {
 	 * @param <T>           the stream element type
 	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return Collectors.collectingAndThen(
 			Collectors.<T, K, V, LinkedHashMap<K, V>>toMap(keyMapper, valueMapper, mergeFunction, LinkedHashMap::new),
-			ConcurrentUnmodifiableLinkedMap.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap::new
 		);
 	}
 
@@ -2083,7 +2083,7 @@ public final class Concurrent {
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap() {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap() {
 		return toUnmodifiableTreeMap(Map.Entry::getKey, Map.Entry::getValue, throwingMerger());
 	}
 
@@ -2099,7 +2099,7 @@ public final class Concurrent {
 	 * @param <T>         the stream element type
 	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
 		return toUnmodifiableTreeMap(keyMapper, valueMapper, throwingMerger());
 	}
 
@@ -2116,10 +2116,10 @@ public final class Concurrent {
 	 * @param <T>           the stream element type
 	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentUnmodifiableTreeMap<K, V>> toUnmodifiableTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return Collectors.collectingAndThen(
 			Collectors.<T, K, V, TreeMap<K, V>>toMap(keyMapper, valueMapper, mergeFunction, TreeMap::new),
-			ConcurrentUnmodifiableTreeMap.Impl::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap::new
 		);
 	}
 

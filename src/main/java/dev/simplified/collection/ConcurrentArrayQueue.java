@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.atomic.AtomicQueue;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,8 +64,8 @@ public class ConcurrentArrayQueue<E> extends AtomicQueue<E, ArrayDeque<E>> imple
 
 	/**
 	 * Constructs a {@code ConcurrentArrayQueue} with a pre-built backing queue and an explicit
-	 * lock. Used by {@link ConcurrentUnmodifiableQueue.Impl} to install a snapshot queue paired
-	 * with a no-op lock for wait-free reads.
+	 * lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue} to install a
+	 * snapshot queue paired with a no-op lock for wait-free reads.
 	 *
 	 * @param backingQueue the pre-built backing queue
 	 * @param lock the lock guarding {@code backingQueue}
@@ -108,7 +107,7 @@ public class ConcurrentArrayQueue<E> extends AtomicQueue<E, ArrayDeque<E>> imple
 	 */
 	@Override
 	public @NotNull ConcurrentQueue<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiableQueue.Impl<>(this.withReadLock(() -> new ArrayDeque<>(this.ref)));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue<>(this.withReadLock(() -> new ArrayDeque<>(this.ref)));
 	}
 
 }

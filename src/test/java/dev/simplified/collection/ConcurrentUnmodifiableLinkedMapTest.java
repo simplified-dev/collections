@@ -1,8 +1,5 @@
-package dev.simplified.collection.unmodifiable;
+package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentLinkedMap;
-import dev.simplified.collection.ConcurrentMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -20,14 +17,14 @@ class ConcurrentUnmodifiableLinkedMapTest {
 
 		@Test
 		void factory_empty_isLinkedMapSnapshot() {
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap();
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap();
 			assertEquals(0, u.size());
-			assertTrue(u instanceof ConcurrentLinkedMap);
+			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap);
 		}
 
 		@Test
 		void factory_entries_keepsContents() {
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap(
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap(
 				Map.entry("a", 1),
 				Map.entry("b", 2)
 			);
@@ -38,7 +35,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 
 		@Test
 		void factory_map_keepsContents() {
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap(Map.of("x", 10));
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap(Map.of("x", 10));
 			assertEquals(10, u.get("x"));
 		}
 
@@ -46,7 +43,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 		void toUnmodifiable_fromLinkedMap_returnsLinkedMapUnmodifiable() {
 			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
-			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiableLinkedMap);
+			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap);
 		}
 	}
 
@@ -57,7 +54,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 		void allMutators_throwUOE() {
 			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = (ConcurrentUnmodifiableLinkedMap<String, Integer>) src.toUnmodifiable();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.put("b", 2));
 			assertThrows(UnsupportedOperationException.class, () -> u.putAll(Map.of("c", 3)));
@@ -74,7 +71,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 
 		@Test
 		void entrySet_iterator_remove_throwsUOE() {
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap(Map.entry("a", 1));
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap(Map.entry("a", 1));
 			Iterator<Map.Entry<String, Integer>> it = u.entrySet().iterator();
 			it.next();
 			assertThrows(UnsupportedOperationException.class, it::remove);
@@ -88,7 +85,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = (ConcurrentUnmodifiableLinkedMap<String, Integer>) src.toUnmodifiable();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.put("b", 2);
@@ -106,7 +103,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = (ConcurrentUnmodifiableLinkedMap<String, Integer>) src.toUnmodifiable();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			List<String> keys = new ArrayList<>();
 			for (Map.Entry<String, Integer> e : u.entrySet()) keys.add(e.getKey());
@@ -118,15 +115,14 @@ class ConcurrentUnmodifiableLinkedMapTest {
 	class Assignability {
 
 		@Test
-		void isAlsoConcurrentMapAndUnmodifiableMap() {
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap();
+		void isAlsoConcurrentMap() {
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap();
 			assertTrue(u instanceof ConcurrentMap);
-			assertTrue(u instanceof ConcurrentUnmodifiableMap);
 		}
 
 		@Test
 		void doubleWrap_returnsSameInstance() {
-			ConcurrentUnmodifiableLinkedMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap();
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap();
 			assertSame(u, u.toUnmodifiable());
 		}
 	}

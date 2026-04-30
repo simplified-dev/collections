@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -165,7 +164,7 @@ class NavigableSetTest {
 
 		@Test
 		void unmodifiable_descendingSet_throwsOnAdd() {
-			ConcurrentUnmodifiableTreeSet<Integer> u = Concurrent.newUnmodifiableTreeSet(List.of(1, 2, 3));
+			ConcurrentTreeSet<Integer> u = (ConcurrentTreeSet<Integer>) Concurrent.newUnmodifiableTreeSet(List.of(1, 2, 3));
 			NavigableSet<Integer> desc = u.descendingSet();
 			assertEquals(3, desc.first());
 			assertThrows(UnsupportedOperationException.class, () -> desc.add(99));
@@ -173,14 +172,14 @@ class NavigableSetTest {
 
 		@Test
 		void unmodifiable_pollFirst_throws() {
-			ConcurrentUnmodifiableTreeSet<Integer> u = Concurrent.newUnmodifiableTreeSet(List.of(1));
+			ConcurrentTreeSet<Integer> u = (ConcurrentTreeSet<Integer>) Concurrent.newUnmodifiableTreeSet(List.of(1));
 			assertThrows(UnsupportedOperationException.class, u::pollFirst);
 			assertThrows(UnsupportedOperationException.class, u::pollLast);
 		}
 
 		@Test
 		void unmodifiable_subSet_throwsOnAdd() {
-			ConcurrentUnmodifiableTreeSet<Integer> u = Concurrent.newUnmodifiableTreeSet(List.of(1, 2, 3));
+			ConcurrentTreeSet<Integer> u = (ConcurrentTreeSet<Integer>) Concurrent.newUnmodifiableTreeSet(List.of(1, 2, 3));
 			NavigableSet<Integer> sub = u.subSet(1, true, 3, true);
 			assertEquals(3, sub.size());
 			assertThrows(UnsupportedOperationException.class, () -> sub.add(2));
@@ -188,7 +187,7 @@ class NavigableSetTest {
 
 		@Test
 		void unmodifiable_descendingIterator_doesNotPermitRemove() {
-			ConcurrentUnmodifiableTreeSet<Integer> u = Concurrent.newUnmodifiableTreeSet(List.of(1, 2, 3));
+			ConcurrentTreeSet<Integer> u = (ConcurrentTreeSet<Integer>) Concurrent.newUnmodifiableTreeSet(List.of(1, 2, 3));
 			Iterator<Integer> it = u.descendingIterator();
 			assertEquals(3, it.next());
 			assertThrows(UnsupportedOperationException.class, it::remove);

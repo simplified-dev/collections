@@ -1,8 +1,5 @@
-package dev.simplified.collection.unmodifiable;
+package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
-import dev.simplified.collection.ConcurrentLinkedList;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -19,29 +16,30 @@ class ConcurrentUnmodifiableLinkedListTest {
 
 		@Test
 		void factory_empty_isLinkedListSnapshot() {
-			ConcurrentUnmodifiableLinkedList<String> u = Concurrent.newUnmodifiableLinkedList();
+			ConcurrentList<String> u = Concurrent.newUnmodifiableLinkedList();
 			assertEquals(0, u.size());
 			assertTrue(u instanceof ConcurrentLinkedList);
+			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList);
 		}
 
 		@Test
 		void factory_varargs_keepsContents() {
-			ConcurrentUnmodifiableLinkedList<String> u = Concurrent.newUnmodifiableLinkedList("a", "b", "c");
+			ConcurrentList<String> u = Concurrent.newUnmodifiableLinkedList("a", "b", "c");
 			assertEquals(3, u.size());
 			assertEquals(List.of("a", "b", "c"), new ArrayList<>(u));
 		}
 
 		@Test
 		void factory_collection_keepsContents() {
-			ConcurrentUnmodifiableLinkedList<String> u = Concurrent.newUnmodifiableLinkedList(List.of("x", "y"));
+			ConcurrentList<String> u = Concurrent.newUnmodifiableLinkedList(List.of("x", "y"));
 			assertEquals(2, u.size());
 			assertEquals(List.of("x", "y"), new ArrayList<>(u));
 		}
 
 		@Test
 		void toUnmodifiable_fromLinkedList_returnsLinkedListUnmodifiable() {
-			ConcurrentLinkedList<String> src = Concurrent.newLinkedList("a", "b");
-			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiableLinkedList);
+			ConcurrentList<String> src = Concurrent.newLinkedList("a", "b");
+			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList);
 		}
 	}
 
@@ -50,8 +48,8 @@ class ConcurrentUnmodifiableLinkedListTest {
 
 		@Test
 		void allMutators_throwUOE() {
-			ConcurrentLinkedList<String> src = Concurrent.newLinkedList("a", "b");
-			ConcurrentUnmodifiableLinkedList<String> u = (ConcurrentUnmodifiableLinkedList<String>) src.toUnmodifiable();
+			ConcurrentList<String> src = Concurrent.newLinkedList("a", "b");
+			ConcurrentList<String> u = src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.add(0, "c"));
@@ -75,7 +73,7 @@ class ConcurrentUnmodifiableLinkedListTest {
 
 		@Test
 		void iterator_remove_throwsUOE() {
-			ConcurrentUnmodifiableLinkedList<String> u = Concurrent.newUnmodifiableLinkedList("a", "b");
+			ConcurrentList<String> u = Concurrent.newUnmodifiableLinkedList("a", "b");
 			Iterator<String> it = u.iterator();
 			it.next();
 			assertThrows(UnsupportedOperationException.class, it::remove);
@@ -87,9 +85,9 @@ class ConcurrentUnmodifiableLinkedListTest {
 
 		@Test
 		void sourceMutations_notVisibleThroughWrapper() {
-			ConcurrentLinkedList<String> src = Concurrent.newLinkedList();
+			ConcurrentList<String> src = Concurrent.newLinkedList();
 			src.add("a");
-			ConcurrentUnmodifiableLinkedList<String> u = (ConcurrentUnmodifiableLinkedList<String>) src.toUnmodifiable();
+			ConcurrentList<String> u = src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.add("b");
@@ -103,11 +101,11 @@ class ConcurrentUnmodifiableLinkedListTest {
 
 		@Test
 		void preservesInsertionOrder() {
-			ConcurrentLinkedList<String> src = Concurrent.newLinkedList();
+			ConcurrentList<String> src = Concurrent.newLinkedList();
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentUnmodifiableLinkedList<String> u = (ConcurrentUnmodifiableLinkedList<String>) src.toUnmodifiable();
+			ConcurrentList<String> u = src.toUnmodifiable();
 			assertEquals(List.of("c", "a", "b"), new ArrayList<>(u));
 		}
 	}
@@ -116,15 +114,15 @@ class ConcurrentUnmodifiableLinkedListTest {
 	class Assignability {
 
 		@Test
-		void isAlsoConcurrentListAndUnmodifiableList() {
-			ConcurrentUnmodifiableLinkedList<String> u = Concurrent.newUnmodifiableLinkedList("a");
+		void isAlsoConcurrentList() {
+			ConcurrentList<String> u = Concurrent.newUnmodifiableLinkedList("a");
 			assertTrue(u instanceof ConcurrentList);
-			assertTrue(u instanceof ConcurrentUnmodifiableList);
+			assertTrue(u instanceof ConcurrentLinkedList);
 		}
 
 		@Test
 		void doubleWrap_returnsSameInstance() {
-			ConcurrentUnmodifiableLinkedList<String> u = Concurrent.newUnmodifiableLinkedList("a");
+			ConcurrentList<String> u = Concurrent.newUnmodifiableLinkedList("a");
 			assertSame(u, u.toUnmodifiable());
 		}
 	}
