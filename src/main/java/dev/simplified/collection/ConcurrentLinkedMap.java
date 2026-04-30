@@ -85,7 +85,7 @@ public interface ConcurrentLinkedMap<K, V> extends ConcurrentMap<K, V> {
 	 * @param <K> the type of keys maintained by this map
 	 * @param <V> the type of mapped values
 	 */
-	class Impl<K, V> extends ConcurrentMap.Impl<K, V> implements ConcurrentLinkedMap<K, V> {
+	class Impl<K, V> extends ConcurrentHashMap<K, V> implements ConcurrentLinkedMap<K, V> {
 
 		/**
 		 * Creates a new concurrent linked map.

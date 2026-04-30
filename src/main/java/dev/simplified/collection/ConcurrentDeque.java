@@ -5,6 +5,7 @@ import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableDeque;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
@@ -147,7 +148,7 @@ public interface ConcurrentDeque<E> extends ConcurrentQueue<E>, Deque<E> {
 		 */
 		@Override
 		public @NotNull ConcurrentUnmodifiableDeque<E> toUnmodifiable() {
-			return new ConcurrentUnmodifiableDeque.Impl<>(this.withReadLock(() -> new LinkedList<>(this.ref)));
+			return new ConcurrentUnmodifiableDeque.Impl<>(this.withReadLock(() -> new ArrayDeque<>(this.ref)));
 		}
 
 	}

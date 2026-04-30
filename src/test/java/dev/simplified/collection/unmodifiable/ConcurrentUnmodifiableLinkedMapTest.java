@@ -1,8 +1,8 @@
 package dev.simplified.collection.unmodifiable;
 
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.ConcurrentLinkedMap;
+import dev.simplified.collection.ConcurrentMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +44,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 
 		@Test
 		void toUnmodifiable_fromLinkedMap_returnsLinkedMapUnmodifiable() {
-			ConcurrentLinkedMap<String, Integer> src = Concurrent.newLinkedMap();
+			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
 			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiableLinkedMap);
 		}
@@ -55,7 +55,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 
 		@Test
 		void allMutators_throwUOE() {
-			ConcurrentLinkedMap<String, Integer> src = Concurrent.newLinkedMap();
+			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
 			ConcurrentUnmodifiableLinkedMap<String, Integer> u = (ConcurrentUnmodifiableLinkedMap<String, Integer>) src.toUnmodifiable();
 
@@ -86,7 +86,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 
 		@Test
 		void sourceMutations_notVisibleThroughWrapper() {
-			ConcurrentLinkedMap<String, Integer> src = Concurrent.newLinkedMap();
+			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
 			ConcurrentUnmodifiableLinkedMap<String, Integer> u = (ConcurrentUnmodifiableLinkedMap<String, Integer>) src.toUnmodifiable();
 
@@ -102,7 +102,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 
 		@Test
 		void preservesInsertionOrder_inEntrySet() {
-			ConcurrentLinkedMap<String, Integer> src = Concurrent.newLinkedMap();
+			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);

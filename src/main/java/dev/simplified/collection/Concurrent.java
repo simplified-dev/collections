@@ -43,7 +43,7 @@ public final class Concurrent {
 	 * @return a new empty concurrent collection
 	 */
 	public static <E> @NotNull ConcurrentCollection<E> newCollection() {
-		return new ConcurrentCollection.Impl<>();
+		return new ConcurrentArrayList<>();
 	}
 
 	/**
@@ -55,7 +55,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentCollection<E> newCollection(@NotNull E... array) {
-		return new ConcurrentCollection.Impl<>(array);
+		return new ConcurrentArrayList<>(array);
 	}
 
 	/**
@@ -69,7 +69,7 @@ public final class Concurrent {
 	 * @return a new concurrent collection containing the source elements
 	 */
 	public static <E> @NotNull ConcurrentCollection<E> newCollection(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentCollection.Impl<>(collection);
+		return new ConcurrentArrayList<>(collection);
 	}
 
 	/**
@@ -79,7 +79,7 @@ public final class Concurrent {
 	 * @return a new empty concurrent deque
 	 */
 	public static <E> @NotNull ConcurrentDeque<E> newDeque() {
-		return new ConcurrentDeque.Impl<>();
+		return new ConcurrentArrayDeque<>();
 	}
 
 	/**
@@ -91,7 +91,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentDeque<E> newDeque(@NotNull E... array) {
-		return new ConcurrentDeque.Impl<>(array);
+		return new ConcurrentArrayDeque<>(array);
 	}
 
 	/**
@@ -105,7 +105,7 @@ public final class Concurrent {
 	 * @return a new concurrent deque containing the source elements
 	 */
 	public static <E> @NotNull ConcurrentDeque<E> newDeque(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentDeque.Impl<>(collection);
+		return new ConcurrentArrayDeque<>(collection);
 	}
 
 	/**
@@ -115,7 +115,7 @@ public final class Concurrent {
 	 * @return a new empty concurrent list
 	 */
 	public static <E> @NotNull ConcurrentList<E> newList() {
-		return new ConcurrentList.Impl<>();
+		return new ConcurrentArrayList<>();
 	}
 
 	/**
@@ -126,7 +126,7 @@ public final class Concurrent {
 	 * @return a new concurrent list containing the specified elements
 	 */
 	public static <E> @NotNull ConcurrentList<E> newList(int initialCapacity) {
-		return new ConcurrentList.Impl<>(initialCapacity);
+		return new ConcurrentArrayList<>(initialCapacity);
 	}
 
 	/**
@@ -138,7 +138,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentList<E> newList(@NotNull E... array) {
-		return new ConcurrentList.Impl<>(array);
+		return new ConcurrentArrayList<>(array);
 	}
 
 	/**
@@ -153,7 +153,7 @@ public final class Concurrent {
 	 * @return a new concurrent list containing the source elements
 	 */
 	public static <E> @NotNull ConcurrentList<E> newList(@Nullable Collection<? extends E> collection) {
-		return new ConcurrentList.Impl<>(collection);
+		return new ConcurrentArrayList<>(collection);
 	}
 
 	/**
@@ -166,7 +166,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <K, V> @NotNull ConcurrentMap<K, V> newMap(@NotNull Map.Entry<K, V>... entries) {
-		return new ConcurrentMap.Impl<>(entries);
+		return new ConcurrentHashMap<>(entries);
 	}
 
 	/**
@@ -181,7 +181,7 @@ public final class Concurrent {
 	 * @return a new concurrent map containing the source entries
 	 */
 	public static <K, V> @NotNull ConcurrentMap<K, V> newMap(@NotNull Map<? extends K, ? extends V> map) {
-		return new ConcurrentMap.Impl<>(map);
+		return new ConcurrentHashMap<>(map);
 	}
 
 	/**
@@ -191,7 +191,7 @@ public final class Concurrent {
 	 * @return a new empty concurrent queue
 	 */
 	public static <E> @NotNull ConcurrentQueue<E> newQueue() {
-		return new ConcurrentQueue.Impl<>();
+		return new ConcurrentArrayQueue<>();
 	}
 
 	/**
@@ -203,7 +203,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentQueue<E> newQueue(@NotNull E... array) {
-		return new ConcurrentQueue.Impl<>(array);
+		return new ConcurrentArrayQueue<>(array);
 	}
 
 	/**
@@ -217,7 +217,7 @@ public final class Concurrent {
 	 * @return a new concurrent queue containing the source elements
 	 */
 	public static <E> @NotNull ConcurrentQueue<E> newQueue(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentQueue.Impl<>(collection);
+		return new ConcurrentArrayQueue<>(collection);
 	}
 
 	/**
@@ -227,7 +227,7 @@ public final class Concurrent {
 	 * @return a new empty concurrent set
 	 */
 	public static <E> @NotNull ConcurrentSet<E> newSet() {
-		return new ConcurrentSet.Impl<>();
+		return new ConcurrentHashSet<>();
 	}
 
 	/**
@@ -239,7 +239,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentSet<E> newSet(@NotNull E... array) {
-		return new ConcurrentSet.Impl<>(array);
+		return new ConcurrentHashSet<>(array);
 	}
 
 	/**
@@ -254,7 +254,7 @@ public final class Concurrent {
 	 * @return a new concurrent set containing the source elements
 	 */
 	public static <E> @NotNull ConcurrentSet<E> newSet(@Nullable Collection<? extends E> collection) {
-		return new ConcurrentSet.Impl<>(collection);
+		return new ConcurrentHashSet<>(collection);
 	}
 
 	/**
@@ -300,7 +300,7 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a new empty concurrent linked map
 	 */
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newLinkedMap() {
+	public static <K, V> @NotNull ConcurrentMap<K, V> newLinkedMap() {
 		return newLinkedMap(-1);
 	}
 
@@ -313,8 +313,8 @@ public final class Concurrent {
 	 * @param <V>     the value type
 	 * @return a new empty concurrent linked map with the given size constraint
 	 */
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newLinkedMap(int maxSize) {
-		return new ConcurrentLinkedMap.Impl<>(maxSize);
+	public static <K, V> @NotNull ConcurrentMap<K, V> newLinkedMap(int maxSize) {
+		return new ConcurrentLinkedHashMap<>(maxSize);
 	}
 
 	/**
@@ -328,8 +328,8 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a new concurrent linked map containing the source entries
 	 */
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
-		return new ConcurrentLinkedMap.Impl<>(map);
+	public static <K, V> @NotNull ConcurrentMap<K, V> newLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
+		return new ConcurrentLinkedHashMap<>(map);
 	}
 
 	/**
@@ -345,8 +345,8 @@ public final class Concurrent {
 	 * @param <V>     the value type
 	 * @return a new concurrent linked map containing the source entries with the given size constraint
 	 */
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newLinkedMap(@NotNull Map<? extends K, ? extends V> map, int maxSize) {
-		return new ConcurrentLinkedMap.Impl<>(map, maxSize);
+	public static <K, V> @NotNull ConcurrentMap<K, V> newLinkedMap(@NotNull Map<? extends K, ? extends V> map, int maxSize) {
+		return new ConcurrentLinkedHashMap<>(map, maxSize);
 	}
 
 	/**
@@ -519,8 +519,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty concurrent linked set
 	 */
-	public static <E> @NotNull ConcurrentLinkedSet<E> newLinkedSet() {
-		return new ConcurrentLinkedSet.Impl<>();
+	public static <E> @NotNull ConcurrentSet<E> newLinkedSet() {
+		return new ConcurrentLinkedHashSet<>();
 	}
 
 	/**
@@ -531,8 +531,8 @@ public final class Concurrent {
 	 * @return a new concurrent linked set containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentLinkedSet<E> newLinkedSet(@NotNull E... array) {
-		return new ConcurrentLinkedSet.Impl<>(array);
+	public static <E> @NotNull ConcurrentSet<E> newLinkedSet(@NotNull E... array) {
+		return new ConcurrentLinkedHashSet<>(array);
 	}
 
 	/**
@@ -545,8 +545,8 @@ public final class Concurrent {
 	 * @param <E>        the element type
 	 * @return a new concurrent linked set containing the source elements
 	 */
-	public static <E> @NotNull ConcurrentLinkedSet<E> newLinkedSet(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentLinkedSet.Impl<>(collection);
+	public static <E> @NotNull ConcurrentSet<E> newLinkedSet(@NotNull Collection<? extends E> collection) {
+		return new ConcurrentLinkedHashSet<>(collection);
 	}
 
 	/**
@@ -740,7 +740,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent queue
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue() {
-		return new ConcurrentUnmodifiableQueue.Impl<>(new LinkedList<>());
+		return new ConcurrentUnmodifiableQueue.Impl<>(new ArrayDeque<>());
 	}
 
 	/**
@@ -752,7 +752,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableQueue<E> newUnmodifiableQueue(@NotNull E... array) {
-		return new ConcurrentUnmodifiableQueue.Impl<>(new LinkedList<>(Arrays.asList(array)));
+		return new ConcurrentUnmodifiableQueue.Impl<>(new ArrayDeque<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -770,7 +770,7 @@ public final class Concurrent {
 		if (collection instanceof ConcurrentQueue)
 			return (ConcurrentUnmodifiableQueue<E>) ((ConcurrentQueue<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableQueue.Impl<>(new LinkedList<>(collection));
+		return new ConcurrentUnmodifiableQueue.Impl<>(new ArrayDeque<>(collection));
 	}
 
 	/**
@@ -780,7 +780,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent deque
 	 */
 	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque() {
-		return new ConcurrentUnmodifiableDeque.Impl<>(new LinkedList<>());
+		return new ConcurrentUnmodifiableDeque.Impl<>(new ArrayDeque<>());
 	}
 
 	/**
@@ -792,7 +792,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentUnmodifiableDeque<E> newUnmodifiableDeque(@NotNull E... array) {
-		return new ConcurrentUnmodifiableDeque.Impl<>(new LinkedList<>(Arrays.asList(array)));
+		return new ConcurrentUnmodifiableDeque.Impl<>(new ArrayDeque<>(Arrays.asList(array)));
 	}
 
 	/**
@@ -810,7 +810,7 @@ public final class Concurrent {
 		if (collection instanceof ConcurrentDeque)
 			return (ConcurrentUnmodifiableDeque<E>) ((ConcurrentDeque<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiableDeque.Impl<>(new LinkedList<>(collection));
+		return new ConcurrentUnmodifiableDeque.Impl<>(new ArrayDeque<>(collection));
 	}
 
 	/**
@@ -1182,7 +1182,7 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a concurrent linked set backed by {@code backing}
 	 */
-	public static <E> @NotNull ConcurrentLinkedSet<E> adoptLinkedSet(@NotNull LinkedHashSet<E> backing) {
+	public static <E> @NotNull ConcurrentSet<E> adoptLinkedSet(@NotNull LinkedHashSet<E> backing) {
 		return ConcurrentLinkedSet.adopt(backing);
 	}
 
@@ -1226,7 +1226,7 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a concurrent linked map backed by {@code backing}
 	 */
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> adoptLinkedMap(@NotNull LinkedHashMap<K, V> backing) {
+	public static <K, V> @NotNull ConcurrentMap<K, V> adoptLinkedMap(@NotNull LinkedHashMap<K, V> backing) {
 		return ConcurrentLinkedMap.adopt(backing);
 	}
 
@@ -1285,7 +1285,7 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableDeque<E>> toUnmodifiableDeque() {
 		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
+			Collectors.<E, ArrayDeque<E>>toCollection(ArrayDeque::new),
 			ConcurrentUnmodifiableDeque.Impl::new
 		);
 	}
@@ -1314,7 +1314,7 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull Collector<E, ?, ConcurrentUnmodifiableQueue<E>> toUnmodifiableQueue() {
 		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
+			Collectors.<E, ArrayDeque<E>>toCollection(ArrayDeque::new),
 			ConcurrentUnmodifiableQueue.Impl::new
 		);
 	}
@@ -1542,7 +1542,7 @@ public final class Concurrent {
 	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toWeakLinkedMap() {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakLinkedMap() {
 		return toLinkedMap(entry -> ((Map.Entry<K, V>) entry).getKey(), entry -> ((Map.Entry<K, V>) entry).getValue(), throwingMerger());
 	}
 
@@ -1556,7 +1556,7 @@ public final class Concurrent {
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap() {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toLinkedMap() {
 		return toLinkedMap(throwingMerger());
 	}
 
@@ -1571,7 +1571,7 @@ public final class Concurrent {
 	 * @param <T>           the stream element type (must extend {@link Map.Entry})
 	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
 		return toLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
 	}
 
@@ -1587,7 +1587,7 @@ public final class Concurrent {
 	 * @param <T>         the stream element type
 	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
 		return toLinkedMap(keyMapper, valueMapper, throwingMerger(), LinkedHashMap::new, Concurrent::adoptLinkedMap);
 	}
 
@@ -1605,7 +1605,7 @@ public final class Concurrent {
 	 * @param <T>           the stream element type
 	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return toLinkedMap(keyMapper, valueMapper, mergeFunction, LinkedHashMap::new, Concurrent::adoptLinkedMap);
 	}
 
@@ -1628,7 +1628,7 @@ public final class Concurrent {
 	 * @param <A> the result type (extends {@link ConcurrentLinkedMap})
 	 * @return a collector producing a concurrent linked map of the adopted type
 	 */
-	public static <K, V, T, M extends Map<K, V>, A extends ConcurrentLinkedMap<K, V>> @NotNull Collector<T, ?, A> toLinkedMap(
+	public static <K, V, T, M extends Map<K, V>, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, A> toLinkedMap(
 		@NotNull Function<? super T, ? extends K> keyMapper,
 		@NotNull Function<? super T, ? extends V> valueMapper,
 		@NotNull BinaryOperator<V> mergeFunction,
@@ -1829,7 +1829,7 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a collector producing a {@link ConcurrentLinkedSet}
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentLinkedSet<E>> toLinkedSet() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toLinkedSet() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
 			Concurrent::adoptLinkedSet

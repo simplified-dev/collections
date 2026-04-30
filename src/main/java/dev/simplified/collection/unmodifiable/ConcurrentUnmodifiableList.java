@@ -1,5 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.ConcurrentArrayList;
 import dev.simplified.collection.ConcurrentList;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +28,7 @@ public interface ConcurrentUnmodifiableList<E> extends ConcurrentList<E>, Concur
 	 *
 	 * @param <E> the type of elements in this list
 	 */
-	class Impl<E> extends ConcurrentList.Impl<E> implements ConcurrentUnmodifiableList<E> {
+	class Impl<E> extends ConcurrentArrayList<E> implements ConcurrentUnmodifiableList<E> {
 
 		/**
 		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by

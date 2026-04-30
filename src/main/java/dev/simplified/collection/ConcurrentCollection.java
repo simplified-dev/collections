@@ -244,9 +244,9 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 		 * Returns a type-preserving snapshot of this collection's backing reference, captured under
 		 * the read lock.
 		 *
-		 * @return a fresh {@link AbstractCollection} containing the current elements
+		 * @return a fresh {@link java.util.List} containing the current elements
 		 */
-		protected @NotNull AbstractCollection<E> cloneRef() {
+		protected @NotNull java.util.List<E> cloneRef() {
 			return this.withReadLock(() -> new ArrayList<>(this.ref));
 		}
 

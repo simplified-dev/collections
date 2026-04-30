@@ -1,5 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.ConcurrentLinkedHashMap;
 import dev.simplified.collection.ConcurrentLinkedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +34,7 @@ public interface ConcurrentUnmodifiableLinkedMap<K, V> extends ConcurrentLinkedM
 	 * @param <K> the type of keys maintained by this map
 	 * @param <V> the type of mapped values
 	 */
-	class Impl<K, V> extends ConcurrentLinkedMap.Impl<K, V> implements ConcurrentUnmodifiableLinkedMap<K, V> {
+	class Impl<K, V> extends ConcurrentLinkedHashMap<K, V> implements ConcurrentUnmodifiableLinkedMap<K, V> {
 
 		/**
 		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by

@@ -79,7 +79,7 @@ public interface ConcurrentLinkedSet<E> extends ConcurrentSet<E> {
 	 *
 	 * @param <E> the type of elements in this set
 	 */
-	class Impl<E> extends ConcurrentSet.Impl<E> implements ConcurrentLinkedSet<E> {
+	class Impl<E> extends ConcurrentHashSet<E> implements ConcurrentLinkedSet<E> {
 
 		/**
 		 * Creates a new concurrent linked set.
