@@ -11,17 +11,10 @@ import dev.simplified.collection.ConcurrentCollection;
 import dev.simplified.collection.ConcurrentDeque;
 import dev.simplified.collection.ConcurrentHashMap;
 import dev.simplified.collection.ConcurrentHashSet;
-import dev.simplified.collection.ConcurrentLinkedHashMap;
-import dev.simplified.collection.ConcurrentLinkedHashSet;
-import dev.simplified.collection.ConcurrentLinkedList;
-import dev.simplified.collection.ConcurrentLinkedMap;
-import dev.simplified.collection.ConcurrentLinkedSet;
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.ConcurrentQueue;
 import dev.simplified.collection.ConcurrentSet;
-import dev.simplified.collection.ConcurrentTreeMap;
-import dev.simplified.collection.ConcurrentTreeSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -54,15 +47,10 @@ public final class ConcurrentTypeAdapterFactory implements TypeAdapterFactory {
     private static final Map<Class<?>, Class<?>> INTERFACE_TO_IMPL = Map.ofEntries(
         Map.entry(ConcurrentCollection.class, ConcurrentArrayList.class),
         Map.entry(ConcurrentList.class, ConcurrentArrayList.class),
-        Map.entry(ConcurrentLinkedList.class, ConcurrentLinkedList.Impl.class),
         Map.entry(ConcurrentSet.class, ConcurrentHashSet.class),
-        Map.entry(ConcurrentLinkedSet.class, ConcurrentLinkedHashSet.class),
-        Map.entry(ConcurrentTreeSet.class, ConcurrentTreeSet.Impl.class),
         Map.entry(ConcurrentQueue.class, ConcurrentArrayQueue.class),
         Map.entry(ConcurrentDeque.class, ConcurrentArrayDeque.class),
-        Map.entry(ConcurrentMap.class, ConcurrentHashMap.class),
-        Map.entry(ConcurrentLinkedMap.class, ConcurrentLinkedHashMap.class),
-        Map.entry(ConcurrentTreeMap.class, ConcurrentTreeMap.Impl.class)
+        Map.entry(ConcurrentMap.class, ConcurrentHashMap.class)
     );
 
     /** {@inheritDoc} */
