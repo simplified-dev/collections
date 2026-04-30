@@ -1,5 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.ConcurrentHashSet;
 import dev.simplified.collection.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,7 +26,7 @@ public interface ConcurrentUnmodifiableSet<E> extends ConcurrentSet<E>, Concurre
 	 *
 	 * @param <E> the type of elements in this set
 	 */
-	class Impl<E> extends ConcurrentSet.Impl<E> implements ConcurrentUnmodifiableSet<E> {
+	class Impl<E> extends ConcurrentHashSet<E> implements ConcurrentUnmodifiableSet<E> {
 
 		/**
 		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by

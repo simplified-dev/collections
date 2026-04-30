@@ -1,11 +1,12 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.ConcurrentArrayQueue;
 import dev.simplified.collection.ConcurrentQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.function.Supplier;
 
 /**
@@ -25,7 +26,7 @@ public interface ConcurrentUnmodifiableQueue<E> extends ConcurrentQueue<E>, Conc
 	 *
 	 * @param <E> the type of elements in this queue
 	 */
-	class Impl<E> extends ConcurrentQueue.Impl<E> implements ConcurrentUnmodifiableQueue<E> {
+	class Impl<E> extends ConcurrentArrayQueue<E> implements ConcurrentUnmodifiableQueue<E> {
 
 		/**
 		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by
@@ -33,7 +34,7 @@ public interface ConcurrentUnmodifiableQueue<E> extends ConcurrentQueue<E>, Conc
 		 *
 		 * @param snapshot a freshly cloned backing queue
 		 */
-		public Impl(@NotNull LinkedList<E> snapshot) {
+		public Impl(@NotNull ArrayDeque<E> snapshot) {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 

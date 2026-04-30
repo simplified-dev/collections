@@ -123,7 +123,7 @@ class ConcurrentFactoryTest {
 
 		@Test
 		void toLinkedSet() {
-			ConcurrentLinkedSet<Integer> s = Stream.of(3, 1, 2).collect(Concurrent.toLinkedSet());
+			ConcurrentSet<Integer> s = Stream.of(3, 1, 2).collect(Concurrent.toLinkedSet());
 			assertEquals(3, s.size());
 			assertEquals(List.of(3, 1, 2), new ArrayList<>(s));
 		}

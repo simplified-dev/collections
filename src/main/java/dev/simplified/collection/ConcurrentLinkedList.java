@@ -80,7 +80,7 @@ public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
 	 *
 	 * @param <E> the type of elements in this list
 	 */
-	class Impl<E> extends ConcurrentList.Impl<E> implements ConcurrentLinkedList<E> {
+	class Impl<E> extends ConcurrentArrayList<E> implements ConcurrentLinkedList<E> {
 
 		/**
 		 * Creates a new concurrent linked list.

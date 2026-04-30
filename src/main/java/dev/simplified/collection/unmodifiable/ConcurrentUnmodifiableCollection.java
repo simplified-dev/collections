@@ -1,10 +1,13 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.ConcurrentArrayList;
 import dev.simplified.collection.ConcurrentCollection;
+import dev.simplified.collection.ConcurrentList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractCollection;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -25,7 +28,7 @@ public interface ConcurrentUnmodifiableCollection<E> extends ConcurrentCollectio
 	 *
 	 * @param <E> the type of elements in this collection
 	 */
-	class Impl<E> extends ConcurrentCollection.Impl<E> implements ConcurrentUnmodifiableCollection<E> {
+	class Impl<E> extends ConcurrentArrayList<E> implements ConcurrentUnmodifiableCollection<E> {
 
 		/**
 		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by
@@ -33,7 +36,7 @@ public interface ConcurrentUnmodifiableCollection<E> extends ConcurrentCollectio
 		 *
 		 * @param snapshot a freshly cloned backing collection
 		 */
-		public Impl(@NotNull AbstractCollection<E> snapshot) {
+		public Impl(@NotNull List<E> snapshot) {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
@@ -57,7 +60,7 @@ public interface ConcurrentUnmodifiableCollection<E> extends ConcurrentCollectio
 
 		/** {@inheritDoc} */
 		@Override
-		public final boolean addIf(@NotNull Predicate<AbstractCollection<E>> predicate, @NotNull E element) {
+		public final boolean addIf(@NotNull Predicate<List<E>> predicate, @NotNull E element) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -93,7 +96,7 @@ public interface ConcurrentUnmodifiableCollection<E> extends ConcurrentCollectio
 
 		/** {@inheritDoc} */
 		@Override
-		public final @NotNull ConcurrentUnmodifiableCollection<E> toUnmodifiable() {
+		public final @NotNull ConcurrentList<E> toUnmodifiable() {
 			return this;
 		}
 

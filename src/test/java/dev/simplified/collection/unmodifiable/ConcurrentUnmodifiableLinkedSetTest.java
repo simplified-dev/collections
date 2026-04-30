@@ -1,8 +1,8 @@
 package dev.simplified.collection.unmodifiable;
 
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentSet;
 import dev.simplified.collection.ConcurrentLinkedSet;
+import dev.simplified.collection.ConcurrentSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 
 		@Test
 		void toUnmodifiable_fromLinkedSet_returnsLinkedSetUnmodifiable() {
-			ConcurrentLinkedSet<String> src = Concurrent.newLinkedSet("a", "b");
+			ConcurrentSet<String> src = Concurrent.newLinkedSet("a", "b");
 			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiableLinkedSet);
 		}
 	}
@@ -49,7 +49,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 
 		@Test
 		void allMutators_throwUOE() {
-			ConcurrentLinkedSet<String> src = Concurrent.newLinkedSet("a");
+			ConcurrentSet<String> src = Concurrent.newLinkedSet("a");
 			ConcurrentUnmodifiableLinkedSet<String> u = (ConcurrentUnmodifiableLinkedSet<String>) src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
@@ -76,7 +76,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 
 		@Test
 		void sourceMutations_notVisibleThroughWrapper() {
-			ConcurrentLinkedSet<String> src = Concurrent.newLinkedSet();
+			ConcurrentSet<String> src = Concurrent.newLinkedSet();
 			src.add("a");
 			ConcurrentUnmodifiableLinkedSet<String> u = (ConcurrentUnmodifiableLinkedSet<String>) src.toUnmodifiable();
 
@@ -93,7 +93,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 
 		@Test
 		void preservesInsertionOrder() {
-			ConcurrentLinkedSet<String> src = Concurrent.newLinkedSet();
+			ConcurrentSet<String> src = Concurrent.newLinkedSet();
 			src.add("c");
 			src.add("a");
 			src.add("b");

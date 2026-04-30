@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -16,9 +15,9 @@ import java.util.concurrent.locks.ReadWriteLock;
  * access. Supports standard queue operations: offer, peek, poll, and element retrieval.
  *
  * <p><b>Null-element behavior:</b> {@link ArrayDeque} rejects {@code null} elements with a
- * {@link NullPointerException}, unlike {@link LinkedList} which accepts them. Callers migrating
- * from a {@code LinkedList}-backed queue must ensure no {@code null} values flow through this
- * queue.</p>
+ * {@link NullPointerException}, unlike {@link java.util.LinkedList} which accepts them. Callers
+ * migrating from a {@code LinkedList}-backed queue must ensure no {@code null} values flow
+ * through this queue.</p>
  *
  * <p>The queue exposes only the {@link ConcurrentQueue} surface; consumers cannot downcast to
  * {@link java.util.Deque}. Use {@link ConcurrentArrayDeque} when double-ended access is
@@ -109,7 +108,7 @@ public class ConcurrentArrayQueue<E> extends AtomicQueue<E, ArrayDeque<E>> imple
 	 */
 	@Override
 	public @NotNull ConcurrentQueue<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiableQueue.Impl<>(this.withReadLock(() -> new LinkedList<>(this.ref)));
+		return new ConcurrentUnmodifiableQueue.Impl<>(this.withReadLock(() -> new ArrayDeque<>(this.ref)));
 	}
 
 }

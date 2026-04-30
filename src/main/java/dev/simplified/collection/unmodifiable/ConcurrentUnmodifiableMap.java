@@ -1,5 +1,6 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.ConcurrentHashMap;
 import dev.simplified.collection.ConcurrentMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +34,7 @@ public interface ConcurrentUnmodifiableMap<K, V> extends ConcurrentMap<K, V> {
 	 * @param <K> the type of keys maintained by this map
 	 * @param <V> the type of mapped values
 	 */
-	class Impl<K, V> extends ConcurrentMap.Impl<K, V> implements ConcurrentUnmodifiableMap<K, V> {
+	class Impl<K, V> extends ConcurrentHashMap<K, V> implements ConcurrentUnmodifiableMap<K, V> {
 
 		/**
 		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by

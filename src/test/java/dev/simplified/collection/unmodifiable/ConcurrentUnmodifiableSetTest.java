@@ -2,7 +2,6 @@ package dev.simplified.collection.unmodifiable;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentSet;
-import dev.simplified.collection.ConcurrentLinkedSet;
 import dev.simplified.collection.ConcurrentTreeSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -62,7 +61,7 @@ class ConcurrentUnmodifiableSetTest {
 
 		@Test
 		void wrapsLinkedSet_preservesInsertionOrder() {
-			ConcurrentLinkedSet<String> src = Concurrent.newLinkedSet();
+			ConcurrentSet<String> src = Concurrent.newLinkedSet();
 			src.add("c");
 			src.add("a");
 			src.add("b");

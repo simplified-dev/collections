@@ -1,11 +1,12 @@
 package dev.simplified.collection.unmodifiable;
 
+import dev.simplified.collection.ConcurrentArrayDeque;
 import dev.simplified.collection.ConcurrentDeque;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.LinkedList;
 
 /**
  * An immutable snapshot view of a {@link ConcurrentDeque}. All mutating operations on
@@ -24,7 +25,7 @@ public interface ConcurrentUnmodifiableDeque<E> extends ConcurrentDeque<E>, Conc
 	 *
 	 * @param <E> the type of elements in this deque
 	 */
-	class Impl<E> extends ConcurrentDeque.Impl<E> implements ConcurrentUnmodifiableDeque<E> {
+	class Impl<E> extends ConcurrentArrayDeque<E> implements ConcurrentUnmodifiableDeque<E> {
 
 		/**
 		 * Wraps the given pre-cloned snapshot reference. Callers should obtain {@code snapshot} by
@@ -32,7 +33,7 @@ public interface ConcurrentUnmodifiableDeque<E> extends ConcurrentDeque<E>, Conc
 		 *
 		 * @param snapshot a freshly cloned backing deque
 		 */
-		public Impl(@NotNull LinkedList<E> snapshot) {
+		public Impl(@NotNull ArrayDeque<E> snapshot) {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
