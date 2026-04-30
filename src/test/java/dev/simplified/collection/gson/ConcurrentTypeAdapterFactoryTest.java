@@ -7,6 +7,8 @@ import com.google.gson.reflect.TypeToken;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentCollection;
 import dev.simplified.collection.ConcurrentDeque;
+import dev.simplified.collection.ConcurrentLinkedHashMap;
+import dev.simplified.collection.ConcurrentLinkedHashSet;
 import dev.simplified.collection.ConcurrentLinkedList;
 import dev.simplified.collection.ConcurrentLinkedMap;
 import dev.simplified.collection.ConcurrentLinkedSet;
@@ -75,11 +77,11 @@ class ConcurrentTypeAdapterFactoryTest {
 
         @Test
         void deserialize_concurrentLinkedSet() {
-            ConcurrentLinkedSet<String> result = GSON.fromJson(
+            ConcurrentSet<String> result = GSON.fromJson(
                 "[\"a\",\"b\"]",
                 new TypeToken<ConcurrentLinkedSet<String>>() {}.getType()
             );
-            assertThat(result, instanceOf(ConcurrentLinkedSet.class));
+            assertThat(result, instanceOf(ConcurrentLinkedHashSet.class));
             assertThat(result, containsInAnyOrder("a", "b"));
         }
 
@@ -131,11 +133,11 @@ class ConcurrentTypeAdapterFactoryTest {
 
         @Test
         void deserialize_concurrentLinkedMap() {
-            ConcurrentLinkedMap<String, Integer> result = GSON.fromJson(
+            ConcurrentMap<String, Integer> result = GSON.fromJson(
                 "{\"a\":1,\"b\":2}",
                 new TypeToken<ConcurrentLinkedMap<String, Integer>>() {}.getType()
             );
-            assertThat(result, instanceOf(ConcurrentLinkedMap.class));
+            assertThat(result, instanceOf(ConcurrentLinkedHashMap.class));
             assertThat(result, hasEntry("a", 1));
         }
 

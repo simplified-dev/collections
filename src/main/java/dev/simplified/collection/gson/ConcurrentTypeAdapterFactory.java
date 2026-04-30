@@ -4,8 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
+import dev.simplified.collection.ConcurrentArrayDeque;
+import dev.simplified.collection.ConcurrentArrayList;
+import dev.simplified.collection.ConcurrentArrayQueue;
 import dev.simplified.collection.ConcurrentCollection;
 import dev.simplified.collection.ConcurrentDeque;
+import dev.simplified.collection.ConcurrentHashMap;
+import dev.simplified.collection.ConcurrentHashSet;
+import dev.simplified.collection.ConcurrentLinkedHashMap;
+import dev.simplified.collection.ConcurrentLinkedHashSet;
 import dev.simplified.collection.ConcurrentLinkedList;
 import dev.simplified.collection.ConcurrentLinkedMap;
 import dev.simplified.collection.ConcurrentLinkedSet;
@@ -45,16 +52,16 @@ import java.util.Map;
 public final class ConcurrentTypeAdapterFactory implements TypeAdapterFactory {
 
     private static final Map<Class<?>, Class<?>> INTERFACE_TO_IMPL = Map.ofEntries(
-        Map.entry(ConcurrentCollection.class, ConcurrentCollection.Impl.class),
-        Map.entry(ConcurrentList.class, ConcurrentList.Impl.class),
+        Map.entry(ConcurrentCollection.class, ConcurrentArrayList.class),
+        Map.entry(ConcurrentList.class, ConcurrentArrayList.class),
         Map.entry(ConcurrentLinkedList.class, ConcurrentLinkedList.Impl.class),
-        Map.entry(ConcurrentSet.class, ConcurrentSet.Impl.class),
-        Map.entry(ConcurrentLinkedSet.class, ConcurrentLinkedSet.Impl.class),
+        Map.entry(ConcurrentSet.class, ConcurrentHashSet.class),
+        Map.entry(ConcurrentLinkedSet.class, ConcurrentLinkedHashSet.class),
         Map.entry(ConcurrentTreeSet.class, ConcurrentTreeSet.Impl.class),
-        Map.entry(ConcurrentQueue.class, ConcurrentQueue.Impl.class),
-        Map.entry(ConcurrentDeque.class, ConcurrentDeque.Impl.class),
-        Map.entry(ConcurrentMap.class, ConcurrentMap.Impl.class),
-        Map.entry(ConcurrentLinkedMap.class, ConcurrentLinkedMap.Impl.class),
+        Map.entry(ConcurrentQueue.class, ConcurrentArrayQueue.class),
+        Map.entry(ConcurrentDeque.class, ConcurrentArrayDeque.class),
+        Map.entry(ConcurrentMap.class, ConcurrentHashMap.class),
+        Map.entry(ConcurrentLinkedMap.class, ConcurrentLinkedHashMap.class),
         Map.entry(ConcurrentTreeMap.class, ConcurrentTreeMap.Impl.class)
     );
 
