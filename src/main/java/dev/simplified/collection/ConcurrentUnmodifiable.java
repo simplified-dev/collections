@@ -352,7 +352,7 @@ final class ConcurrentUnmodifiable {
 	 *
 	 * @param <E> the type of elements in this list
 	 */
-	static final class UnmodifiableConcurrentLinkedList<E> extends ConcurrentLinkedList.Impl<E> {
+	static final class UnmodifiableConcurrentLinkedList<E> extends ConcurrentLinkedList<E> {
 
 		UnmodifiableConcurrentLinkedList(@NotNull LinkedList<E> snapshot) {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
@@ -392,7 +392,7 @@ final class ConcurrentUnmodifiable {
 	 *
 	 * @param <E> the type of elements in this set
 	 */
-	static final class UnmodifiableConcurrentTreeSet<E> extends ConcurrentTreeSet.Impl<E> {
+	static final class UnmodifiableConcurrentTreeSet<E> extends ConcurrentTreeSet<E> {
 
 		UnmodifiableConcurrentTreeSet(@NotNull TreeSet<E> snapshot) {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
@@ -447,7 +447,7 @@ final class ConcurrentUnmodifiable {
 	 * @param <K> the type of keys
 	 * @param <V> the type of mapped values
 	 */
-	static final class UnmodifiableConcurrentTreeMap<K, V> extends ConcurrentTreeMap.Impl<K, V> {
+	static final class UnmodifiableConcurrentTreeMap<K, V> extends ConcurrentTreeMap<K, V> {
 
 		UnmodifiableConcurrentTreeMap(@NotNull TreeMap<K, V> snapshot) {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);

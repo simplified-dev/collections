@@ -11,150 +11,106 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
- * A thread-safe concurrent list variant backed by a {@link LinkedList} that preserves the
- * source's insertion-order traversal characteristics.
+ * A thread-safe {@link ConcurrentList} backed by a {@link LinkedList} that preserves the source's
+ * insertion-order traversal characteristics. Mirrors the JDK relationship between
+ * {@link java.util.LinkedList} and {@link java.util.ArrayList} - both are siblings of
+ * {@link AtomicList}, neither extends the other.
  *
  * @param <E> the type of elements in this list
  */
-public interface ConcurrentLinkedList<E> extends ConcurrentList<E> {
+public class ConcurrentLinkedList<E> extends AtomicList<E, List<E>> implements ConcurrentList<E> {
 
 	/**
-	 * Creates a new empty {@link ConcurrentLinkedList} backed by a {@link LinkedList}.
-	 *
-	 * @param <E> the element type
-	 * @return a new empty concurrent linked list
+	 * Creates a new concurrent linked list.
 	 */
-	static <E> @NotNull ConcurrentLinkedList<E> empty() {
-		return new Impl<E>();
+	public ConcurrentLinkedList() {
+		super(new LinkedList<>());
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentLinkedList} containing the given elements.
+	 * Creates a new concurrent linked list and fills it with the given array.
 	 *
-	 * @param elements the elements to include
-	 * @param <E> the element type
-	 * @return a new concurrent linked list containing the specified elements
+	 * @param array the elements to include
 	 */
 	@SafeVarargs
-	static <E> @NotNull ConcurrentLinkedList<E> of(@NotNull E... elements) {
-		return new Impl<>(elements);
+	public ConcurrentLinkedList(@NotNull E... array) {
+		this(Arrays.asList(array));
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentLinkedList} containing all elements of the given collection.
+	 * Creates a new concurrent linked list and fills it with the given collection.
 	 *
 	 * @param collection the source collection to copy from, or {@code null} for an empty list
-	 * @param <E> the element type
-	 * @return a new concurrent linked list containing the source's elements
 	 */
-	static <E> @NotNull ConcurrentLinkedList<E> from(@Nullable Collection<? extends E> collection) {
-		return new Impl<E>(collection);
+	public ConcurrentLinkedList(@Nullable Collection<? extends E> collection) {
+		super(collection == null ? new LinkedList<>() : new LinkedList<>(collection));
+	}
+
+	/**
+	 * Constructs a {@code ConcurrentLinkedList} that adopts {@code backingList} as its storage
+	 * with a fresh lock. Public callers should go through {@link #adopt(LinkedList)}.
+	 *
+	 * @param backingList the backing linked list to adopt
+	 */
+	protected ConcurrentLinkedList(@NotNull LinkedList<E> backingList) {
+		super(backingList);
+	}
+
+	/**
+	 * Constructs a {@code ConcurrentLinkedList} with a pre-built backing list and an explicit
+	 * lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList} to install a
+	 * snapshot list paired with a no-op lock for wait-free reads.
+	 *
+	 * @param backingList the pre-built backing list
+	 * @param lock the lock guarding {@code backingList}
+	 */
+	protected ConcurrentLinkedList(@NotNull LinkedList<E> backingList, @NotNull ReadWriteLock lock) {
+		super(backingList, lock);
 	}
 
 	/**
 	 * Wraps {@code backing} as a {@link ConcurrentLinkedList} without copying.
 	 * <p>
-	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
-	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
-	 * zero-copy publication of single-threaded build results.
+	 * The caller relinquishes exclusive ownership: subsequent direct mutations to {@code backing}
+	 * bypass the read/write lock and may corrupt concurrent reads. Use this for zero-copy
+	 * publication of single-threaded build results.
 	 *
 	 * @param backing the linked list to adopt
 	 * @param <E> the element type
 	 * @return a concurrent linked list backed by {@code backing}
 	 */
-	static <E> @NotNull ConcurrentLinkedList<E> adopt(@NotNull LinkedList<E> backing) {
-		return new Impl<>(backing);
+	public static <E> @NotNull ConcurrentLinkedList<E> adopt(@NotNull LinkedList<E> backing) {
+		return new ConcurrentLinkedList<>(backing);
 	}
 
 	/**
-	 * A thread-safe list backed by a {@link LinkedList} with concurrent read and write access via
-	 * {@link ReadWriteLock}. Supports indexed access, sorting, and snapshot-based iteration with
-	 * linked-list insertion characteristics.
+	 * {@inheritDoc}
 	 *
-	 * @param <E> the type of elements in this list
+	 * <p>Produces a {@link LinkedList} snapshot preserving the source's insertion-order traversal
+	 * characteristics.</p>
 	 */
-	class Impl<E> extends ConcurrentArrayList<E> implements ConcurrentLinkedList<E> {
+	@Override
+	protected @NotNull List<E> snapshot() {
+		return this.withReadLock(() -> new LinkedList<>(this.ref));
+	}
 
-		/**
-		 * Creates a new concurrent linked list.
-		 */
-		public Impl() {
-			super(new LinkedList<>());
-		}
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected @NotNull AtomicList<E, List<E>> newEmpty() {
+		return new ConcurrentLinkedList<>();
+	}
 
-		/**
-		 * Creates a new concurrent linked list and fills it with the given array.
-		 *
-		 * @param array the elements to include
-		 */
-		@SafeVarargs
-		public Impl(@NotNull E... array) {
-			this(Arrays.asList(array));
-		}
-
-		/**
-		 * Creates a new concurrent linked list and fills it with the given collection.
-		 *
-		 * @param collection the source collection to copy from, or {@code null} for an empty list
-		 */
-		public Impl(@Nullable Collection<? extends E> collection) {
-			super(collection == null ? new LinkedList<>() : new LinkedList<>(collection));
-		}
-
-		/**
-		 * Constructs a {@code ConcurrentLinkedList.Impl} that adopts {@code backingList} as its
-		 * storage with a fresh lock. Public callers should go through
-		 * {@link ConcurrentLinkedList#adopt(LinkedList)}.
-		 *
-		 * @param backingList the backing linked list to adopt
-		 */
-		protected Impl(@NotNull LinkedList<E> backingList) {
-			super(backingList);
-		}
-
-		/**
-		 * Constructs a {@code ConcurrentLinkedList.Impl} with a pre-built backing list and an
-		 * explicit lock. Used by {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList} to install a
-		 * snapshot list paired with a no-op lock for wait-free reads.
-		 *
-		 * @param backingList the pre-built backing list
-		 * @param lock the lock guarding {@code backingList}
-		 */
-		protected Impl(@NotNull LinkedList<E> backingList, @NotNull ReadWriteLock lock) {
-			super(backingList, lock);
-		}
-
-		/**
-		 * {@inheritDoc}
-		 *
-		 * <p>Produces a {@link LinkedList} snapshot preserving the source's insertion-order
-		 * traversal characteristics.</p>
-		 */
-		@Override
-		protected @NotNull List<E> snapshot() {
-			return this.withReadLock(() -> new LinkedList<>(this.ref));
-		}
-
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		protected @NotNull AtomicList<E, List<E>> newEmpty() {
-			return new ConcurrentLinkedList.Impl<>();
-		}
-
-		/**
-		 * Returns an immutable snapshot of this {@code ConcurrentLinkedList.Impl} preserving
-		 * insertion order.
-		 *
-		 * @return an unmodifiable {@link ConcurrentLinkedList.Impl} containing a snapshot of the
-		 *         elements
-		 */
-		@Override
-		public @NotNull ConcurrentList<E> toUnmodifiable() {
-			return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>((LinkedList<E>) this.snapshot());
-		}
-
+	/**
+	 * Returns an immutable snapshot of this {@code ConcurrentLinkedList} preserving insertion
+	 * order.
+	 *
+	 * @return an immutable snapshot
+	 */
+	@Override
+	public @NotNull ConcurrentList<E> toUnmodifiable() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>((LinkedList<E>) this.snapshot());
 	}
 
 }

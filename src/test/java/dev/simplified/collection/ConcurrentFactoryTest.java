@@ -1,7 +1,5 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.ConcurrentLinkedMap;
-import dev.simplified.collection.ConcurrentLinkedSet;
 import dev.simplified.collection.ConcurrentTreeMap;
 import dev.simplified.collection.ConcurrentTreeSet;
 import org.junit.jupiter.api.Nested;

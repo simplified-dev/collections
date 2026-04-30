@@ -1,6 +1,6 @@
 package dev.simplified.collection.atomic;
 
-import dev.simplified.collection.ConcurrentTreeSet;
+import dev.simplified.collection.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @apiNote This is a low-level building block for custom concurrent implementations.
  * Most callers should use the corresponding {@code Concurrent*} type instead.
  */
-public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & NavigableSet<E>> extends AtomicSet<E, T> implements ConcurrentTreeSet<E> {
+public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & NavigableSet<E>> extends AtomicSet<E, T> implements ConcurrentSet<E>, NavigableSet<E> {
 
 	private transient volatile @Nullable NavigableSet<E> descendingSetView;
 
