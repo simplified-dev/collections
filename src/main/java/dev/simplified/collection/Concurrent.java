@@ -1126,8 +1126,12 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a concurrent collection backed by {@code backing}
 	 */
+	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentCollection<E> adoptCollection(@NotNull AbstractCollection<E> backing) {
-		return ConcurrentCollection.adopt(backing);
+		if (backing instanceof List<?>)
+			return ConcurrentArrayList.adopt((List<E>) backing);
+
+		return ConcurrentArrayList.adopt(new ArrayList<>(backing));
 	}
 
 	/**
@@ -1141,7 +1145,7 @@ public final class Concurrent {
 	 * @return a concurrent list backed by {@code backing}
 	 */
 	public static <E> @NotNull ConcurrentList<E> adoptList(@NotNull List<E> backing) {
-		return ConcurrentList.adopt(backing);
+		return ConcurrentArrayList.adopt(backing);
 	}
 
 	/**
@@ -1169,7 +1173,7 @@ public final class Concurrent {
 	 * @return a concurrent set backed by {@code backing}
 	 */
 	public static <E> @NotNull ConcurrentSet<E> adoptSet(@NotNull AbstractSet<E> backing) {
-		return ConcurrentSet.adopt(backing);
+		return ConcurrentHashSet.adopt(backing);
 	}
 
 	/**
@@ -1183,7 +1187,7 @@ public final class Concurrent {
 	 * @return a concurrent linked set backed by {@code backing}
 	 */
 	public static <E> @NotNull ConcurrentSet<E> adoptLinkedSet(@NotNull LinkedHashSet<E> backing) {
-		return ConcurrentLinkedSet.adopt(backing);
+		return ConcurrentLinkedHashSet.adopt(backing);
 	}
 
 	/**
@@ -1212,7 +1216,7 @@ public final class Concurrent {
 	 * @return a concurrent map backed by {@code backing}
 	 */
 	public static <K, V> @NotNull ConcurrentMap<K, V> adoptMap(@NotNull AbstractMap<K, V> backing) {
-		return ConcurrentMap.adopt(backing);
+		return ConcurrentHashMap.adopt(backing);
 	}
 
 	/**
@@ -1227,7 +1231,7 @@ public final class Concurrent {
 	 * @return a concurrent linked map backed by {@code backing}
 	 */
 	public static <K, V> @NotNull ConcurrentMap<K, V> adoptLinkedMap(@NotNull LinkedHashMap<K, V> backing) {
-		return ConcurrentLinkedMap.adopt(backing);
+		return ConcurrentLinkedHashMap.adopt(backing);
 	}
 
 	/**
