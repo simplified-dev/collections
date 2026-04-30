@@ -36,7 +36,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentCollection.Impl}.
+	 * Creates a new empty {@link ConcurrentArrayList}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty concurrent collection
@@ -46,7 +46,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentCollection.Impl} containing the given elements.
+	 * Creates a new {@link ConcurrentArrayList} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -72,7 +72,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentDeque.Impl}.
+	 * Creates a new empty {@link ConcurrentArrayDeque}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty concurrent deque
@@ -82,7 +82,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentDeque.Impl} containing the given elements.
+	 * Creates a new {@link ConcurrentArrayDeque} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -108,7 +108,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentList.Impl}.
+	 * Creates a new empty {@link ConcurrentArrayList}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty concurrent list
@@ -118,7 +118,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentList.Impl} containing the given elements.
+	 * Creates a new {@link ConcurrentArrayList} containing the given elements.
 	 *
 	 * @param initialCapacity the initial capacity of the underlying list
 	 * @param <E>             the element type
@@ -129,7 +129,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentList.Impl} containing the given elements.
+	 * Creates a new {@link ConcurrentArrayList} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -156,7 +156,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentMap.Impl} containing the given map entries.
+	 * Creates a new {@link ConcurrentHashMap} containing the given map entries.
 	 *
 	 * @param entries the entries to include
 	 * @param <K>     the key type
@@ -184,7 +184,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentQueue.Impl}.
+	 * Creates a new empty {@link ConcurrentArrayQueue}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty concurrent queue
@@ -194,7 +194,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentQueue.Impl} containing the given elements.
+	 * Creates a new {@link ConcurrentArrayQueue} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -220,7 +220,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentSet.Impl}.
+	 * Creates a new empty {@link ConcurrentHashSet}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty concurrent set
@@ -230,7 +230,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentSet.Impl} containing the given elements.
+	 * Creates a new {@link ConcurrentHashSet} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -549,8 +549,8 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableCollection.Impl} backed by a fresh
-	 * {@link ConcurrentCollection.Impl}.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList} backed by a fresh
+	 * {@link ConcurrentArrayList}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent collection
@@ -560,7 +560,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableCollection.Impl} containing the given elements.
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -575,12 +575,12 @@ public final class Concurrent {
 	 * Creates an immutable snapshot of the given collection.
 	 *
 	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
-	 * on the source are not reflected. If the source is itself a {@link ConcurrentCollection.Impl},
+	 * on the source are not reflected. If the source is itself a {@link ConcurrentArrayList},
 	 * its {@code toUnmodifiable()} is delegated to so its read lock guards the copy.</p>
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableCollection.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentCollection<E> newUnmodifiableCollection(@NotNull Collection<? extends E> collection) {
@@ -591,8 +591,8 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableList.Impl} backed by a fresh
-	 * {@link ConcurrentList.Impl}.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList} backed by a fresh
+	 * {@link ConcurrentArrayList}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent list
@@ -602,7 +602,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableList.Impl} containing the given elements.
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -617,15 +617,15 @@ public final class Concurrent {
 	 * Creates an immutable snapshot of the given collection as a list.
 	 *
 	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
-	 * on the source are not reflected. If the source is a {@link ConcurrentList.Impl} but
+	 * on the source are not reflected. If the source is a {@link ConcurrentArrayList} but
 	 * not a {@link ConcurrentLinkedList}, its {@code toUnmodifiable()} is delegated to so
 	 * the source's read lock guards the copy. {@link ConcurrentLinkedList} sources are
 	 * routed through the {@link ArrayList ArrayList}-backed fallback to honor
-	 * this factory's {@link ConcurrentUnmodifiableList.Impl} return contract.</p>
+	 * this factory's {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList} return contract.</p>
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableList.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentList<E> newUnmodifiableList(@Nullable Collection<? extends E> collection) {
@@ -640,7 +640,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableMap.Impl} containing the given map entries.
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap} containing the given map entries.
 	 *
 	 * @param entries the entries to include
 	 * @param <K>     the key type
@@ -660,17 +660,17 @@ public final class Concurrent {
 	 * Creates an immutable snapshot of the given map.
 	 *
 	 * <p>The snapshot copies the input's entries at construction time; subsequent mutations
-	 * on the source are not reflected. If the source is a {@link ConcurrentMap.Impl} but
+	 * on the source are not reflected. If the source is a {@link ConcurrentHashMap} but
 	 * neither a {@link ConcurrentTreeMap} nor a {@link ConcurrentLinkedHashMap}, its
 	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy.
 	 * {@link ConcurrentTreeMap} and {@link ConcurrentLinkedHashMap} sources are routed through
 	 * the {@link HashMap HashMap}-backed fallback to honor this factory's
-	 * {@link ConcurrentUnmodifiableMap.Impl} return contract.</p>
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap} return contract.</p>
 	 *
 	 * @param map the source map
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a snapshot {@link ConcurrentUnmodifiableMap.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
@@ -684,8 +684,8 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableSet.Impl} backed by a fresh
-	 * {@link ConcurrentSet.Impl}.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet} backed by a fresh
+	 * {@link ConcurrentHashSet}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent set
@@ -695,7 +695,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableSet.Impl} containing the given elements.
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -710,16 +710,16 @@ public final class Concurrent {
 	 * Creates an immutable snapshot of the given collection as a set.
 	 *
 	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
-	 * on the source are not reflected. If the source is a {@link ConcurrentSet.Impl} but
+	 * on the source are not reflected. If the source is a {@link ConcurrentHashSet} but
 	 * neither a {@link ConcurrentTreeSet} nor a {@link ConcurrentLinkedHashSet}, its
 	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy.
 	 * {@link ConcurrentTreeSet} and {@link ConcurrentLinkedHashSet} sources are routed through
 	 * the {@link HashSet HashSet}-backed fallback to honor this factory's
-	 * {@link ConcurrentUnmodifiableSet.Impl} return contract.</p>
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet} return contract.</p>
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableSet.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableSet(@NotNull Collection<? extends E> collection) {
@@ -733,7 +733,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableQueue.Impl}.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent queue
@@ -743,7 +743,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableQueue.Impl} containing the given elements.
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -762,7 +762,7 @@ public final class Concurrent {
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableQueue.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentQueue<E> newUnmodifiableQueue(@NotNull Collection<? extends E> collection) {
@@ -773,7 +773,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableDeque.Impl}.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent deque
@@ -783,7 +783,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableDeque.Impl} containing the given elements.
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -802,7 +802,7 @@ public final class Concurrent {
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableDeque.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentArrayDeque}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentDeque<E> newUnmodifiableDeque(@NotNull Collection<? extends E> collection) {
@@ -813,7 +813,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableLinkedList.Impl}.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent linked list
@@ -823,7 +823,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableLinkedList.Impl} containing the given elements.
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -840,7 +840,7 @@ public final class Concurrent {
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedList.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentList<E> newUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
@@ -851,7 +851,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableLinkedSet.Impl}.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent linked set
@@ -861,7 +861,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableLinkedSet.Impl} containing the given elements.
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E>   the element type
@@ -878,7 +878,7 @@ public final class Concurrent {
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedSet.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableLinkedSet(@NotNull Collection<? extends E> collection) {
@@ -889,7 +889,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableLinkedMap.Impl}.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap}.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
@@ -900,7 +900,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableLinkedMap.Impl} containing the given entries,
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap} containing the given entries,
 	 * preserving insertion order.
 	 *
 	 * @param pairs the entries to include
@@ -924,7 +924,7 @@ public final class Concurrent {
 	 * @param map the source map
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a snapshot {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
@@ -935,7 +935,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableTreeSet.Impl} with natural element ordering.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet} with natural element ordering.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent tree set
@@ -945,7 +945,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableTreeSet.Impl} ordered by the given comparator.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet} ordered by the given comparator.
 	 *
 	 * @param comparator the comparator used to order the elements
 	 * @param <E>        the element type
@@ -956,7 +956,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableTreeSet.Impl} containing the given elements,
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet} containing the given elements,
 	 * with natural element ordering.
 	 *
 	 * @param array the elements to include
@@ -971,7 +971,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableTreeSet.Impl} containing the given elements,
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet} containing the given elements,
 	 * ordered by the specified comparator.
 	 *
 	 * @param comparator the comparator used to order the elements
@@ -992,7 +992,7 @@ public final class Concurrent {
 	 *
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableTreeSet.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableTreeSet(@NotNull Collection<? extends E> collection) {
@@ -1009,7 +1009,7 @@ public final class Concurrent {
 	 * @param comparator the comparator used to order the elements
 	 * @param collection the source collection
 	 * @param <E>        the element type
-	 * @return a snapshot {@link ConcurrentUnmodifiableTreeSet.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet}
 	 */
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableTreeSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
 		TreeSet<E> snapshot = new TreeSet<>(comparator);
@@ -1018,7 +1018,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableTreeMap.Impl} with natural key ordering.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} with natural key ordering.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
@@ -1029,7 +1029,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentUnmodifiableTreeMap.Impl} ordered by the given comparator.
+	 * Creates a new empty {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} ordered by the given comparator.
 	 *
 	 * @param comparator the comparator used to order the keys
 	 * @param <K>        the key type
@@ -1041,7 +1041,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableTreeMap.Impl} containing the given entries, with
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} containing the given entries, with
 	 * natural key ordering.
 	 *
 	 * @param pairs the entries to include
@@ -1062,7 +1062,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentUnmodifiableTreeMap.Impl} containing the given entries,
+	 * Creates a new {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} containing the given entries,
 	 * ordered by the specified comparator.
 	 *
 	 * @param comparator the comparator used to order the keys
@@ -1089,7 +1089,7 @@ public final class Concurrent {
 	 * @param map the source map
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a snapshot {@link ConcurrentUnmodifiableTreeMap.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableTreeMap(@NotNull Map<? extends K, ? extends V> map) {
@@ -1107,7 +1107,7 @@ public final class Concurrent {
 	 * @param map        the source map
 	 * @param <K>        the key type
 	 * @param <V>        the value type
-	 * @return a snapshot {@link ConcurrentUnmodifiableTreeMap.Impl}
+	 * @return a snapshot {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap}
 	 */
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
 		TreeMap<K, V> snapshot = new TreeMap<>(comparator);
@@ -1118,7 +1118,7 @@ public final class Concurrent {
 	/**
 	 * Wraps {@code backing} as a {@link ConcurrentCollection} without copying.
 	 * <p>
-	 * Delegates to {@link ConcurrentCollection#adopt(AbstractCollection)}; see that method for
+	 * Delegates to {@link ConcurrentArrayList#adopt(List)}; see that method for
 	 * the ownership contract.
 	 *
 	 * @param backing the collection to adopt
@@ -1136,7 +1136,7 @@ public final class Concurrent {
 	/**
 	 * Wraps {@code backing} as a {@link ConcurrentList} without copying.
 	 * <p>
-	 * Delegates to {@link ConcurrentList#adopt(List)}; see that method for the ownership
+	 * Delegates to {@link ConcurrentArrayList#adopt(List)}; see that method for the ownership
 	 * contract.
 	 *
 	 * @param backing the list to adopt
@@ -1164,7 +1164,7 @@ public final class Concurrent {
 	/**
 	 * Wraps {@code backing} as a {@link ConcurrentSet} without copying.
 	 * <p>
-	 * Delegates to {@link ConcurrentSet#adopt(AbstractSet)}; see that method for the ownership
+	 * Delegates to {@link ConcurrentHashSet#adopt(AbstractSet)}; see that method for the ownership
 	 * contract.
 	 *
 	 * @param backing the set to adopt
@@ -1206,7 +1206,7 @@ public final class Concurrent {
 	/**
 	 * Wraps {@code backing} as a {@link ConcurrentMap} without copying.
 	 * <p>
-	 * Delegates to {@link ConcurrentMap#adopt(AbstractMap)}; see that method for the ownership
+	 * Delegates to {@link ConcurrentHashMap#adopt(AbstractMap)}; see that method for the ownership
 	 * contract.
 	 *
 	 * @param backing the map to adopt
@@ -1280,7 +1280,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentUnmodifiableDeque} at
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentDeque} at
 	 * finish.
 	 *
 	 * @param <E> the element type
@@ -1309,7 +1309,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentUnmodifiableQueue} at
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentQueue} at
 	 * finish.
 	 *
 	 * @param <E> the element type
@@ -1340,7 +1340,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentUnmodifiableLinkedList}
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentList}
 	 * at finish, preserving insertion order.
 	 *
 	 * @param <E> the element type
@@ -1371,7 +1371,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link ArrayList}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentUnmodifiableList} at
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentList} at
 	 * finish.
 	 *
 	 * @param <E> the element type
@@ -1645,13 +1645,13 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentUnmodifiableMap.Impl}
+	 * Returns a {@link Collector} that accumulates stream elements into a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 * by casting each element to {@link Map.Entry}. Throws on duplicate keys.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakUnmodifiableMap() {
@@ -1659,34 +1659,34 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a {@link ConcurrentUnmodifiableMap.Impl}.
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}.
 	 * Throws on duplicate keys.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 */
 	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap() {
 		return toUnmodifiableMap(throwingMerger());
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a {@link ConcurrentUnmodifiableMap.Impl},
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap},
 	 * using the specified merge function for duplicate keys.
 	 *
 	 * @param mergeFunction the function to resolve collisions between values associated with the same key
 	 * @param <K>           the key type
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 */
 	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap(@NotNull BinaryOperator<V> mergeFunction) {
 		return toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentUnmodifiableMap.Impl}
+	 * Returns a {@link Collector} that accumulates stream elements into a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 * using the given key and value mappers. Throws on duplicate keys.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
@@ -1694,14 +1694,14 @@ public final class Concurrent {
 	 * @param <K>         the key type
 	 * @param <V>         the value type
 	 * @param <T>         the stream element type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
 		return toUnmodifiableMap(keyMapper, valueMapper, throwingMerger());
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a {@link ConcurrentUnmodifiableMap.Impl}
+	 * Returns a {@link Collector} that accumulates stream elements into a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 * using the given key mapper, value mapper, and merge function for duplicate keys.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
@@ -1710,7 +1710,7 @@ public final class Concurrent {
 	 * @param <K>           the key type
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return Collectors.collectingAndThen(
@@ -1722,19 +1722,19 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a raw {@link Map} supplied
 	 * by {@code rawMapSupplier} (lock-free during accumulation), then wraps the populated map as a
-	 * {@link ConcurrentUnmodifiableMap} via {@code finisher} at finish. This is the most general
+	 * {@link ConcurrentMap} via {@code finisher} at finish. This is the most general
 	 * {@code toUnmodifiableMap} overload.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
 	 * @param valueMapper the function to extract map values from stream elements
 	 * @param mergeFunction the function to resolve collisions between values associated with the same key
 	 * @param rawMapSupplier the supplier providing the empty backing map used during accumulation
-	 * @param finisher the finisher that wraps the populated raw map as a {@link ConcurrentUnmodifiableMap}
+	 * @param finisher the finisher that wraps the populated raw map as a {@link ConcurrentMap}
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type
 	 * @param <M> the raw backing map type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableMap}
+	 * @return a collector producing a {@link ConcurrentMap}
 	 */
 	public static <K, V, T, M extends Map<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableMap(
 		@NotNull Function<? super T, ? extends K> keyMapper,
@@ -1751,14 +1751,14 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@link ConcurrentUnmodifiableTreeMap.Impl} ordered by the given comparator. Throws on
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} ordered by the given comparator. Throws on
 	 * duplicate keys.
 	 *
 	 * @param comparator the comparator used to order and compare the keys
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl} ordered by {@code comparator}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} ordered by {@code comparator}
 	 */
 	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap(@NotNull Comparator<? super K> comparator) {
 		return toUnmodifiableTreeMap(
@@ -1772,7 +1772,7 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a raw {@link TreeMap}
 	 * supplied by {@code rawMapSupplier} (lock-free during accumulation), then wraps the populated
-	 * tree map as a {@link ConcurrentUnmodifiableTreeMap} at finish.
+	 * tree map as a {@link ConcurrentMap} at finish.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
 	 * @param valueMapper the function to extract map values from stream elements
@@ -1781,7 +1781,7 @@ public final class Concurrent {
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap}
+	 * @return a collector producing a {@link ConcurrentMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap(
 		@NotNull Function<? super T, ? extends K> keyMapper,
@@ -1811,7 +1811,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentUnmodifiableSet} at
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentSet} at
 	 * finish.
 	 *
 	 * @param <E> the element type
@@ -1842,7 +1842,7 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh
 	 * {@link LinkedHashSet} (lock-free during accumulation), then wraps it as a
-	 * {@link ConcurrentUnmodifiableLinkedSet} at finish, preserving insertion order.
+	 * {@link ConcurrentSet} at finish, preserving insertion order.
 	 *
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent linked set
@@ -1886,7 +1886,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link TreeSet}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentUnmodifiableTreeSet} at
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentSet} at
 	 * finish.
 	 *
 	 * @param <E> the element type
@@ -1902,7 +1902,7 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link TreeSet}
 	 * ordered by {@code comparator} (lock-free during accumulation), then wraps it as a
-	 * {@link ConcurrentUnmodifiableTreeSet} at finish.
+	 * {@link ConcurrentSet} at finish.
 	 *
 	 * @param comparator the comparator used to order the elements
 	 * @param <E> the element type
@@ -2009,13 +2009,13 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@link ConcurrentUnmodifiableLinkedMap.Impl}, preserving insertion order. Throws on
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap}, preserving insertion order. Throws on
 	 * duplicate keys.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap}
 	 */
 	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap() {
 		return toUnmodifiableLinkedMap(throwingMerger());
@@ -2023,14 +2023,14 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@link ConcurrentUnmodifiableLinkedMap.Impl}, preserving insertion order, using the
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap}, preserving insertion order, using the
 	 * specified merge function for duplicate keys.
 	 *
 	 * @param mergeFunction the function to resolve collisions between values associated with the same key
 	 * @param <K>           the key type
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap}
 	 */
 	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
 		return toUnmodifiableLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
@@ -2038,7 +2038,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@link ConcurrentUnmodifiableLinkedMap.Impl} using the given key and value mappers,
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap} using the given key and value mappers,
 	 * preserving insertion order. Throws on duplicate keys.
 	 *
 	 * @param keyMapper   the function to extract map keys from stream elements
@@ -2046,7 +2046,7 @@ public final class Concurrent {
 	 * @param <K>         the key type
 	 * @param <V>         the value type
 	 * @param <T>         the stream element type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
 		return toUnmodifiableLinkedMap(keyMapper, valueMapper, throwingMerger());
@@ -2054,7 +2054,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@link ConcurrentUnmodifiableLinkedMap.Impl} using the given key mapper, value mapper, and
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap} using the given key mapper, value mapper, and
 	 * merge function for duplicate keys, preserving insertion order.
 	 *
 	 * @param keyMapper     the function to extract map keys from stream elements
@@ -2063,7 +2063,7 @@ public final class Concurrent {
 	 * @param <K>           the key type
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableLinkedMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return Collectors.collectingAndThen(
@@ -2074,13 +2074,13 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@link ConcurrentUnmodifiableTreeMap.Impl} with natural key ordering. Throws on
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} with natural key ordering. Throws on
 	 * duplicate keys.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap}
 	 */
 	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap() {
 		return toUnmodifiableTreeMap(Map.Entry::getKey, Map.Entry::getValue, throwingMerger());
@@ -2088,7 +2088,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@link ConcurrentUnmodifiableTreeMap.Impl} with natural key ordering, using the given key
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} with natural key ordering, using the given key
 	 * and value mappers. Throws on duplicate keys.
 	 *
 	 * @param keyMapper   the function to extract map keys from stream elements
@@ -2096,7 +2096,7 @@ public final class Concurrent {
 	 * @param <K>         the key type
 	 * @param <V>         the value type
 	 * @param <T>         the stream element type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
 		return toUnmodifiableTreeMap(keyMapper, valueMapper, throwingMerger());
@@ -2104,7 +2104,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@link ConcurrentUnmodifiableTreeMap.Impl} with natural key ordering, using the given key
+	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap} with natural key ordering, using the given key
 	 * mapper, value mapper, and merge function for duplicate keys.
 	 *
 	 * @param keyMapper     the function to extract map keys from stream elements
@@ -2113,7 +2113,7 @@ public final class Concurrent {
 	 * @param <K>           the key type
 	 * @param <V>           the value type
 	 * @param <T>           the stream element type
-	 * @return a collector producing a {@link ConcurrentUnmodifiableTreeMap.Impl}
+	 * @return a collector producing a {@code ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableTreeMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return Collectors.collectingAndThen(
