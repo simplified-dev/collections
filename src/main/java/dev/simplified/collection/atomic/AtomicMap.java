@@ -768,6 +768,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			return new EntrySetIterator(AtomicMap.this.entrySetSnapshot());
 		}
 
+		@Override
+		public @NotNull Spliterator<Entry<K, V>> spliterator() {
+			return Spliterators.spliterator(AtomicMap.this.entrySetSnapshot(),
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
+		}
+
 	}
 
 	/**
@@ -809,6 +815,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		@Override
 		public @NotNull Iterator<K> iterator() {
 			return new KeySetIterator(AtomicMap.this.keySetSnapshot());
+		}
+
+		@Override
+		public @NotNull Spliterator<K> spliterator() {
+			return Spliterators.spliterator(AtomicMap.this.keySetSnapshot(),
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
 		}
 
 	}
@@ -858,6 +870,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		@Override
 		public @NotNull Iterator<V> iterator() {
 			return new ValuesIterator(AtomicMap.this.valuesSnapshot());
+		}
+
+		@Override
+		public @NotNull Spliterator<V> spliterator() {
+			return Spliterators.spliterator(AtomicMap.this.valuesSnapshot(),
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE);
 		}
 
 	}

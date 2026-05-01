@@ -16,6 +16,8 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -440,6 +442,14 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		}
 
 		@Override
+		public @NotNull Spliterator<K> spliterator() {
+			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.toArray());
+			return Spliterators.spliterator(snapshot,
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE
+					| Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED);
+		}
+
+		@Override
 		public @NotNull NavigableSet<K> descendingSet() {
 			return AtomicNavigableMap.this.withReadLock(() -> new LockedNavigableSetView(this.delegate.descendingSet()));
 		}
@@ -505,6 +515,14 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 			return new AtomicIterator<>(snapshot, 0);
 		}
 
+		@Override
+		public @NotNull Spliterator<Map.Entry<K, V>> spliterator() {
+			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.entrySet().toArray());
+			return Spliterators.spliterator(snapshot,
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE
+					| Spliterator.DISTINCT | Spliterator.ORDERED);
+		}
+
 	}
 
 	/**
@@ -536,6 +554,13 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		public @NotNull Iterator<V> iterator() {
 			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.values().toArray());
 			return new AtomicIterator<>(snapshot, 0);
+		}
+
+		@Override
+		public @NotNull Spliterator<V> spliterator() {
+			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.values().toArray());
+			return Spliterators.spliterator(snapshot,
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.ORDERED);
 		}
 
 	}

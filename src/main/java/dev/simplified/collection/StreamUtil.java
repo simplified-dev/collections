@@ -158,28 +158,37 @@ public final class StreamUtil {
         long size = spliterator.estimateSize();
 
         if (!spliterator.hasCharacteristics(Spliterator.SUBSIZED)) {
-            return StreamSupport.stream(
-                new Spliterators.AbstractSpliterator<>(size, spliterator.characteristics() & (Spliterator.ORDERED | Spliterator.SIZED)) {
-                    private long index = 0;
-                    private @Nullable T holder;
-                    private final Consumer<T> capture = t -> this.holder = t;
+            class Splitr extends Spliterators.AbstractSpliterator<R> implements Consumer<T> {
 
-                    @Override
-                    public boolean tryAdvance(Consumer<? super R> action) {
-                        if (spliterator.tryAdvance(this.capture)) {
-                            try {
-                                action.accept(function.apply(this.holder, this.index++, size));
-                                return true;
-                            } finally {
-                                this.holder = null;
-                            }
+                private long index = 0;
+                private @Nullable T holder;
+
+                Splitr() {
+                    super(size, spliterator.characteristics() & (Spliterator.ORDERED | Spliterator.SIZED));
+                }
+
+                @Override
+                public void accept(@NotNull T t) {
+                    this.holder = t;
+                }
+
+                @Override
+                public boolean tryAdvance(Consumer<? super R> action) {
+                    if (spliterator.tryAdvance(this)) {
+                        try {
+                            action.accept(function.apply(this.holder, this.index++, size));
+                            return true;
+                        } finally {
+                            this.holder = null;
                         }
-
-                        return false;
                     }
-                },
-                parallel
-            );
+
+                    return false;
+                }
+
+            }
+
+            return StreamSupport.stream(new Splitr(), parallel);
         } else {
             class Splitr extends MapWithIndexSpliterator<Spliterator<T>, R, Splitr> implements Consumer<T> {
 

@@ -4,6 +4,7 @@ import dev.simplified.collection.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractSet;
+import java.util.Spliterator;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -32,6 +33,14 @@ public abstract class AtomicSet<E, T extends AbstractSet<E>> extends AtomicColle
 	 */
 	protected AtomicSet(@NotNull T ref, @NotNull java.util.concurrent.locks.ReadWriteLock lock) {
 		super(ref, lock);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected int spliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT;
 	}
 
 }
