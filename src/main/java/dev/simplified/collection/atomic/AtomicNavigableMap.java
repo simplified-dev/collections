@@ -482,9 +482,10 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		@Override
 		public @NotNull Spliterator<K> spliterator() {
 			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.toArray());
-			return Spliterators.spliterator(snapshot,
+			Spliterator<K> base = Spliterators.spliterator(snapshot,
 				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE
 					| Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED);
+			return new SortedSnapshotSpliterator<>(base, this.delegate.comparator());
 		}
 
 		@Override
