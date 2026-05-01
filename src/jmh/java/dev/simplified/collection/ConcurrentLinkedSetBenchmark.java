@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * JMH benchmark suite for {@link ConcurrentLinkedHashSet}, comparing throughput against
+ * JMH benchmark suite for {@link ConcurrentLinkedSet}, comparing throughput against
  * {@link LinkedHashSet} and {@code Collections.synchronizedSet(new LinkedHashSet<>())}.
  */
 @BenchmarkMode(Mode.Throughput)
@@ -17,23 +17,23 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 1)
 @Fork(2)
 @State(Scope.Benchmark)
-public class ConcurrentLinkedHashSetBenchmark {
+public class ConcurrentLinkedSetBenchmark {
 
     @Param({"100", "1000", "10000"})
     private int size;
 
-    private ConcurrentLinkedHashSet<Integer> concurrentLinkedHashSet;
+    private ConcurrentLinkedSet<Integer> concurrentLinkedSet;
     private LinkedHashSet<Integer> linkedHashSet;
     private Set<Integer> syncLinkedHashSet;
 
     @Setup(Level.Iteration)
     public void setup() {
-        concurrentLinkedHashSet = new ConcurrentLinkedHashSet<>();
+        concurrentLinkedSet = new ConcurrentLinkedSet<>();
         linkedHashSet = new LinkedHashSet<>();
         syncLinkedHashSet = Collections.synchronizedSet(new LinkedHashSet<>());
 
         for (int i = 0; i < size; i++) {
-            concurrentLinkedHashSet.add(i);
+            concurrentLinkedSet.add(i);
             linkedHashSet.add(i);
             syncLinkedHashSet.add(i);
         }
@@ -43,7 +43,7 @@ public class ConcurrentLinkedHashSetBenchmark {
 
     @Benchmark
     public boolean concurrentLinkedHashSet_add() {
-        return concurrentLinkedHashSet.add(size + 1);
+        return concurrentLinkedSet.add(size + 1);
     }
 
     @Benchmark
@@ -60,7 +60,7 @@ public class ConcurrentLinkedHashSetBenchmark {
 
     @Benchmark
     public boolean concurrentLinkedHashSet_contains() {
-        return concurrentLinkedHashSet.contains(size / 2);
+        return concurrentLinkedSet.contains(size / 2);
     }
 
     @Benchmark
@@ -78,7 +78,7 @@ public class ConcurrentLinkedHashSetBenchmark {
     @Benchmark
     public int concurrentLinkedHashSet_iterate() {
         int sum = 0;
-        for (int i : concurrentLinkedHashSet) sum += i;
+        for (int i : concurrentLinkedSet) sum += i;
         return sum;
     }
 
@@ -102,7 +102,7 @@ public class ConcurrentLinkedHashSetBenchmark {
 
     @Benchmark
     public int concurrentLinkedHashSet_size() {
-        return concurrentLinkedHashSet.size();
+        return concurrentLinkedSet.size();
     }
 
     @Benchmark
@@ -119,7 +119,7 @@ public class ConcurrentLinkedHashSetBenchmark {
 
     @Benchmark
     public boolean concurrentLinkedHashSet_remove() {
-        return concurrentLinkedHashSet.remove(size / 2);
+        return concurrentLinkedSet.remove(size / 2);
     }
 
     @Benchmark

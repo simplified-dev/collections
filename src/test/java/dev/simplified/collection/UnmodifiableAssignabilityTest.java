@@ -80,7 +80,7 @@ class UnmodifiableAssignabilityTest {
 
 		@Test
 		void unmodifiableLinkedMap_isUnmodifiableConcurrentLinkedHashMap() {
-			assertTrue(Concurrent.newUnmodifiableLinkedMap() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap);
+			assertTrue(Concurrent.newUnmodifiableLinkedMap() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap);
 		}
 
 		@Test
@@ -90,7 +90,7 @@ class UnmodifiableAssignabilityTest {
 
 		@Test
 		void unmodifiableLinkedSet_isUnmodifiableConcurrentLinkedHashSet() {
-			assertTrue(Concurrent.newUnmodifiableLinkedSet() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet);
+			assertTrue(Concurrent.newUnmodifiableLinkedSet() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet);
 		}
 
 		@Test
