@@ -5,22 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -174,15 +159,15 @@ final class ConcurrentUnmodifiable {
 	}
 
 	/**
-	 * Immutable snapshot of a {@link ConcurrentLinkedHashSet} preserving the source's insertion
+	 * Immutable snapshot of a {@link ConcurrentLinkedSet} preserving the source's insertion
 	 * order. Reads are wait-free; mutating operations reject with
 	 * {@link UnsupportedOperationException}.
 	 *
 	 * @param <E> the type of elements in this set
 	 */
-	static final class UnmodifiableConcurrentLinkedHashSet<E> extends ConcurrentLinkedHashSet<E> {
+	static final class UnmodifiableConcurrentLinkedSet<E> extends ConcurrentLinkedSet<E> {
 
-		UnmodifiableConcurrentLinkedHashSet(@NotNull LinkedHashSet<E> snapshot) {
+		UnmodifiableConcurrentLinkedSet(@NotNull LinkedHashSet<E> snapshot) {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
@@ -230,6 +215,7 @@ final class ConcurrentUnmodifiable {
 		@Override public boolean remove(Object key, Object value) { throw new UnsupportedOperationException(); }
 		@Override public boolean removeIf(@NotNull BiPredicate<? super K, ? super V> predicate) { throw new UnsupportedOperationException(); }
 		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
+		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
@@ -239,16 +225,16 @@ final class ConcurrentUnmodifiable {
 	}
 
 	/**
-	 * Immutable snapshot of a {@link ConcurrentLinkedHashMap} preserving the source's insertion
+	 * Immutable snapshot of a {@link ConcurrentLinkedMap} preserving the source's insertion
 	 * order. Reads are wait-free; mutating operations reject with
 	 * {@link UnsupportedOperationException}.
 	 *
 	 * @param <K> the type of keys
 	 * @param <V> the type of mapped values
 	 */
-	static final class UnmodifiableConcurrentLinkedHashMap<K, V> extends ConcurrentLinkedHashMap<K, V> {
+	static final class UnmodifiableConcurrentLinkedMap<K, V> extends ConcurrentLinkedMap<K, V> {
 
-		UnmodifiableConcurrentLinkedHashMap(@NotNull LinkedHashMap<K, V> snapshot) {
+		UnmodifiableConcurrentLinkedMap(@NotNull LinkedHashMap<K, V> snapshot) {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
@@ -266,6 +252,7 @@ final class ConcurrentUnmodifiable {
 		@Override public boolean remove(Object key, Object value) { throw new UnsupportedOperationException(); }
 		@Override public boolean removeIf(@NotNull BiPredicate<? super K, ? super V> predicate) { throw new UnsupportedOperationException(); }
 		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
+		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
@@ -469,6 +456,7 @@ final class ConcurrentUnmodifiable {
 		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
 		@Override public Map.Entry<K, V> pollFirstEntry() { throw new UnsupportedOperationException(); }
 		@Override public Map.Entry<K, V> pollLastEntry() { throw new UnsupportedOperationException(); }
+		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override public @NotNull NavigableMap<K, V> descendingMap() { return Collections.unmodifiableNavigableMap(super.descendingMap()); }
 		@Override public @NotNull NavigableSet<K> navigableKeySet() { return Collections.unmodifiableNavigableSet(super.navigableKeySet()); }

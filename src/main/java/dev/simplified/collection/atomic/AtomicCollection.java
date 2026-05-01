@@ -12,7 +12,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
@@ -35,6 +38,8 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 	protected final @NotNull T ref;
 	protected final @NotNull ReadWriteLock lock;
+	private final @NotNull Lock readLockView;
+	private final @NotNull Lock writeLockView;
 
 	/**
 	 * Cached {@link #toArray} snapshot used by iterators. Published under the read lock,
@@ -57,6 +62,8 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	protected AtomicCollection(@NotNull T ref, @NotNull ReadWriteLock lock) {
 		this.ref = ref;
 		this.lock = lock;
+		this.readLockView = lock.readLock();
+		this.writeLockView = lock.writeLock();
 	}
 
 	/**
@@ -64,7 +71,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * mutator on this collection, before the write lock is released.
 	 */
 	protected void invalidateSnapshot() {
-		this.snapshotCache = null;
+		if (this.snapshotCache != null) this.snapshotCache = null;
 		this.onSnapshotInvalidated();
 	}
 
@@ -76,12 +83,12 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @return the value returned by {@code action}
 	 */
 	protected final <R> R withReadLock(@NotNull java.util.function.Supplier<R> action) {
-		this.lock.readLock().lock();
+		this.readLockView.lock();
 
 		try {
 			return action.get();
 		} finally {
-			this.lock.readLock().unlock();
+			this.readLockView.unlock();
 		}
 	}
 
@@ -91,12 +98,12 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @param action the action to execute under the read lock
 	 */
 	protected final void withReadLock(@NotNull Runnable action) {
-		this.lock.readLock().lock();
+		this.readLockView.lock();
 
 		try {
 			action.run();
 		} finally {
-			this.lock.readLock().unlock();
+			this.readLockView.unlock();
 		}
 	}
 
@@ -109,13 +116,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @return the value returned by {@code action}
 	 */
 	protected final <R> R withWriteLock(@NotNull java.util.function.Supplier<R> action) {
-		this.lock.writeLock().lock();
+		this.writeLockView.lock();
 
 		try {
 			return action.get();
 		} finally {
 			this.invalidateSnapshot();
-			this.lock.writeLock().unlock();
+			this.writeLockView.unlock();
 		}
 	}
 
@@ -126,13 +133,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @param action the action to execute under the write lock
 	 */
 	protected final void withWriteLock(@NotNull Runnable action) {
-		this.lock.writeLock().lock();
+		this.writeLockView.lock();
 
 		try {
 			action.run();
 		} finally {
 			this.invalidateSnapshot();
-			this.lock.writeLock().unlock();
+			this.writeLockView.unlock();
 		}
 	}
 
@@ -303,6 +310,17 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public @NotNull Iterator<E> iterator() {
+		return new ConcurrentCollectionIterator(this.cachedOrFreshSnapshotArray(), 0);
+	}
+
+	/**
+	 * Returns the cached iteration snapshot if present, otherwise populates and publishes one
+	 * under the read lock with double-checked locking. Shared by {@link #iterator()},
+	 * {@link #spliterator()}, and {@link #toArray()} so a single snapshot serves all three.
+	 *
+	 * @return the (possibly fresh) cached snapshot array
+	 */
+	protected final Object[] cachedOrFreshSnapshotArray() {
 		Object[] snapshot = this.snapshotCache;
 
 		if (snapshot == null) {
@@ -318,7 +336,29 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 			});
 		}
 
-		return new ConcurrentCollectionIterator(snapshot, 0);
+		return snapshot;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Returns a snapshot-backed spliterator over the cached iteration array. Reuses the same
+	 * snapshot fed to {@link #iterator()} so consecutive calls do not double-allocate.
+	 */
+	@Override
+	public @NotNull Spliterator<E> spliterator() {
+		return Spliterators.spliterator(this.cachedOrFreshSnapshotArray(), this.spliteratorCharacteristics());
+	}
+
+	/**
+	 * Returns the characteristic bits this collection's spliterator advertises. Subclasses override
+	 * to add type-specific bits ({@link Spliterator#DISTINCT}, {@link Spliterator#SORTED},
+	 * {@link Spliterator#NONNULL}).
+	 *
+	 * @return the spliterator characteristic bitmask
+	 */
+	protected int spliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.ORDERED;
 	}
 
 	/**
@@ -412,16 +452,21 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public Object @NotNull [] toArray() {
-		return this.withReadLock((java.util.function.Supplier<Object[]>) this.ref::toArray);
+		Object[] snap = this.cachedOrFreshSnapshotArray();
+		return Arrays.copyOf(snap, snap.length);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	@SuppressWarnings("SuspiciousToArrayCall")
+	@SuppressWarnings({"SuspiciousToArrayCall", "unchecked"})
 	public <U> U @NotNull [] toArray(@NotNull U @NotNull [] array) {
-		return this.withReadLock(() -> this.ref.toArray(array));
+		Object[] snap = this.cachedOrFreshSnapshotArray();
+		if (array.length < snap.length) return (U[]) Arrays.copyOf(snap, snap.length, array.getClass());
+		System.arraycopy(snap, 0, array, 0, snap.length);
+		if (array.length > snap.length) array[snap.length] = null;
+		return array;
 	}
 
 	/**

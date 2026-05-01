@@ -9,6 +9,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.SortedSet;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -48,7 +50,28 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	protected void onSnapshotInvalidated() {
-		this.descendingSetView = null;
+		if (this.descendingSetView != null) this.descendingSetView = null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected int spliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE
+			| Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Returns a snapshot-backed spliterator that exposes this set's {@link Comparator} so
+	 * downstream operations honoring {@link Spliterator#SORTED} pick up the configured order.
+	 */
+	@Override
+	public @NotNull Spliterator<E> spliterator() {
+		Spliterator<E> base = Spliterators.spliterator(this.cachedOrFreshSnapshotArray(), this.spliteratorCharacteristics());
+		return new SortedSnapshotSpliterator<>(base, this.ref.comparator());
 	}
 
 	/**
@@ -244,6 +267,15 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 		public @NotNull Iterator<E> iterator() {
 			Object[] snapshot = AtomicNavigableSet.this.withReadLock(() -> this.delegate.toArray());
 			return new AtomicIterator<>(snapshot, 0);
+		}
+
+		@Override
+		public @NotNull Spliterator<E> spliterator() {
+			Object[] snapshot = AtomicNavigableSet.this.withReadLock(() -> this.delegate.toArray());
+			Spliterator<E> base = Spliterators.spliterator(snapshot,
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE
+					| Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED);
+			return new SortedSnapshotSpliterator<>(base, this.delegate.comparator());
 		}
 
 		@Override

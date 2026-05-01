@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.AbstractMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Spliterator;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -16,12 +17,12 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
+public class ConcurrentLinkedMap<K, V> extends ConcurrentHashMap<K, V> {
 
 	/**
 	 * Creates a new concurrent linked map.
 	 */
-	public ConcurrentLinkedHashMap() {
+	public ConcurrentLinkedMap() {
 		super(new MaxSizeLinkedMap<>(), (Map<K, V>) null);
 	}
 
@@ -30,7 +31,7 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 *
 	 * @param maxSize the maximum number of entries allowed in the map
 	 */
-	public ConcurrentLinkedHashMap(int maxSize) {
+	public ConcurrentLinkedMap(int maxSize) {
 		super(new MaxSizeLinkedMap<>(maxSize), (Map<K, V>) null);
 	}
 
@@ -39,8 +40,8 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 *
 	 * @param map the source map to copy from
 	 */
-	public ConcurrentLinkedHashMap(@Nullable Map<? extends K, ? extends V> map) {
-		super(new MaxSizeLinkedMap<>(), map);
+	public ConcurrentLinkedMap(@Nullable Map<? extends K, ? extends V> map) {
+		super(MaxSizeLinkedMap.sized(-1, map == null ? 0 : map.size()), map);
 	}
 
 	/**
@@ -49,8 +50,8 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 * @param map the source map to copy from
 	 * @param maxSize the maximum number of entries allowed in the map
 	 */
-	public ConcurrentLinkedHashMap(@Nullable Map<? extends K, ? extends V> map, int maxSize) {
-		super(new MaxSizeLinkedMap<>(maxSize), map);
+	public ConcurrentLinkedMap(@Nullable Map<? extends K, ? extends V> map, int maxSize) {
+		super(MaxSizeLinkedMap.sized(maxSize, map == null ? 0 : map.size()), map);
 	}
 
 	/**
@@ -59,7 +60,7 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 *
 	 * @param backingMap the backing linked hash map to adopt
 	 */
-	protected ConcurrentLinkedHashMap(@NotNull LinkedHashMap<K, V> backingMap) {
+	protected ConcurrentLinkedMap(@NotNull LinkedHashMap<K, V> backingMap) {
 		super(backingMap);
 	}
 
@@ -71,12 +72,12 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 * @param backingMap the pre-built backing map
 	 * @param lock the lock guarding {@code backingMap}
 	 */
-	protected ConcurrentLinkedHashMap(@NotNull LinkedHashMap<K, V> backingMap, @NotNull ReadWriteLock lock) {
+	protected ConcurrentLinkedMap(@NotNull LinkedHashMap<K, V> backingMap, @NotNull ReadWriteLock lock) {
 		super(backingMap, lock);
 	}
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentLinkedHashMap} without copying.
+	 * Wraps {@code backing} as a {@link ConcurrentLinkedMap} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to {@code backing}
 	 * bypass the read/write lock and may corrupt concurrent reads. Use this for zero-copy
@@ -88,8 +89,8 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 * @param <V> the value type
 	 * @return a concurrent linked hash map backed by {@code backing}
 	 */
-	public static <K, V> @NotNull ConcurrentLinkedHashMap<K, V> adopt(@NotNull LinkedHashMap<K, V> backing) {
-		return new ConcurrentLinkedHashMap<>(backing);
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> adopt(@NotNull LinkedHashMap<K, V> backing) {
+		return new ConcurrentLinkedMap<>(backing);
 	}
 
 	/**
@@ -113,14 +114,47 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 */
 	@Override
 	public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap<>((LinkedHashMap<K, V>) this.cloneRef());
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>((LinkedHashMap<K, V>) this.cloneRef());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so the entry-set spliterator preserves the
+	 * {@link LinkedHashMap} insertion order on parallel-stream consumers.
+	 */
+	@Override
+	protected int entrySetSpliteratorCharacteristics() {
+		return super.entrySetSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so the key-set spliterator preserves the
+	 * {@link LinkedHashMap} insertion order on parallel-stream consumers.
+	 */
+	@Override
+	protected int keySetSpliteratorCharacteristics() {
+		return super.keySetSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so the values-collection spliterator preserves the
+	 * {@link LinkedHashMap} insertion order on parallel-stream consumers.
+	 */
+	@Override
+	protected int valuesSpliteratorCharacteristics() {
+		return super.valuesSpliteratorCharacteristics() | Spliterator.ORDERED;
 	}
 
 	/**
 	 * A {@link LinkedHashMap} that evicts the eldest entry once its size exceeds a fixed cap, or
 	 * never evicts when the cap is {@code -1}. Final + private: the class cannot be subclassed
 	 * and the containing map is the sole caller, so {@link #removeEldestEntry} is guaranteed to
-	 * execute under the enclosing {@link ConcurrentLinkedHashMap}'s write lock.
+	 * execute under the enclosing {@link ConcurrentLinkedMap}'s write lock.
 	 *
 	 * @param <K> the type of keys
 	 * @param <V> the type of values
@@ -135,6 +169,16 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 
 		MaxSizeLinkedMap(int maxSize) {
 			this.maxSize = maxSize;
+		}
+
+		private MaxSizeLinkedMap(int maxSize, int initialCapacity, float loadFactor) {
+			super(initialCapacity, loadFactor);
+			this.maxSize = maxSize;
+		}
+
+		static <K, V> @NotNull MaxSizeLinkedMap<K, V> sized(int maxSize, int numMappings) {
+			if (numMappings <= 0) return new MaxSizeLinkedMap<>(maxSize);
+			return new MaxSizeLinkedMap<>(maxSize, (int) Math.ceil(numMappings / 0.75d), 0.75f);
 		}
 
 		@Override

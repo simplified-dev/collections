@@ -8,6 +8,7 @@ import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Spliterator;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -17,12 +18,12 @@ import java.util.concurrent.locks.ReadWriteLock;
  *
  * @param <E> the type of elements in this set
  */
-public class ConcurrentLinkedHashSet<E> extends ConcurrentHashSet<E> {
+public class ConcurrentLinkedSet<E> extends ConcurrentHashSet<E> {
 
 	/**
 	 * Creates a new concurrent linked set.
 	 */
-	public ConcurrentLinkedHashSet() {
+	public ConcurrentLinkedSet() {
 		super(new LinkedHashSet<>());
 	}
 
@@ -32,7 +33,7 @@ public class ConcurrentLinkedHashSet<E> extends ConcurrentHashSet<E> {
 	 * @param array the elements to include
 	 */
 	@SafeVarargs
-	public ConcurrentLinkedHashSet(@NotNull E... array) {
+	public ConcurrentLinkedSet(@NotNull E... array) {
 		this(Arrays.asList(array));
 	}
 
@@ -41,7 +42,7 @@ public class ConcurrentLinkedHashSet<E> extends ConcurrentHashSet<E> {
 	 *
 	 * @param collection the source collection to copy from, or {@code null} for an empty set
 	 */
-	public ConcurrentLinkedHashSet(@Nullable Collection<? extends E> collection) {
+	public ConcurrentLinkedSet(@Nullable Collection<? extends E> collection) {
 		super(collection == null ? new LinkedHashSet<>() : new LinkedHashSet<>(collection));
 	}
 
@@ -51,7 +52,7 @@ public class ConcurrentLinkedHashSet<E> extends ConcurrentHashSet<E> {
 	 *
 	 * @param backingSet the backing linked hash set to adopt
 	 */
-	protected ConcurrentLinkedHashSet(@NotNull LinkedHashSet<E> backingSet) {
+	protected ConcurrentLinkedSet(@NotNull LinkedHashSet<E> backingSet) {
 		super(backingSet);
 	}
 
@@ -63,12 +64,12 @@ public class ConcurrentLinkedHashSet<E> extends ConcurrentHashSet<E> {
 	 * @param backingSet the pre-built backing set
 	 * @param lock the lock guarding {@code backingSet}
 	 */
-	protected ConcurrentLinkedHashSet(@NotNull LinkedHashSet<E> backingSet, @NotNull ReadWriteLock lock) {
+	protected ConcurrentLinkedSet(@NotNull LinkedHashSet<E> backingSet, @NotNull ReadWriteLock lock) {
 		super(backingSet, lock);
 	}
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentLinkedHashSet} without copying.
+	 * Wraps {@code backing} as a {@link ConcurrentLinkedSet} without copying.
 	 * <p>
 	 * The caller relinquishes exclusive ownership: subsequent direct mutations to {@code backing}
 	 * bypass the read/write lock and may corrupt concurrent reads. Use this for zero-copy
@@ -78,8 +79,8 @@ public class ConcurrentLinkedHashSet<E> extends ConcurrentHashSet<E> {
 	 * @param <E> the element type
 	 * @return a concurrent linked hash set backed by {@code backing}
 	 */
-	public static <E> @NotNull ConcurrentLinkedHashSet<E> adopt(@NotNull LinkedHashSet<E> backing) {
-		return new ConcurrentLinkedHashSet<>(backing);
+	public static <E> @NotNull ConcurrentLinkedSet<E> adopt(@NotNull LinkedHashSet<E> backing) {
+		return new ConcurrentLinkedSet<>(backing);
 	}
 
 	/**
@@ -87,7 +88,7 @@ public class ConcurrentLinkedHashSet<E> extends ConcurrentHashSet<E> {
 	 */
 	@Override
 	protected @NotNull AtomicCollection<E, AbstractSet<E>> newEmpty() {
-		return new ConcurrentLinkedHashSet<>();
+		return new ConcurrentLinkedSet<>();
 	}
 
 	/**
@@ -109,7 +110,20 @@ public class ConcurrentLinkedHashSet<E> extends ConcurrentHashSet<E> {
 	 */
 	@Override
 	public @NotNull ConcurrentSet<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>((LinkedHashSet<E>) this.cloneRef());
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>((LinkedHashSet<E>) this.cloneRef());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} on top of the inherited set characteristics so encounter
+	 * order is preserved on parallel-stream consumers ({@code findFirst}, {@code forEachOrdered},
+	 * order-sensitive collectors). The {@link LinkedHashSet} backing maintains insertion order;
+	 * advertising {@code ORDERED} surfaces that contract through the spliterator API.
+	 */
+	@Override
+	protected int spliteratorCharacteristics() {
+		return super.spliteratorCharacteristics() | Spliterator.ORDERED;
 	}
 
 }

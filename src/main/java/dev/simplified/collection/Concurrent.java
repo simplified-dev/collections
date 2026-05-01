@@ -112,7 +112,7 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty concurrent list
 	 */
-	public static <E> @NotNull ConcurrentList<E> newList() {
+	public static <E> @NotNull ConcurrentArrayList<E> newList() {
 		return new ConcurrentArrayList<>();
 	}
 
@@ -123,7 +123,7 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new concurrent list containing the specified elements
 	 */
-	public static <E> @NotNull ConcurrentList<E> newList(int initialCapacity) {
+	public static <E> @NotNull ConcurrentArrayList<E> newList(int initialCapacity) {
 		return new ConcurrentArrayList<>(initialCapacity);
 	}
 
@@ -135,12 +135,12 @@ public final class Concurrent {
 	 * @return a new concurrent list containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentList<E> newList(@NotNull E... array) {
+	public static <E> @NotNull ConcurrentArrayList<E> newList(@NotNull E... array) {
 		return new ConcurrentArrayList<>(array);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentList} by copying all elements from {@code collection}.
+	 * Creates a new {@link ConcurrentArrayList} by copying all elements from {@code collection}.
 	 * <p>
 	 * The returned list owns its own backing storage; subsequent modifications to
 	 * {@code collection} do not affect the returned list and vice versa. A {@code null}
@@ -150,7 +150,7 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new concurrent list containing the source elements
 	 */
-	public static <E> @NotNull ConcurrentList<E> newList(@Nullable Collection<? extends E> collection) {
+	public static <E> @NotNull ConcurrentArrayList<E> newList(@Nullable Collection<? extends E> collection) {
 		return new ConcurrentArrayList<>(collection);
 	}
 
@@ -292,18 +292,18 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentLinkedHashMap} with no maximum size constraint.
+	 * Creates a new empty {@link ConcurrentLinkedMap} with no maximum size constraint.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @return a new empty concurrent linked map
 	 */
-	public static <K, V> @NotNull ConcurrentMap<K, V> newLinkedMap() {
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newLinkedMap() {
 		return newLinkedMap(-1);
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentLinkedHashMap} with the specified maximum size.
+	 * Creates a new empty {@link ConcurrentLinkedMap} with the specified maximum size.
 	 * A value of {@code -1} indicates no size limit.
 	 *
 	 * @param maxSize the maximum number of entries, or {@code -1} for unlimited
@@ -311,12 +311,12 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a new empty concurrent linked map with the given size constraint
 	 */
-	public static <K, V> @NotNull ConcurrentMap<K, V> newLinkedMap(int maxSize) {
-		return new ConcurrentLinkedHashMap<>(maxSize);
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newLinkedMap(int maxSize) {
+		return new ConcurrentLinkedMap<>(maxSize);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentLinkedHashMap} by copying all entries from {@code map}.
+	 * Creates a new {@link ConcurrentLinkedMap} by copying all entries from {@code map}.
 	 * <p>
 	 * The returned linked map owns its own backing storage; subsequent modifications to
 	 * {@code map} do not affect the returned map and vice versa.
@@ -326,12 +326,12 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a new concurrent linked map containing the source entries
 	 */
-	public static <K, V> @NotNull ConcurrentMap<K, V> newLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
-		return new ConcurrentLinkedHashMap<>(map);
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
+		return new ConcurrentLinkedMap<>(map);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentLinkedHashMap} with the given maximum size by copying all
+	 * Creates a new {@link ConcurrentLinkedMap} with the given maximum size by copying all
 	 * entries from {@code map}.
 	 * <p>
 	 * The returned linked map owns its own backing storage; subsequent modifications to
@@ -343,8 +343,8 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @return a new concurrent linked map containing the source entries with the given size constraint
 	 */
-	public static <K, V> @NotNull ConcurrentMap<K, V> newLinkedMap(@NotNull Map<? extends K, ? extends V> map, int maxSize) {
-		return new ConcurrentLinkedHashMap<>(map, maxSize);
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newLinkedMap(@NotNull Map<? extends K, ? extends V> map, int maxSize) {
+		return new ConcurrentLinkedMap<>(map, maxSize);
 	}
 
 	/**
@@ -512,29 +512,29 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new empty {@link ConcurrentLinkedHashSet}.
+	 * Creates a new empty {@link ConcurrentLinkedSet}.
 	 *
 	 * @param <E> the element type
 	 * @return a new empty concurrent linked set
 	 */
-	public static <E> @NotNull ConcurrentSet<E> newLinkedSet() {
-		return new ConcurrentLinkedHashSet<>();
+	public static <E> @NotNull ConcurrentLinkedSet<E> newLinkedSet() {
+		return new ConcurrentLinkedSet<>();
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentLinkedHashSet} containing the given elements.
+	 * Creates a new {@link ConcurrentLinkedSet} containing the given elements.
 	 *
 	 * @param array the elements to include
 	 * @param <E> the element type
 	 * @return a new concurrent linked set containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentSet<E> newLinkedSet(@NotNull E... array) {
-		return new ConcurrentLinkedHashSet<>(array);
+	public static <E> @NotNull ConcurrentLinkedSet<E> newLinkedSet(@NotNull E... array) {
+		return new ConcurrentLinkedSet<>(array);
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentLinkedHashSet} by copying all elements from {@code collection}.
+	 * Creates a new {@link ConcurrentLinkedSet} by copying all elements from {@code collection}.
 	 * <p>
 	 * The returned linked set owns its own backing storage; subsequent modifications to
 	 * {@code collection} do not affect the returned set and vice versa.
@@ -543,8 +543,8 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new concurrent linked set containing the source elements
 	 */
-	public static <E> @NotNull ConcurrentSet<E> newLinkedSet(@NotNull Collection<? extends E> collection) {
-		return new ConcurrentLinkedHashSet<>(collection);
+	public static <E> @NotNull ConcurrentLinkedSet<E> newLinkedSet(@NotNull Collection<? extends E> collection) {
+		return new ConcurrentLinkedSet<>(collection);
 	}
 
 	/**
@@ -596,7 +596,7 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a new empty unmodifiable concurrent list
 	 */
-	public static <E> @NotNull ConcurrentList<E> newUnmodifiableList() {
+	public static <E> @NotNull ConcurrentArrayList<E> newUnmodifiableList() {
 		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>());
 	}
 
@@ -608,7 +608,7 @@ public final class Concurrent {
 	 * @return a new unmodifiable concurrent list containing the specified elements
 	 */
 	@SafeVarargs
-	public static <E> @NotNull ConcurrentList<E> newUnmodifiableList(@NotNull E... array) {
+	public static <E> @NotNull ConcurrentArrayList<E> newUnmodifiableList(@NotNull E... array) {
 		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>(Arrays.asList(array)));
 	}
 
@@ -632,8 +632,8 @@ public final class Concurrent {
 		// ConcurrentLinkedList.toUnmodifiable() yields a LinkedList-backed wrapper; route
 		// those sources to the ArrayList-backed fallback so this factory keeps returning an
 		// UnmodifiableConcurrentArrayList as documented.
-		if (collection instanceof ConcurrentList && !(collection instanceof ConcurrentLinkedList))
-			return ((ConcurrentList<E>) collection).toUnmodifiable();
+		if (collection instanceof ConcurrentArrayList)
+			return ((ConcurrentArrayList<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList<>(new ArrayList<>(collection));
 	}
@@ -648,7 +648,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableMap(@NotNull Map.Entry<K, V>... entries) {
-		HashMap<K, V> snapshot = new HashMap<>();
+		HashMap<K, V> snapshot = HashMap.newHashMap(entries.length);
 		for (Map.Entry<K, V> entry : entries) {
 			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
 		}
@@ -660,9 +660,9 @@ public final class Concurrent {
 	 *
 	 * <p>The snapshot copies the input's entries at construction time; subsequent mutations
 	 * on the source are not reflected. If the source is a {@link ConcurrentHashMap} but
-	 * neither a {@link ConcurrentTreeMap} nor a {@link ConcurrentLinkedHashMap}, its
+	 * neither a {@link ConcurrentTreeMap} nor a {@link ConcurrentLinkedMap}, its
 	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy.
-	 * {@link ConcurrentTreeMap} and {@link ConcurrentLinkedHashMap} sources are routed through
+	 * {@link ConcurrentTreeMap} and {@link ConcurrentLinkedMap} sources are routed through
 	 * the {@link HashMap HashMap}-backed fallback to honor this factory's
 	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap} return contract.</p>
 	 *
@@ -676,7 +676,7 @@ public final class Concurrent {
 		// ConcurrentTreeMap and ConcurrentLinkedHashMap override toUnmodifiable() to
 		// yield TreeMap/LinkedHashMap-backed siblings; route those sources to the HashMap-backed
 		// fallback so this factory keeps returning a ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap as documented.
-		if (map instanceof ConcurrentMap && !(map instanceof ConcurrentTreeMap) && !(map instanceof ConcurrentLinkedHashMap))
+		if (map instanceof ConcurrentHashMap && !(map instanceof ConcurrentLinkedMap))
 			return ((ConcurrentMap<K, V>) map).toUnmodifiable();
 
 		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap<>(new HashMap<>(map));
@@ -702,7 +702,9 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableSet(@NotNull E... array) {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>(Arrays.asList(array)));
+		HashSet<E> snapshot = HashSet.newHashSet(array.length);
+		for (E element : array) snapshot.add(element);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(snapshot);
 	}
 
 	/**
@@ -710,9 +712,9 @@ public final class Concurrent {
 	 *
 	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
 	 * on the source are not reflected. If the source is a {@link ConcurrentHashSet} but
-	 * neither a {@link ConcurrentTreeSet} nor a {@link ConcurrentLinkedHashSet}, its
+	 * neither a {@link ConcurrentTreeSet} nor a {@link ConcurrentLinkedSet}, its
 	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy.
-	 * {@link ConcurrentTreeSet} and {@link ConcurrentLinkedHashSet} sources are routed through
+	 * {@link ConcurrentTreeSet} and {@link ConcurrentLinkedSet} sources are routed through
 	 * the {@link HashSet HashSet}-backed fallback to honor this factory's
 	 * {@code ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet} return contract.</p>
 	 *
@@ -725,7 +727,7 @@ public final class Concurrent {
 		// ConcurrentTreeSet and ConcurrentLinkedHashSet override toUnmodifiable() to
 		// yield TreeSet/LinkedHashSet-backed siblings; route those sources to the HashSet-backed
 		// fallback so this factory keeps returning a ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet as documented.
-		if (collection instanceof ConcurrentSet && !(collection instanceof ConcurrentTreeSet) && !(collection instanceof ConcurrentLinkedHashSet))
+		if (collection instanceof ConcurrentSet && !(collection instanceof ConcurrentTreeSet) && !(collection instanceof ConcurrentLinkedSet))
 			return ((ConcurrentSet<E>) collection).toUnmodifiable();
 
 		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>(collection));
@@ -856,7 +858,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent linked set
 	 */
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableLinkedSet() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>(new LinkedHashSet<>());
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(new LinkedHashSet<>());
 	}
 
 	/**
@@ -868,7 +870,9 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableLinkedSet(@NotNull E... array) {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>(new LinkedHashSet<>(Arrays.asList(array)));
+		LinkedHashSet<E> snapshot = LinkedHashSet.newLinkedHashSet(array.length);
+		for (E element : array) snapshot.add(element);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(snapshot);
 	}
 
 	/**
@@ -881,10 +885,10 @@ public final class Concurrent {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableLinkedSet(@NotNull Collection<? extends E> collection) {
-		if (collection instanceof ConcurrentLinkedHashSet)
-			return ((ConcurrentLinkedHashSet<E>) collection).toUnmodifiable();
+		if (collection instanceof ConcurrentLinkedSet)
+			return ((ConcurrentLinkedSet<E>) collection).toUnmodifiable();
 
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>(new LinkedHashSet<>(collection));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(new LinkedHashSet<>(collection));
 	}
 
 	/**
@@ -895,7 +899,7 @@ public final class Concurrent {
 	 * @return a new empty unmodifiable concurrent linked map
 	 */
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableLinkedMap() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap<>(new LinkedHashMap<>());
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(new LinkedHashMap<>());
 	}
 
 	/**
@@ -909,11 +913,11 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableLinkedMap(@NotNull Map.Entry<K, V>... pairs) {
-		LinkedHashMap<K, V> snapshot = new LinkedHashMap<>();
+		LinkedHashMap<K, V> snapshot = LinkedHashMap.newLinkedHashMap(pairs.length);
 		for (Map.Entry<K, V> entry : pairs) {
 			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
 		}
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap<>(snapshot);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(snapshot);
 	}
 
 	/**
@@ -927,10 +931,10 @@ public final class Concurrent {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
-		if (map instanceof ConcurrentLinkedHashMap)
-			return ((ConcurrentLinkedHashMap<K, V>) map).toUnmodifiable();
+		if (map instanceof ConcurrentLinkedMap)
+			return ((ConcurrentLinkedMap<K, V>) map).toUnmodifiable();
 
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap<>(new LinkedHashMap<>(map));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(new LinkedHashMap<>(map));
 	}
 
 	/**
@@ -1133,7 +1137,7 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentList} without copying.
+	 * Wraps {@code backing} as a {@link ConcurrentArrayList} without copying.
 	 * <p>
 	 * Delegates to {@link ConcurrentArrayList#adopt(List)}; see that method for the ownership
 	 * contract.
@@ -1142,7 +1146,7 @@ public final class Concurrent {
 	 * @param <E> the element type
 	 * @return a concurrent list backed by {@code backing}
 	 */
-	public static <E> @NotNull ConcurrentList<E> adoptList(@NotNull List<E> backing) {
+	public static <E> @NotNull ConcurrentArrayList<E> adoptList(@NotNull List<E> backing) {
 		return ConcurrentArrayList.adopt(backing);
 	}
 
@@ -1175,9 +1179,9 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentLinkedHashSet} without copying.
+	 * Wraps {@code backing} as a {@link ConcurrentLinkedSet} without copying.
 	 * <p>
-	 * Delegates to {@link ConcurrentLinkedHashSet#adopt(LinkedHashSet)}; see that method for the
+	 * Delegates to {@link ConcurrentLinkedSet#adopt(LinkedHashSet)}; see that method for the
 	 * ownership contract.
 	 *
 	 * @param backing the linked hash set to adopt
@@ -1185,7 +1189,7 @@ public final class Concurrent {
 	 * @return a concurrent linked set backed by {@code backing}
 	 */
 	public static <E> @NotNull ConcurrentSet<E> adoptLinkedSet(@NotNull LinkedHashSet<E> backing) {
-		return ConcurrentLinkedHashSet.adopt(backing);
+		return ConcurrentLinkedSet.adopt(backing);
 	}
 
 	/**
@@ -1218,9 +1222,9 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentLinkedHashMap} without copying.
+	 * Wraps {@code backing} as a {@link ConcurrentLinkedMap} without copying.
 	 * <p>
-	 * Delegates to {@link ConcurrentLinkedHashMap#adopt(LinkedHashMap)}; see that method for the
+	 * Delegates to {@link ConcurrentLinkedMap#adopt(LinkedHashMap)}; see that method for the
 	 * ownership contract.
 	 *
 	 * @param backing the linked hash map to adopt
@@ -1229,7 +1233,7 @@ public final class Concurrent {
 	 * @return a concurrent linked map backed by {@code backing}
 	 */
 	public static <K, V> @NotNull ConcurrentMap<K, V> adoptLinkedMap(@NotNull LinkedHashMap<K, V> backing) {
-		return ConcurrentLinkedHashMap.adopt(backing);
+		return ConcurrentLinkedMap.adopt(backing);
 	}
 
 	/**
@@ -1339,7 +1343,7 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentList}
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentArrayList}
 	 * at finish, preserving insertion order.
 	 *
 	 * @param <E> the element type
@@ -1354,14 +1358,14 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link ArrayList}
-	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentList} at finish.
+	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentArrayList} at finish.
 	 * Equivalent to {@code Collectors.collectingAndThen(Collectors.toCollection(ArrayList::new),
 	 * Concurrent::adoptList)}.
 	 *
 	 * @param <E> the element type
-	 * @return a collector producing a {@link ConcurrentList}
+	 * @return a collector producing a {@link ConcurrentArrayList}
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentList<E>> toList() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentArrayList<E>> toList() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, ArrayList<E>>toCollection(ArrayList::new),
 			Concurrent::adoptList
@@ -1370,13 +1374,13 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link ArrayList}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentList} at
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentArrayList} at
 	 * finish.
 	 *
 	 * @param <E> the element type
 	 * @return a collector producing an unmodifiable concurrent list
 	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentList<E>> toUnmodifiableList() {
+	public static <E> @NotNull Collector<E, ?, ConcurrentArrayList<E>> toUnmodifiableList() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, ArrayList<E>>toCollection(ArrayList::new),
 			ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList::new
@@ -1537,13 +1541,13 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh
 	 * {@link LinkedHashMap} (lock-free during accumulation) by casting each element to
-	 * {@link Map.Entry}, then adopts it as a {@link ConcurrentLinkedHashMap} at finish, preserving
+	 * {@link Map.Entry}, then adopts it as a {@link ConcurrentLinkedMap} at finish, preserving
 	 * insertion order. Throws on duplicate keys.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentLinkedHashMap}
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
 	@SuppressWarnings("unchecked")
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakLinkedMap() {
@@ -1553,12 +1557,12 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
 	 * {@link LinkedHashMap} (lock-free during accumulation), then adopts it as a
-	 * {@link ConcurrentLinkedHashMap} at finish, preserving insertion order. Throws on duplicate keys.
+	 * {@link ConcurrentLinkedMap} at finish, preserving insertion order. Throws on duplicate keys.
 	 *
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentLinkedHashMap}
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
 	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toLinkedMap() {
 		return toLinkedMap(throwingMerger());
@@ -1567,13 +1571,13 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
 	 * {@link LinkedHashMap} (lock-free during accumulation), using the specified merge function
-	 * for duplicate keys, then adopts it as a {@link ConcurrentLinkedHashMap} at finish.
+	 * for duplicate keys, then adopts it as a {@link ConcurrentLinkedMap} at finish.
 	 *
 	 * @param mergeFunction the function to resolve collisions between values associated with the same key
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentLinkedHashMap}
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
 	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
 		return toLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
@@ -1582,14 +1586,14 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh
 	 * {@link LinkedHashMap} (lock-free during accumulation) using the given key and value mappers,
-	 * then adopts it as a {@link ConcurrentLinkedHashMap} at finish. Throws on duplicate keys.
+	 * then adopts it as a {@link ConcurrentLinkedMap} at finish. Throws on duplicate keys.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
 	 * @param valueMapper the function to extract map values from stream elements
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentLinkedHashMap}
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
 		return toLinkedMap(keyMapper, valueMapper, throwingMerger(), LinkedHashMap::new, Concurrent::adoptLinkedMap);
@@ -1598,7 +1602,7 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh
 	 * {@link LinkedHashMap} (lock-free during accumulation) using the given key mapper, value
-	 * mapper, and merge function for duplicate keys, then adopts it as a {@link ConcurrentLinkedHashMap}
+	 * mapper, and merge function for duplicate keys, then adopts it as a {@link ConcurrentLinkedMap}
 	 * at finish.
 	 *
 	 * @param keyMapper the function to extract map keys from stream elements
@@ -1607,7 +1611,7 @@ public final class Concurrent {
 	 * @param <K> the key type
 	 * @param <V> the value type
 	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentLinkedHashMap}
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return toLinkedMap(keyMapper, valueMapper, mergeFunction, LinkedHashMap::new, Concurrent::adoptLinkedMap);
@@ -1629,7 +1633,7 @@ public final class Concurrent {
 	 * @param <V> the value type
 	 * @param <T> the stream element type
 	 * @param <M> the raw backing map type
-	 * @param <A> the result type (extends {@link ConcurrentLinkedHashMap})
+	 * @param <A> the result type (extends {@link ConcurrentLinkedMap})
 	 * @return a collector producing a concurrent linked map of the adopted type
 	 */
 	public static <K, V, T, M extends Map<K, V>, A extends ConcurrentMap<K, V>> @NotNull Collector<T, ?, A> toLinkedMap(
@@ -1828,10 +1832,10 @@ public final class Concurrent {
 	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh
 	 * {@link LinkedHashSet} (lock-free during accumulation), then adopts it as a
-	 * {@link ConcurrentLinkedHashSet} at finish, preserving insertion order.
+	 * {@link ConcurrentLinkedSet} at finish, preserving insertion order.
 	 *
 	 * @param <E> the element type
-	 * @return a collector producing a {@link ConcurrentLinkedHashSet}
+	 * @return a collector producing a {@link ConcurrentLinkedSet}
 	 */
 	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toLinkedSet() {
 		return Collectors.collectingAndThen(
@@ -1851,7 +1855,7 @@ public final class Concurrent {
 	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toUnmodifiableLinkedSet() {
 		return Collectors.collectingAndThen(
 			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet::new
 		);
 	}
 
@@ -2069,7 +2073,7 @@ public final class Concurrent {
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return Collectors.collectingAndThen(
 			Collectors.<T, K, V, LinkedHashMap<K, V>>toMap(keyMapper, valueMapper, mergeFunction, LinkedHashMap::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap::new
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap::new
 		);
 	}
 

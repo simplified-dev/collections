@@ -16,6 +16,8 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -67,9 +69,47 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	protected void onSnapshotInvalidated() {
-		this.descendingMapView = null;
-		this.navigableKeySetView = null;
-		this.descendingKeySetView = null;
+		if (this.descendingMapView != null) this.descendingMapView = null;
+		if (this.navigableKeySetView != null) this.navigableKeySetView = null;
+		if (this.descendingKeySetView != null) this.descendingKeySetView = null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map entry traversal preserves key order
+	 * through stream operations. {@link Spliterator#SORTED} is intentionally not advertised on the
+	 * entry-set view because the JDK array spliterator cannot expose a key-based
+	 * {@link java.util.Comparator} for {@link java.util.Map.Entry} elements.
+	 */
+	@Override
+	protected int entrySetSpliteratorCharacteristics() {
+		return super.entrySetSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map key traversal preserves key order.
+	 * {@link Spliterator#SORTED} is not advertised here because the snapshot-array spliterator
+	 * cannot expose the backing map's {@link java.util.Comparator}; callers needing the SORTED
+	 * contract must go through {@link #navigableKeySet()}, which returns a view that wraps the
+	 * spliterator with the configured comparator.
+	 */
+	@Override
+	protected int keySetSpliteratorCharacteristics() {
+		return super.keySetSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map value traversal preserves the
+	 * encounter order induced by the backing map's key ordering.
+	 */
+	@Override
+	protected int valuesSpliteratorCharacteristics() {
+		return super.valuesSpliteratorCharacteristics() | Spliterator.ORDERED;
 	}
 
 	/**
@@ -440,6 +480,15 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		}
 
 		@Override
+		public @NotNull Spliterator<K> spliterator() {
+			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.toArray());
+			Spliterator<K> base = Spliterators.spliterator(snapshot,
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE
+					| Spliterator.DISTINCT | Spliterator.SORTED | Spliterator.ORDERED);
+			return new SortedSnapshotSpliterator<>(base, this.delegate.comparator());
+		}
+
+		@Override
 		public @NotNull NavigableSet<K> descendingSet() {
 			return AtomicNavigableMap.this.withReadLock(() -> new LockedNavigableSetView(this.delegate.descendingSet()));
 		}
@@ -505,6 +554,14 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 			return new AtomicIterator<>(snapshot, 0);
 		}
 
+		@Override
+		public @NotNull Spliterator<Map.Entry<K, V>> spliterator() {
+			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.entrySet().toArray());
+			return Spliterators.spliterator(snapshot,
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE
+					| Spliterator.DISTINCT | Spliterator.ORDERED);
+		}
+
 	}
 
 	/**
@@ -536,6 +593,13 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		public @NotNull Iterator<V> iterator() {
 			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.values().toArray());
 			return new AtomicIterator<>(snapshot, 0);
+		}
+
+		@Override
+		public @NotNull Spliterator<V> spliterator() {
+			Object[] snapshot = AtomicNavigableMap.this.withReadLock(() -> this.delegate.values().toArray());
+			return Spliterators.spliterator(snapshot,
+				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.ORDERED);
 		}
 
 	}
