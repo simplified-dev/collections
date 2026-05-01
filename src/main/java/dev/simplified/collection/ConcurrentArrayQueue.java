@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Spliterator;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -95,6 +96,18 @@ public class ConcurrentArrayQueue<E> extends AtomicQueue<E, ArrayDeque<E>> imple
 	@Override
 	protected @NotNull AtomicQueue<E, ArrayDeque<E>> newEmpty() {
 		return new ConcurrentArrayQueue<>();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Advertises {@link Spliterator#NONNULL} - the {@link ArrayDeque} backing rejects {@code null}
+	 * elements at insertion time, so the snapshot is guaranteed null-free.
+	 */
+	@Override
+	protected int spliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE
+			| Spliterator.ORDERED | Spliterator.NONNULL;
 	}
 
 	/**
