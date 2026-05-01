@@ -103,6 +103,17 @@ public class ConcurrentLinkedList<E> extends AtomicList<E, List<E>> implements C
 	}
 
 	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adopts the {@code snapshot} - which is always a {@link LinkedList} produced by this
+	 * class's {@link #snapshot()} - as the backing of a fresh {@code ConcurrentLinkedList}.</p>
+	 */
+	@Override
+	protected @NotNull AtomicList<E, List<E>> adoptSnapshot(@NotNull List<E> snapshot) {
+		return new ConcurrentLinkedList<>((LinkedList<E>) snapshot);
+	}
+
+	/**
 	 * Returns an immutable snapshot of this {@code ConcurrentLinkedList} preserving insertion
 	 * order.
 	 *

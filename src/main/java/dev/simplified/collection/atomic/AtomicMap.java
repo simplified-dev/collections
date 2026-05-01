@@ -105,6 +105,14 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected void onSnapshotInvalidated() {}
 
 	/**
+	 * Hook invoked from view-side mutation paths that bypass the public mutator overrides.
+	 * Default is a no-op; {@code ConcurrentUnmodifiable*} subclasses override to throw
+	 * {@link UnsupportedOperationException} so view-iterator-driven removal still rejects
+	 * mutations.
+	 */
+	protected void checkMutationAllowed() {}
+
+	/**
 	 * Executes the given action with the read lock held and returns its result.
 	 *
 	 * @param action the action to execute under the read lock
@@ -850,14 +858,15 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
+			AtomicMap.this.checkMutationAllowed();
 			return AtomicMap.this.withWriteLock(() -> {
-				for (Entry<K, V> entry : AtomicMap.this.ref.entrySet()) {
-					if (Objects.equals(entry.getValue(), o)) {
-						AtomicMap.this.remove(entry.getKey());
+				Iterator<Entry<K, V>> it = AtomicMap.this.ref.entrySet().iterator();
+				while (it.hasNext()) {
+					if (Objects.equals(it.next().getValue(), o)) {
+						it.remove();
 						return true;
 					}
 				}
-
 				return false;
 			});
 		}
@@ -970,11 +979,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 				throw new IllegalStateException();
 
 			Object value = this.snapshot[this.last];
+			AtomicMap.this.checkMutationAllowed();
 
 			AtomicMap.this.withWriteLock(() -> {
-				for (Entry<K, V> entry : AtomicMap.this.ref.entrySet()) {
-					if (Objects.equals(entry.getValue(), value)) {
-						AtomicMap.this.remove(entry.getKey());
+				Iterator<Entry<K, V>> it = AtomicMap.this.ref.entrySet().iterator();
+				while (it.hasNext()) {
+					if (Objects.equals(it.next().getValue(), value)) {
+						it.remove();
 						break;
 					}
 				}

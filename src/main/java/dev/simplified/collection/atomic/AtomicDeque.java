@@ -203,27 +203,15 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public @NotNull Iterator<E> descendingIterator() {
-		Object[] snapshot = this.withReadLock(() -> this.ref.descendingIterator() != null
-			? toSnapshot(this.ref.descendingIterator(), this.ref.size())
-			: new Object[0]);
+		Object[] snapshot = this.withReadLock(() -> {
+			Object[] arr = new Object[this.ref.size()];
+			int i = 0;
+			for (Iterator<E> it = this.ref.descendingIterator(); it.hasNext(); )
+				arr[i++] = it.next();
+			return arr;
+		});
 
 		return new DescendingIterator(snapshot);
-	}
-
-	private static <E> Object[] toSnapshot(@NotNull Iterator<E> iterator, int size) {
-		Object[] snapshot = new Object[size];
-		int index = 0;
-
-		while (iterator.hasNext() && index < size)
-			snapshot[index++] = iterator.next();
-
-		if (index < size) {
-			Object[] trimmed = new Object[index];
-			System.arraycopy(snapshot, 0, trimmed, 0, index);
-			return trimmed;
-		}
-
-		return snapshot;
 	}
 
 	private final class DescendingIterator implements Iterator<E> {
