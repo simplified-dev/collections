@@ -99,23 +99,23 @@ dependencies {
 
 ### Concurrent Collections
 
-Create thread-safe collections using either the per-interface static factories or the `Concurrent` utility:
+Create thread-safe collections by instantiating the public concrete classes directly or via the `Concurrent` factory hub:
 
 ```java
-import dev.simplified.collection.ConcurrentList;
-import dev.simplified.collection.ConcurrentMap;
-import dev.simplified.collection.ConcurrentSet;
+import dev.simplified.collection.ConcurrentArrayList;
+import dev.simplified.collection.ConcurrentHashMap;
+import dev.simplified.collection.ConcurrentHashSet;
 import dev.simplified.collection.ConcurrentTreeMap;
 
-// Static factories on each interface
-ConcurrentList<String>           list  = ConcurrentList.empty();
-ConcurrentList<String>           seed  = ConcurrentList.of("a", "b", "c");
-ConcurrentMap<String, Integer>   map   = ConcurrentMap.from(existingMap);
-ConcurrentSet<String>            set   = ConcurrentSet.empty();
-ConcurrentTreeMap<String, Long>  tree  = ConcurrentTreeMap.withComparator(byPriority);
+// Construct via the new public impl classes
+ConcurrentList<String>           list  = new ConcurrentArrayList<>();
+ConcurrentList<String>           seed  = new ConcurrentArrayList<>("a", "b", "c");
+ConcurrentMap<String, Integer>   map   = new ConcurrentHashMap<>(existingMap);
+ConcurrentSet<String>            set   = new ConcurrentHashSet<>();
+ConcurrentTreeMap<String, Long>  tree  = new ConcurrentTreeMap<>(byPriority);
 
 // Zero-copy publication of a single-threaded build result
-ConcurrentList<String> adopted = ConcurrentList.adopt(prebuilt);
+ConcurrentList<String> adopted = ConcurrentArrayList.adopt(prebuilt);
 
 list.add("hello");
 map.put("key", 42);
@@ -165,15 +165,14 @@ collections/
 │   │   │   ├── pair/           # Pair, ImmutablePair, MutablePair, PairOptional, PairStream
 │   │   │   ├── single/         # SingleStream
 │   │   │   └── triple/         # Triple, ImmutableTriple, MutableTriple, TripleStream
-│   │   ├── unmodifiable/       # ConcurrentUnmodifiable{Collection,List,Set,Map,Queue,Deque,
-│   │   │                       # LinkedList,LinkedSet,LinkedMap,TreeSet,TreeMap},
-│   │   │                       # NoOpReadWriteLock
 │   │   ├── Concurrent.java     # Factory for creating concurrent collections
-│   │   ├── ConcurrentCollection.java
-│   │   ├── ConcurrentList.java, ConcurrentSet.java, ConcurrentMap.java
-│   │   ├── ConcurrentQueue.java, ConcurrentDeque.java
-│   │   ├── ConcurrentLinkedList.java, ConcurrentLinkedSet.java, ConcurrentLinkedMap.java
-│   │   ├── ConcurrentTreeSet.java, ConcurrentTreeMap.java
+│   │   ├── ConcurrentUnmodifiable.java  # Package-private snapshot wrappers (mirrors Collections)
+│   │   ├── ConcurrentCollection.java, ConcurrentList.java, ConcurrentSet.java, ConcurrentMap.java
+│   │   ├── ConcurrentQueue.java, ConcurrentDeque.java                # base interfaces
+│   │   ├── ConcurrentArrayList.java, ConcurrentLinkedList.java       # list impls
+│   │   ├── ConcurrentHashSet.java, ConcurrentLinkedHashSet.java, ConcurrentTreeSet.java
+│   │   ├── ConcurrentHashMap.java, ConcurrentLinkedHashMap.java, ConcurrentTreeMap.java
+│   │   ├── ConcurrentArrayQueue.java, ConcurrentArrayDeque.java
 │   │   └── StreamUtil.java     # Stream utility methods
 │   ├── test/java/              # JUnit 5 tests (ConcurrentListTest, ConcurrentMapTest, etc.)
 │   └── jmh/java/               # JMH benchmarks (list, map contention benchmarks)

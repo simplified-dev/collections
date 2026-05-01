@@ -71,8 +71,8 @@ public final class PairOptional<L, R> {
      *
      * @param left the left value to describe, must be non-{@code null}
      * @param right the right value to describe, may be {@code null}
-     * @param <L>   the type of the left value
-     * @param <R>   the type of the right value
+     * @param <L> the type of the left value
+     * @param <R> the type of the right value
      * @return a {@code PairOptional} with the pair present
      * @throws NullPointerException if {@code left} is {@code null}
      */
@@ -85,8 +85,8 @@ public final class PairOptional<L, R> {
      * If {@code pair} is {@code null}, returns an empty {@code PairOptional}.
      *
      * @param pair the entry to describe, may be {@code null}
-     * @param <L>  the type of the left value
-     * @param <R>  the type of the right value
+     * @param <L> the type of the left value
+     * @param <R> the type of the right value
      * @return a {@code PairOptional} with the pair present if {@code pair} is non-null,
      *         otherwise an empty {@code PairOptional}
      */
@@ -99,8 +99,8 @@ public final class PairOptional<L, R> {
      * {@link Optional}, or an empty {@code PairOptional} if the {@code Optional} is empty.
      *
      * @param pair a non-null {@code Optional} that may or may not contain a {@link Map.Entry}
-     * @param <L>  the type of the left value
-     * @param <R>  the type of the right value
+     * @param <L> the type of the left value
+     * @param <R> the type of the right value
      * @return a {@code PairOptional} with the pair present if the {@code Optional} contains a
      *         value, otherwise an empty {@code PairOptional}
      */
@@ -114,8 +114,8 @@ public final class PairOptional<L, R> {
      *
      * @param left the possibly-{@code null} left value to describe
      * @param right the possibly-{@code null} right value to describe
-     * @param <L>   the type of the left value
-     * @param <R>   the type of the right value
+     * @param <L> the type of the left value
+     * @param <R> the type of the right value
      * @return a {@code PairOptional} with a present pair if {@code left} is non-{@code null},
      *         otherwise an empty {@code PairOptional}
      */
@@ -128,8 +128,8 @@ public final class PairOptional<L, R> {
      * if {@code pair} is {@code null} or its left element is {@code null}.
      *
      * @param pair the possibly-{@code null} pair to describe
-     * @param <L>  the type of the left value
-     * @param <R>  the type of the right value
+     * @param <L> the type of the left value
+     * @param <R> the type of the right value
      * @return a {@code PairOptional} with a present pair if {@code pair} is non-{@code null}
      *         and its left element is non-{@code null}, otherwise an empty {@code PairOptional}
      */
@@ -324,7 +324,7 @@ public final class PairOptional<L, R> {
      * If the mapping function returns {@code null}, returns an empty {@link Optional}.
      *
      * @param mapper the mapping function to apply to the pair, if present
-     * @param <U>    the type of the value returned from the mapping function
+     * @param <U> the type of the value returned from the mapping function
      * @return an {@link Optional} describing the mapped result, or empty if not present
      */
     public <U> @NotNull Optional<U> map(@NotNull Function<? super Pair<L, R>, ? extends U> mapper) {
@@ -337,7 +337,7 @@ public final class PairOptional<L, R> {
      * {@link Optional}. If the mapping function returns {@code null}, returns empty.
      *
      * @param mapper a function receiving the left and right elements, returning the mapped result
-     * @param <U>    the type of the value returned from the mapping function
+     * @param <U> the type of the value returned from the mapping function
      * @return an {@link Optional} describing the mapped result, or empty if not present
      */
     public <U> @NotNull Optional<U> map(@NotNull BiFunction<? super L, ? super R, ? extends U> mapper) {
@@ -350,8 +350,8 @@ public final class PairOptional<L, R> {
      * {@code null} or has a {@code null} left element, returns an empty {@code PairOptional}.
      *
      * @param mapper a function receiving the left and right elements, returning a new {@link Pair}
-     * @param <U>    the left type of the resulting pair
-     * @param <V>    the right type of the resulting pair
+     * @param <U> the left type of the resulting pair
+     * @param <V> the right type of the resulting pair
      * @return a {@code PairOptional} describing the mapped pair, or empty if not present
      */
     public <U, V> @NotNull PairOptional<U, V> mapPair(@NotNull BiFunction<? super L, ? super R, ? extends Pair<U, V>> mapper) {
@@ -364,7 +364,7 @@ public final class PairOptional<L, R> {
      * key is {@code null}, returns an empty {@code PairOptional}.
      *
      * @param mapper a function to apply to the left element
-     * @param <U>    the new left element type
+     * @param <U> the new left element type
      * @return a {@code PairOptional} with the mapped key, or empty if not present or key is null
      */
     public <U> @NotNull PairOptional<U, R> mapKey(@NotNull Function<? super L, ? extends U> mapper) {
@@ -377,7 +377,7 @@ public final class PairOptional<L, R> {
      * If the original left element is {@code null}, returns an empty {@code PairOptional}.
      *
      * @param mapper a function to apply to the right element
-     * @param <U>    the new right element type
+     * @param <U> the new right element type
      * @return a {@code PairOptional} with the mapped value, or empty if not present
      */
     public <U> @NotNull PairOptional<L, U> mapValue(@NotNull Function<? super R, ? extends U> mapper) {
@@ -394,8 +394,8 @@ public final class PairOptional<L, R> {
      * so {@code flatMap} does not wrap it in an additional layer.
      *
      * @param mapper the mapping function to apply to the pair, if present
-     * @param <UL>    the left type of the pair returned by the mapping function
-     * @param <UR>    the right type of the pair returned by the mapping function
+     * @param <UL> the left type of the pair returned by the mapping function
+     * @param <UR> the right type of the pair returned by the mapping function
      * @return the result of applying the mapping function, or an empty {@link Optional}
      */
     @SuppressWarnings("unchecked")
@@ -412,8 +412,8 @@ public final class PairOptional<L, R> {
      * {@code PairOptional}.
      *
      * @param mapper a function receiving the left and right elements, returning a {@code PairOptional}
-     * @param <UL>    the left type of the resulting {@code PairOptional}
-     * @param <UR>    the right type of the resulting {@code PairOptional}
+     * @param <UL> the left type of the resulting {@code PairOptional}
+     * @param <UR> the right type of the resulting {@code PairOptional}
      * @return the result of applying the mapping function, or an empty {@code PairOptional}
      */
     public <UL, UR> @NotNull PairOptional<UL, UR> flatMap(@NotNull BiFunction<? super L, ? super R, ? extends PairOptional<UL, UR>> mapper) {
@@ -541,7 +541,7 @@ public final class PairOptional<L, R> {
      * A method reference to the exception constructor with an empty argument list can be used
      * as the supplier. For example, {@code IllegalStateException::new}.
      *
-     * @param <X>               the type of the exception to be thrown
+     * @param <X> the type of the exception to be thrown
      * @param exceptionSupplier the supplying function that produces an exception to be thrown
      * @return the pair, if present
      * @throws X if no value is present

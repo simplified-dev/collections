@@ -58,7 +58,7 @@ public interface SingleStream<E> extends Stream<E> {
     /**
      * Creates a {@code SingleStream} wrapping the given {@link Stream}.
      *
-     * @param <E>    the element type
+     * @param <E> the element type
      * @param stream the stream to wrap
      * @return a {@code SingleStream} backed by {@code stream}
      */
@@ -69,7 +69,7 @@ public interface SingleStream<E> extends Stream<E> {
     /**
      * Creates a {@code SingleStream} from the given {@link Collection}.
      *
-     * @param <E>        the element type
+     * @param <E> the element type
      * @param collection the collection to stream
      * @return a {@code SingleStream} backed by the collection's stream
      */
@@ -186,7 +186,7 @@ public interface SingleStream<E> extends Stream<E> {
      * the {@link Collection} returned by {@code mapper}, avoiding a manual
      * {@code .flatMap(c -> c.stream())} call.
      *
-     * @param <R>    the element type of the new stream
+     * @param <R> the element type of the new stream
      * @param mapper a function returning a collection of new values for each element
      * @return a flat-mapped {@code SingleStream}
      */
@@ -448,8 +448,8 @@ public interface SingleStream<E> extends Stream<E> {
      * Expands each element into a {@link Pair}, using the element itself as the key and
      * the result of {@code valueMapper} as the value.
      *
-     * @param <K>         the type of the pair key
-     * @param <V>         the type of the pair value
+     * @param <K> the type of the pair key
+     * @param <V> the type of the pair value
      * @param entryMapper a function producing the entry from each element
      * @return a {@link PairStream} of {@code (element, mappedValue)} pairs
      */
@@ -460,8 +460,8 @@ public interface SingleStream<E> extends Stream<E> {
     /**
      * Expands each element into a {@link Pair} by independently mapping to a key and a value.
      *
-     * @param <K>         the type of the pair key
-     * @param <V>         the type of the pair value
+     * @param <K> the type of the pair key
+     * @param <V> the type of the pair value
      * @param keyMapper a function producing the key from each element
      * @param valueMapper a function producing the value from each element
      * @return a {@link PairStream} of mapped key-value pairs
@@ -473,9 +473,9 @@ public interface SingleStream<E> extends Stream<E> {
     /**
      * Expands each element into a {@link Triple} by independently mapping to a Triple.
      *
-     * @param <L>          the type of the triple middle element
-     * @param <M>          the type of the triple middle element
-     * @param <R>          the type of the triple right element
+     * @param <L> the type of the triple middle element
+     * @param <M> the type of the triple middle element
+     * @param <R> the type of the triple right element
      * @param tripleMapper a function producing the triple value from each element
      * @return a {@link TripleStream} of {@code (element, middle, right)} triples
      */
@@ -487,8 +487,8 @@ public interface SingleStream<E> extends Stream<E> {
      * Expands each element into a {@link Triple}, using the element itself as the left value and
      * the results of {@code middleMapper} and {@code rightMapper} as the middle and right values.
      *
-     * @param <M>          the type of the triple middle element
-     * @param <R>          the type of the triple right element
+     * @param <M> the type of the triple middle element
+     * @param <R> the type of the triple right element
      * @param middleMapper a function producing the middle value from each element
      * @param rightMapper a function producing the right value from each element
      * @return a {@link TripleStream} of {@code (element, middle, right)} triples
@@ -500,9 +500,9 @@ public interface SingleStream<E> extends Stream<E> {
     /**
      * Expands each element into a {@link Triple} by independently mapping to left, middle, and right values.
      *
-     * @param <L>          the type of the triple left element
-     * @param <M>          the type of the triple middle element
-     * @param <R>          the type of the triple right element
+     * @param <L> the type of the triple left element
+     * @param <M> the type of the triple middle element
+     * @param <R> the type of the triple right element
      * @param leftMapper a function producing the left value from each element
      * @param middleMapper a function producing the middle value from each element
      * @param rightMapper a function producing the right value from each element
@@ -531,7 +531,7 @@ public interface SingleStream<E> extends Stream<E> {
      * The index and size are primitive {@code long}s - no boxing or {@link Triple} allocation
      * per element, unlike {@link #indexed()}{@code .map(...)}.
      *
-     * @param <R>    the element type of the resulting stream
+     * @param <R> the element type of the resulting stream
      * @param mapper a function receiving {@code (element, index, size)} and returning the mapped result
      * @return a mapped {@code SingleStream}
      */

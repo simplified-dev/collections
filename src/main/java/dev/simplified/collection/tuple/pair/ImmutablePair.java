@@ -22,8 +22,8 @@ public record ImmutablePair<L, R>(@Nullable L left, @Nullable R right) implement
     /**
      * Returns an immutable pair of two objects, inferring the generic types.
      *
-     * @param <L>   the left element type
-     * @param <R>   the right element type
+     * @param <L> the left element type
+     * @param <R> the right element type
      * @param left the left element, may be null
      * @param right the right element, may be null
      * @return an immutable pair formed from the two parameters, not null

@@ -28,7 +28,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param function the list-field extractor
      * @param value the value to check for containment
-     * @param <S>      the element type within the list field
+     * @param <S> the element type within the list field
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> containsFirst(@NotNull Function<E, List<S>> function, S value) {
@@ -41,7 +41,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param function the list-field extractor
      * @param value the value to check for containment
-     * @param <S>      the element type within the list field
+     * @param <S> the element type within the list field
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Function<E, List<S>> function, S value) {
@@ -52,7 +52,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the first element whose list-valued fields contain the given values, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> containsFirst(@NotNull Pair<Function<E, List<S>>, S>... predicates) {
@@ -63,7 +63,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the first element whose list-valued fields contain the given values, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> containsFirst(@NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
@@ -75,7 +75,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, List<S>>, S>... predicates) {
@@ -88,7 +88,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
@@ -100,7 +100,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param function the list-field extractor
      * @param value the value to check for containment
-     * @param <S>      the element type within the list field
+     * @param <S> the element type within the list field
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull SearchFunction<E, List<S>> function, S value) {
@@ -113,7 +113,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param function the list-field extractor
      * @param value the value to check for containment
-     * @param <S>      the element type within the list field
+     * @param <S> the element type within the list field
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Function<E, List<S>> function, S value) {
@@ -125,7 +125,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, List<S>>, S>... predicates) {
@@ -137,7 +137,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
@@ -148,7 +148,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the first element whose list-valued fields contain the given values, or {@code null} if none match.
      *
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull Pair<Function<E, List<S>>, S>... predicates) {
@@ -159,7 +159,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the first element whose list-valued fields contain the given values, or {@code null} if none match.
      *
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
@@ -173,7 +173,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findFirst(@NotNull Function<E, S> function, S value) {
@@ -186,7 +186,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) {
@@ -197,7 +197,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the first element matching the given field-extractor/value pairs, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findFirst(@NotNull Pair<Function<E, S>, S>... predicates) {
@@ -208,7 +208,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the first element matching the given field-extractor/value pairs, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findFirst(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
@@ -220,7 +220,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
@@ -233,7 +233,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
@@ -255,7 +255,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull SearchFunction<E, S> function, S value) {
@@ -268,7 +268,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) {
@@ -280,7 +280,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
@@ -292,7 +292,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
@@ -303,7 +303,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the first element matching the given field-extractor/value pairs, or {@code null} if none match.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull Pair<Function<E, S>, S>... predicates) {
@@ -314,7 +314,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the first element matching the given field-extractor/value pairs, or {@code null} if none match.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
@@ -328,7 +328,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findLast(@NotNull Function<E, S> function, S value) {
@@ -341,7 +341,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) {
@@ -352,7 +352,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the last element matching the given field-extractor/value pairs, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findLast(@NotNull Pair<Function<E, S>, S>... predicates) {
@@ -363,7 +363,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the last element matching the given field-extractor/value pairs, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findLast(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
@@ -375,7 +375,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
@@ -388,7 +388,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
@@ -412,7 +412,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull SearchFunction<E, S> function, S value) {
@@ -425,7 +425,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) {
@@ -437,7 +437,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
@@ -449,7 +449,7 @@ public interface Sortable<E> extends Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
@@ -460,7 +460,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the last element matching the given field-extractor/value pairs, or {@code null} if none match.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull Pair<Function<E, S>, S>... predicates) {
@@ -471,7 +471,7 @@ public interface Sortable<E> extends Searchable<E> {
      * Returns the last element matching the given field-extractor/value pairs, or {@code null} if none match.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) {

@@ -1,8 +1,7 @@
-package dev.simplified.collection.unmodifiable;
+package dev.simplified.collection;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
-import dev.simplified.collection.ConcurrentLinkedMap;
 import dev.simplified.collection.ConcurrentTreeMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -147,7 +146,7 @@ class ConcurrentUnmodifiableMapTest {
 
 		@Test
 		void wrapsLinkedMap_preservesInsertionOrder() {
-			ConcurrentLinkedMap<String, Integer> src = Concurrent.newLinkedMap();
+			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);

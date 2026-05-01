@@ -359,11 +359,11 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	/**
 	 * Replaces the given element with the provided new element.
 	 * <p>
-	 * This only adds the replaceWith element if it removes the
-	 * existing element successfully.
+	 * Only adds the {@code replaceWith} element if the existing element was successfully removed.
 	 *
-	 * @param existingElement The element to be replaced.
-	 * @param replaceWith The element to replace with.
+	 * @param existingElement the element to be replaced
+	 * @param replaceWith the element to replace with
+	 * @return {@code true} if the element was replaced
 	 */
 	public final boolean replace(@NotNull E existingElement, @NotNull E replaceWith) {
 		return this.withWriteLock(() -> this.ref.remove(existingElement) && this.ref.add(replaceWith));

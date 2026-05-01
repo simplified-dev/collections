@@ -1,18 +1,12 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.atomic.AtomicMap;
 import dev.simplified.collection.query.Searchable;
 import dev.simplified.collection.tuple.pair.PairStream;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableMap;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
-import java.util.AbstractMap;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
@@ -123,166 +117,5 @@ public interface ConcurrentMap<K, V> extends Map<K, V>, Iterable<Map.Entry<K, V>
 	 * @return an immutable snapshot of this map
 	 */
 	@NotNull ConcurrentMap<K, V> toUnmodifiable();
-
-	/**
-	 * Creates a new empty {@link ConcurrentMap} backed by a {@link HashMap}.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a new empty concurrent map
-	 */
-	static <K, V> @NotNull ConcurrentMap<K, V> empty() {
-		return new Impl<>();
-	}
-
-	/**
-	 * Creates a new {@link ConcurrentMap} containing the given entries.
-	 *
-	 * @param entries the entries to include
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a new concurrent map containing the specified entries
-	 */
-	@SafeVarargs
-	static <K, V> @NotNull ConcurrentMap<K, V> of(@NotNull Entry<K, V>... entries) {
-		return new Impl<>(entries);
-	}
-
-	/**
-	 * Creates a new {@link ConcurrentMap} containing all entries of the given map.
-	 *
-	 * @param map the source map to copy from, or {@code null} for an empty map
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a new concurrent map containing the source's entries
-	 */
-	static <K, V> @NotNull ConcurrentMap<K, V> from(@Nullable Map<? extends K, ? extends V> map) {
-		return new Impl<>(map);
-	}
-
-	/**
-	 * Wraps {@code backing} as a {@link ConcurrentMap} without copying.
-	 * <p>
-	 * The caller relinquishes exclusive ownership: subsequent direct mutations to
-	 * {@code backing} bypass the read/write lock and may corrupt concurrent reads. Use this for
-	 * zero-copy publication of single-threaded build results.
-	 *
-	 * @param backing the map to adopt
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a concurrent map backed by {@code backing}
-	 */
-	static <K, V> @NotNull ConcurrentMap<K, V> adopt(@NotNull AbstractMap<K, V> backing) {
-		return new Impl<>(backing);
-	}
-
-	/**
-	 * A thread-safe map backed by a {@link HashMap} with concurrent read and write access via
-	 * {@link ReadWriteLock}. Supports snapshot-based iteration over entries, keys, and values.
-	 *
-	 * @param <K> the type of keys maintained by this map
-	 * @param <V> the type of mapped values
-	 */
-	class Impl<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> implements ConcurrentMap<K, V> {
-
-		/**
-		 * Creates a new concurrent map.
-		 */
-		public Impl() {
-			super(new HashMap<>(), (Map<K, V>) null);
-		}
-
-		/**
-		 * Creates a new concurrent map and fills it with the given pairs.
-		 *
-		 * @param pairs the entries to include
-		 */
-		@SafeVarargs
-		public Impl(@Nullable Map.Entry<K, V>... pairs) {
-			super(new HashMap<>(), pairs);
-		}
-
-		/**
-		 * Creates a new concurrent map and fills it with the given map.
-		 *
-		 * @param map the source map to copy from
-		 */
-		public Impl(@Nullable Map<? extends K, ? extends V> map) {
-			super(new HashMap<>(), map);
-		}
-
-		/**
-		 * Constructs a {@code ConcurrentMap.Impl} that adopts {@code backingMap} as its storage
-		 * with a fresh lock. Public callers should go through {@link ConcurrentMap#adopt(AbstractMap)}.
-		 *
-		 * @param backingMap the backing map to adopt
-		 */
-		protected Impl(@NotNull AbstractMap<K, V> backingMap) {
-			super(backingMap);
-		}
-
-		/**
-		 * Creates a new concurrent map with the given backing map.
-		 *
-		 * @param backingMap the backing map implementation
-		 * @param map the source map to copy from, or {@code null} for an empty map
-		 */
-		protected Impl(@NotNull AbstractMap<K, V> backingMap, @Nullable Map<? extends K, ? extends V> map) {
-			super(backingMap, map);
-		}
-
-		/**
-		 * Creates a new concurrent map with the given backing map and fills it with the given
-		 * pairs.
-		 *
-		 * @param backingMap the backing map implementation
-		 * @param pairs the entries to include
-		 */
-		@SafeVarargs
-		protected Impl(@NotNull AbstractMap<K, V> backingMap, @Nullable Map.Entry<K, V>... pairs) {
-			super(backingMap, pairs);
-		}
-
-		/**
-		 * Constructs a {@code ConcurrentMap.Impl} with a pre-built backing map and an explicit
-		 * lock. Used by {@link ConcurrentUnmodifiableMap.Impl} (and its variants) to install a
-		 * snapshot map paired with a no-op lock for wait-free reads.
-		 *
-		 * @param backingMap the pre-built backing map
-		 * @param lock the lock guarding {@code backingMap}
-		 */
-		protected Impl(@NotNull AbstractMap<K, V> backingMap, @NotNull ReadWriteLock lock) {
-			super(backingMap, lock);
-		}
-
-		/**
-		 * Returns a type-preserving snapshot of this map's backing reference, captured under the
-		 * read lock. Subclasses backed by a different concrete {@link AbstractMap} implementation
-		 * override this to return an instance of that type so iteration order is preserved on the
-		 * snapshot.
-		 *
-		 * @return a fresh {@link AbstractMap} containing the current entries
-		 */
-		protected @NotNull AbstractMap<K, V> cloneRef() {
-			return this.withReadLock(() -> new HashMap<>(this.ref));
-		}
-
-		/**
-		 * Returns an immutable snapshot of this {@code ConcurrentMap.Impl}.
-		 *
-		 * <p>The returned wrapper owns a fresh copy of the current entries - subsequent mutations
-		 * on this map are not reflected in the snapshot. Reads on the snapshot are wait-free.
-		 * The runtime type is {@link ConcurrentUnmodifiableMap.Impl}; the declared return type is
-		 * the mutable parent so subclasses can covariantly override to their own
-		 * {@code ConcurrentUnmodifiable*} variant.</p>
-		 *
-		 * @return an immutable snapshot - runtime type is {@link ConcurrentUnmodifiableMap.Impl}
-		 */
-		@Override
-		public @NotNull ConcurrentUnmodifiableMap<K, V> toUnmodifiable() {
-			return new ConcurrentUnmodifiableMap.Impl<>(this.cloneRef());
-		}
-
-	}
 
 }

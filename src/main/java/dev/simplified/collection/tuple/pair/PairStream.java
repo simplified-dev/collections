@@ -3,7 +3,6 @@ package dev.simplified.collection.tuple.pair;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.function.TriFunction;
-import dev.simplified.collection.ConcurrentLinkedMap;
 import dev.simplified.collection.tuple.single.SingleStream;
 import dev.simplified.collection.tuple.triple.Triple;
 import dev.simplified.collection.tuple.triple.TripleStream;
@@ -71,8 +70,8 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     /**
      * Creates a {@code PairStream} wrapping the given stream of {@link Map.Entry} objects.
      *
-     * @param <K>    the key type
-     * @param <V>    the value type
+     * @param <K> the key type
+     * @param <V> the value type
      * @param stream the stream of entries to wrap
      * @return a {@code PairStream} backed by {@code stream}
      */
@@ -84,8 +83,8 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Creates a {@code PairStream} from a stream of keys by applying {@code mapper} to
      * derive the value for each key.
      *
-     * @param <K>    the key type
-     * @param <V>    the value type
+     * @param <K> the key type
+     * @param <V> the value type
      * @param stream a stream of keys
      * @param mapper a function that produces a value for each key
      * @return a {@code PairStream} of key-value entries
@@ -276,7 +275,7 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Returns a {@link SingleStream} by replacing each entry with the contents of a stream
      * produced by {@code mapper}, which receives the key and value separately.
      *
-     * @param <R>    the element type of the resulting stream
+     * @param <R> the element type of the resulting stream
      * @param mapper a function receiving the key and value, returning a stream of results
      * @return a flat-mapped {@link SingleStream}
      */
@@ -289,7 +288,7 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * {@link Collection} returned by {@code mapper}, avoiding a manual
      * {@code .flatMap(c -> c.stream())} call.
      *
-     * @param <R>    the element type of the resulting stream
+     * @param <R> the element type of the resulting stream
      * @param mapper a function receiving the key and value, returning a collection of results
      * @return a flat-mapped {@link SingleStream}
      */
@@ -301,8 +300,8 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Returns a {@code PairStream} by replacing each entry with the contents of a
      * {@code PairStream} produced by {@code mapper}, which receives the key and value separately.
      *
-     * @param <RK>   the key type of the resulting stream
-     * @param <RV>   the value type of the resulting stream
+     * @param <RK> the key type of the resulting stream
+     * @param <RV> the value type of the resulting stream
      * @param mapper a function receiving the key and value, returning a {@code PairStream}
      * @return a flat-mapped {@code PairStream}
      */
@@ -429,8 +428,8 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Returns a {@code PairStream} by applying {@code mapper} to the key and value of each
      * entry, producing a new {@link Map.Entry} for each.
      *
-     * @param <RK>   the key type of the resulting stream
-     * @param <RV>   the value type of the resulting stream
+     * @param <RK> the key type of the resulting stream
+     * @param <RV> the value type of the resulting stream
      * @param mapper a function receiving the key and value, returning a new entry
      * @return a mapped {@code PairStream}
      */
@@ -442,7 +441,7 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Returns a {@code PairStream} with each key replaced by the result of applying
      * {@code mapper} to it, leaving values unchanged.
      *
-     * @param <R>    the new key type
+     * @param <R> the new key type
      * @param mapper a function to apply to each key
      * @return a {@code PairStream} with transformed keys
      */
@@ -454,7 +453,7 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Returns a {@code PairStream} with each value replaced by the result of applying
      * {@code mapper} to it, leaving keys unchanged.
      *
-     * @param <R>    the new value type
+     * @param <R> the new value type
      * @param mapper a function to apply to each value
      * @return a {@code PairStream} with transformed values
      */
@@ -705,7 +704,7 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * an accumulator that receives both the key and value separately, and a combiner for
      * parallel execution.
      *
-     * @param <U>         the type of the result
+     * @param <U> the type of the result
      * @param identity the identity value for the accumulator
      * @param accumulator a function that folds a key-value pair into the result
      * @param combiner a function to combine two partial results in parallel execution
@@ -805,12 +804,12 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
     }
 
     /**
-     * Accumulates the entries of this stream into a {@link ConcurrentLinkedMap}.
+     * Accumulates the entries of this stream into an insertion-ordered {@link ConcurrentMap}.
      *
-     * @return a {@code ConcurrentLinkedMap} containing the stream entries
+     * @return a {@code ConcurrentMap} containing the stream entries
      * @throws IllegalStateException on duplicate keys
      */
-    default @NotNull ConcurrentLinkedMap<K, V> toLinkedMap() {
+    default @NotNull ConcurrentMap<K, V> toLinkedMap() {
         return this.collect(Concurrent.toLinkedMap());
     }
 
@@ -830,7 +829,7 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Collapses each entry into a single value by applying {@code mapper} to the key
      * and value, returning a {@link SingleStream} of the results.
      *
-     * @param <R>    the result element type
+     * @param <R> the result element type
      * @param mapper a function receiving the key and value, returning the collapsed result
      * @return a {@link SingleStream} of collapsed values
      */
@@ -844,7 +843,7 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Expands each entry into a {@link Triple} by appending a right value derived from the
      * key and value, keeping the key as left and value as middle.
      *
-     * @param <R>         the type of the triple right element
+     * @param <R> the type of the triple right element
      * @param rightMapper a function receiving the key and value, returning the right value
      * @return a {@link TripleStream} of {@code (key, value, right)} triples
      */
@@ -856,7 +855,7 @@ public interface PairStream<K, V> extends SingleStream<Map.Entry<K, V>> {
      * Expands each entry into a {@link Triple} by prepending a left value derived from the
      * key and value, keeping the key as middle and value as right.
      *
-     * @param <L>        the type of the triple left element
+     * @param <L> the type of the triple left element
      * @param leftMapper a function receiving the key and value, returning the left value
      * @return a {@link TripleStream} of {@code (left, key, value)} triples
      */

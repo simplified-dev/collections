@@ -1,7 +1,7 @@
 package dev.simplified.collection.linked;
 
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentLinkedSet;
+import dev.simplified.collection.ConcurrentSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +18,7 @@ class ConcurrentLinkedSetTest {
 
 		@Test
 		void add_dedupes() {
-			ConcurrentLinkedSet<String> s = Concurrent.newLinkedSet();
+			ConcurrentSet<String> s = Concurrent.newLinkedSet();
 			s.add("a");
 			s.add("b");
 			s.add("a");
@@ -27,7 +27,7 @@ class ConcurrentLinkedSetTest {
 
 		@Test
 		void insertionOrder_preserved() {
-			ConcurrentLinkedSet<String> s = Concurrent.newLinkedSet();
+			ConcurrentSet<String> s = Concurrent.newLinkedSet();
 			s.add("c");
 			s.add("a");
 			s.add("b");
@@ -38,7 +38,7 @@ class ConcurrentLinkedSetTest {
 
 		@Test
 		void remove_works() {
-			ConcurrentLinkedSet<String> s = Concurrent.newLinkedSet();
+			ConcurrentSet<String> s = Concurrent.newLinkedSet();
 			s.add("a");
 			s.add("b");
 			s.remove("a");
