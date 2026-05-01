@@ -2,11 +2,11 @@ package dev.simplified.collection.atomic;
 
 import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.tuple.pair.PairStream;
-import dev.simplified.collection.StreamUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
@@ -30,6 +30,8 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 	protected final @NotNull M ref;
 	protected final @NotNull ReadWriteLock lock;
+	private final @NotNull Lock readLockView;
+	private final @NotNull Lock writeLockView;
 
 	/** Lazily initialized live view of the entry set. */
 	private transient volatile @Nullable Set<Entry<K, V>> entrySetView;
@@ -57,15 +59,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	protected AtomicMap(@NotNull M ref, @Nullable Map<? extends K, ? extends V> items) {
-		if (Objects.nonNull(items)) ref.putAll(items);
-		this.ref = ref;
-		this.lock = new ReentrantReadWriteLock();
+		this(ref);
+		if (items != null) ref.putAll(items);
 	}
 
 	protected AtomicMap(@NotNull M ref, @Nullable Map.Entry<? extends K, ? extends V>... items) {
-		StreamUtil.ofArrays(items).filter(Objects::nonNull).forEach(entry -> ref.put(entry.getKey(), entry.getValue()));
-		this.ref = ref;
-		this.lock = new ReentrantReadWriteLock();
+		this(ref);
+		if (items != null) {
+			for (Map.Entry<? extends K, ? extends V> e : items)
+				if (e != null) ref.put(e.getKey(), e.getValue());
+		}
 	}
 
 	/**
@@ -79,6 +82,8 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected AtomicMap(@NotNull M ref, @NotNull ReadWriteLock lock) {
 		this.ref = ref;
 		this.lock = lock;
+		this.readLockView = lock.readLock();
+		this.writeLockView = lock.writeLock();
 	}
 
 	/**
@@ -106,12 +111,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return the value returned by {@code action}
 	 */
 	protected final <R> R withReadLock(@NotNull Supplier<R> action) {
-		this.lock.readLock().lock();
+		this.readLockView.lock();
 
 		try {
 			return action.get();
 		} finally {
-			this.lock.readLock().unlock();
+			this.readLockView.unlock();
 		}
 	}
 
@@ -121,12 +126,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @param action the action to execute under the read lock
 	 */
 	protected final void withReadLock(@NotNull Runnable action) {
-		this.lock.readLock().lock();
+		this.readLockView.lock();
 
 		try {
 			action.run();
 		} finally {
-			this.lock.readLock().unlock();
+			this.readLockView.unlock();
 		}
 	}
 
@@ -139,13 +144,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return the value returned by {@code action}
 	 */
 	protected final <R> R withWriteLock(@NotNull Supplier<R> action) {
-		this.lock.writeLock().lock();
+		this.writeLockView.lock();
 
 		try {
 			return action.get();
 		} finally {
 			this.invalidateViewSnapshots();
-			this.lock.writeLock().unlock();
+			this.writeLockView.unlock();
 		}
 	}
 
@@ -156,13 +161,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @param action the action to execute under the write lock
 	 */
 	protected final void withWriteLock(@NotNull Runnable action) {
-		this.lock.writeLock().lock();
+		this.writeLockView.lock();
 
 		try {
 			action.run();
 		} finally {
 			this.invalidateViewSnapshots();
-			this.lock.writeLock().unlock();
+			this.writeLockView.unlock();
 		}
 	}
 
