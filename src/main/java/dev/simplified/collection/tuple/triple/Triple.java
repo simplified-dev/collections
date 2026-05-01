@@ -25,9 +25,9 @@ public interface Triple<L, M, R> extends Comparable<Triple<L, M, R>> {
     /**
      * Returns an immutable triple of three objects, inferring the generic types.
      *
-     * @param <L>    the left element type
-     * @param <M>    the middle element type
-     * @param <R>    the right element type
+     * @param <L> the left element type
+     * @param <M> the middle element type
+     * @param <R> the right element type
      * @param left the left element, may be null
      * @param middle the middle element, may be null
      * @param right the right element, may be null

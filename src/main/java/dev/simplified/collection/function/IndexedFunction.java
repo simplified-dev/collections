@@ -19,8 +19,8 @@ public interface IndexedFunction<T, R> {
 	 * Applies this function to the given element, its index, and the total size.
 	 *
 	 * @param element the stream element
-	 * @param index   the zero-based index of {@code element} in the source sequence
-	 * @param size    the estimated total size of the source sequence
+	 * @param index the zero-based index of {@code element} in the source sequence
+	 * @param size the estimated total size of the source sequence
 	 * @return the function result
 	 */
 	R apply(T element, long index, long size);

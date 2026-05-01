@@ -55,9 +55,9 @@ public class Graph<T> {
     }
 
     /**
-     * Sort the nodes topologically.
+     * Returns the graph's nodes in topological sort order.
      *
-     * @return Sorted nodes.
+     * @return an unmodifiable concurrent list of node values in topological order
      */
     public @NotNull ConcurrentList<T> topologicalSort() {
         Stack<T> stack = new Stack<>();
@@ -72,11 +72,11 @@ public class Graph<T> {
     }
 
     /**
-     * Recursively iterates through all nodes and their neighbours and
-     * pushes the visited items to the stack.
+     * Recursively iterates through all nodes and their neighbours, pushing visited items onto the
+     * stack.
      *
-     * @param node The current node.
-     * @param stack The combined stack.
+     * @param node the current node
+     * @param stack the combined stack
      */
     private void sort(@NotNull Node<T> node, @NotNull Stack<T> stack){
         node.setVisited(true);

@@ -18,8 +18,8 @@ public interface IndexedPredicate<T> {
 	 * Evaluates this predicate on the given element, its index, and the total size.
 	 *
 	 * @param element the stream element
-	 * @param index   the zero-based index of {@code element} in the source sequence
-	 * @param size    the estimated total size of the source sequence
+	 * @param index the zero-based index of {@code element} in the source sequence
+	 * @param size the estimated total size of the source sequence
 	 * @return {@code true} if the element matches
 	 */
 	boolean test(T element, long index, long size);
