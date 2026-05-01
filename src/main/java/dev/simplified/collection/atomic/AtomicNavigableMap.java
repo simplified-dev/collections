@@ -67,9 +67,9 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	protected void onSnapshotInvalidated() {
-		this.descendingMapView = null;
-		this.navigableKeySetView = null;
-		this.descendingKeySetView = null;
+		if (this.descendingMapView != null) this.descendingMapView = null;
+		if (this.navigableKeySetView != null) this.navigableKeySetView = null;
+		if (this.descendingKeySetView != null) this.descendingKeySetView = null;
 	}
 
 	/**

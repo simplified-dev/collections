@@ -48,7 +48,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	protected void onSnapshotInvalidated() {
-		this.descendingSetView = null;
+		if (this.descendingSetView != null) this.descendingSetView = null;
 	}
 
 	/**

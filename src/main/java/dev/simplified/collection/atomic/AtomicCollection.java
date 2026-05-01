@@ -69,7 +69,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * mutator on this collection, before the write lock is released.
 	 */
 	protected void invalidateSnapshot() {
-		this.snapshotCache = null;
+		if (this.snapshotCache != null) this.snapshotCache = null;
 		this.onSnapshotInvalidated();
 	}
 
