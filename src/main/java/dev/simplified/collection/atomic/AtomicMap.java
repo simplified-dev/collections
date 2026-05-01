@@ -105,10 +105,20 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected void onSnapshotInvalidated() {}
 
 	/**
-	 * Hook invoked from view-side mutation paths that bypass the public mutator overrides.
-	 * Default is a no-op; {@code ConcurrentUnmodifiable*} subclasses override to throw
-	 * {@link UnsupportedOperationException} so view-iterator-driven removal still rejects
-	 * mutations.
+	 * Hook invoked at the entry of every view-side mutating operation that does not delegate to a
+	 * public {@code AtomicMap} mutator. Default is a no-op; {@code ConcurrentUnmodifiable*}
+	 * subclasses override to throw {@link UnsupportedOperationException} before the write lock is
+	 * acquired, avoiding the lock-acquire cost on rejected calls and protecting against future
+	 * mutation paths added to {@code AtomicMap} that bypass the explicit public mutator overrides.
+	 *
+	 * <p>Call sites: {@link KeySetView#remove(Object)}, {@link ValuesView#remove(Object)}, and
+	 * {@link ValuesIterator#remove()} - any view-side mutator that acquires the write lock without
+	 * first delegating to a public {@code AtomicMap} mutator (which has its own UOE override on
+	 * {@code Unmodifiable*} subclasses). View paths that delegate to public mutators
+	 * ({@link EntrySetView#remove(Object)}, {@link EntrySetView#clear()},
+	 * {@link KeySetView#clear()}, {@link ValuesView#clear()}, and the corresponding
+	 * {@code *Iterator.remove()} that route through {@code AtomicMap.remove}) intentionally skip
+	 * the hook because the public mutator's UOE override fires before the lock is acquired.
 	 */
 	protected void checkMutationAllowed() {}
 
@@ -838,6 +848,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
+			AtomicMap.this.checkMutationAllowed();
 			return AtomicMap.this.withWriteLock(() -> {
 				if (!AtomicMap.this.ref.containsKey(o))
 					return false;
