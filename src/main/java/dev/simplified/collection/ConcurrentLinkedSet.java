@@ -8,6 +8,7 @@ import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Spliterator;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -110,6 +111,19 @@ public class ConcurrentLinkedSet<E> extends ConcurrentHashSet<E> {
 	@Override
 	public @NotNull ConcurrentSet<E> toUnmodifiable() {
 		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>((LinkedHashSet<E>) this.cloneRef());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} on top of the inherited set characteristics so encounter
+	 * order is preserved on parallel-stream consumers ({@code findFirst}, {@code forEachOrdered},
+	 * order-sensitive collectors). The {@link LinkedHashSet} backing maintains insertion order;
+	 * advertising {@code ORDERED} surfaces that contract through the spliterator API.
+	 */
+	@Override
+	protected int spliteratorCharacteristics() {
+		return super.spliteratorCharacteristics() | Spliterator.ORDERED;
 	}
 
 }

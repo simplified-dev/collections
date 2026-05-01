@@ -113,6 +113,38 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected void checkMutationAllowed() {}
 
 	/**
+	 * Returns the characteristic bits the {@link #entrySet()} spliterator advertises. Subclasses
+	 * with insertion-ordered backings (e.g. {@link java.util.LinkedHashMap}) override to OR in
+	 * {@link Spliterator#ORDERED}; navigable backings OR in {@link Spliterator#SORTED}.
+	 *
+	 * @return the entry-set spliterator characteristic bitmask
+	 */
+	protected int entrySetSpliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT;
+	}
+
+	/**
+	 * Returns the characteristic bits the {@link #keySet()} spliterator advertises. Subclasses
+	 * with insertion-ordered backings override to OR in {@link Spliterator#ORDERED}; navigable
+	 * backings OR in {@link Spliterator#SORTED}.
+	 *
+	 * @return the key-set spliterator characteristic bitmask
+	 */
+	protected int keySetSpliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT;
+	}
+
+	/**
+	 * Returns the characteristic bits the {@link #values()} spliterator advertises. Subclasses
+	 * with insertion-ordered backings override to OR in {@link Spliterator#ORDERED}.
+	 *
+	 * @return the values-collection spliterator characteristic bitmask
+	 */
+	protected int valuesSpliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE;
+	}
+
+	/**
 	 * Executes the given action with the read lock held and returns its result.
 	 *
 	 * @param action the action to execute under the read lock
@@ -779,7 +811,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		@Override
 		public @NotNull Spliterator<Entry<K, V>> spliterator() {
 			return Spliterators.spliterator(AtomicMap.this.entrySetSnapshot(),
-				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
+				AtomicMap.this.entrySetSpliteratorCharacteristics());
 		}
 
 	}
@@ -828,7 +860,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		@Override
 		public @NotNull Spliterator<K> spliterator() {
 			return Spliterators.spliterator(AtomicMap.this.keySetSnapshot(),
-				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT);
+				AtomicMap.this.keySetSpliteratorCharacteristics());
 		}
 
 	}
@@ -884,7 +916,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		@Override
 		public @NotNull Spliterator<V> spliterator() {
 			return Spliterators.spliterator(AtomicMap.this.valuesSnapshot(),
-				Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE);
+				AtomicMap.this.valuesSpliteratorCharacteristics());
 		}
 
 	}
