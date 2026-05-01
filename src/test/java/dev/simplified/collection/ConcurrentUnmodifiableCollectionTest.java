@@ -1,4 +1,4 @@
-package dev.simplified.collection.unmodifiable;
+package dev.simplified.collection;
 
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentCollection;

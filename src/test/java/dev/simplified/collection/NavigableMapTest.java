@@ -1,7 +1,6 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.unmodifiable.ConcurrentUnmodifiableTreeMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -192,7 +191,7 @@ class NavigableMapTest {
 
 		@Test
 		void unmodifiable_descendingMap_throwsOnPut() {
-			ConcurrentUnmodifiableTreeMap<Integer, String> u = Concurrent.newUnmodifiableTreeMap(
+			ConcurrentTreeMap<Integer, String> u = (ConcurrentTreeMap<Integer, String>) Concurrent.newUnmodifiableTreeMap(
 				java.util.Map.of(1, "a", 2, "b", 3, "c")
 			);
 			NavigableMap<Integer, String> desc = u.descendingMap();
@@ -202,7 +201,7 @@ class NavigableMapTest {
 
 		@Test
 		void unmodifiable_pollFirstEntry_throws() {
-			ConcurrentUnmodifiableTreeMap<Integer, String> u = Concurrent.newUnmodifiableTreeMap(
+			ConcurrentTreeMap<Integer, String> u = (ConcurrentTreeMap<Integer, String>) Concurrent.newUnmodifiableTreeMap(
 				java.util.Map.of(1, "a")
 			);
 			assertThrows(UnsupportedOperationException.class, u::pollFirstEntry);
@@ -211,7 +210,7 @@ class NavigableMapTest {
 
 		@Test
 		void unmodifiable_navigableKeySet_throwsOnAdd() {
-			ConcurrentUnmodifiableTreeMap<Integer, String> u = Concurrent.newUnmodifiableTreeMap(
+			ConcurrentTreeMap<Integer, String> u = (ConcurrentTreeMap<Integer, String>) Concurrent.newUnmodifiableTreeMap(
 				java.util.Map.of(1, "a", 2, "b")
 			);
 			NavigableSet<Integer> ks = u.navigableKeySet();
@@ -221,7 +220,7 @@ class NavigableMapTest {
 
 		@Test
 		void unmodifiable_subMap_throwsOnPut() {
-			ConcurrentUnmodifiableTreeMap<Integer, String> u = Concurrent.newUnmodifiableTreeMap(
+			ConcurrentTreeMap<Integer, String> u = (ConcurrentTreeMap<Integer, String>) Concurrent.newUnmodifiableTreeMap(
 				java.util.Map.of(1, "a", 2, "b", 3, "c")
 			);
 			NavigableMap<Integer, String> sub = u.subMap(1, true, 3, true);

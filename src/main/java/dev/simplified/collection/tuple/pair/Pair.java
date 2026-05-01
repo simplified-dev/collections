@@ -26,8 +26,8 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
     /**
      * Returns an immutable pair of two objects, inferring the generic types.
      *
-     * @param <L>   the left element type
-     * @param <R>   the right element type
+     * @param <L> the left element type
+     * @param <R> the right element type
      * @param left the left element, may be null
      * @param right the right element, may be null
      * @return an immutable pair formed from the two parameters, not null
@@ -40,8 +40,8 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
      * Returns an immutable pair copied from a {@link Map.Entry}, inferring the generic types.
      * If {@code entry} is {@code null}, returns an empty pair.
      *
-     * @param <L>   the left element type
-     * @param <R>   the right element type
+     * @param <L> the left element type
+     * @param <R> the right element type
      * @param entry the entry to copy, may be null
      * @return an immutable pair formed from the entry, not null
      */

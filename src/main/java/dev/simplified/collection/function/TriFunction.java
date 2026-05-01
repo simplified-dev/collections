@@ -15,7 +15,7 @@ import java.util.function.Function;
  * @param <R> the type of the third argument to the function
  * @param <T> the type of the result of the function
  *
- * @see java.util.function.Function
+ * @see Function
  */
 @FunctionalInterface
 public interface TriFunction<L, M, R, T> {
@@ -25,7 +25,7 @@ public interface TriFunction<L, M, R, T> {
      *
      * @param l the first function argument
      * @param m the second function argument
-     * @param r the second function argument
+     * @param r the third function argument
      * @return the function result
      */
     T apply(L l, M m, R r);

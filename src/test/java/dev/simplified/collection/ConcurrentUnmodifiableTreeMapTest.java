@@ -1,8 +1,5 @@
-package dev.simplified.collection.unmodifiable;
+package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentMap;
-import dev.simplified.collection.ConcurrentTreeMap;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -21,20 +18,20 @@ class ConcurrentUnmodifiableTreeMapTest {
 
 		@Test
 		void factory_empty_isTreeMapSnapshot() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap();
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap();
 			assertEquals(0, u.size());
-			assertTrue(u instanceof ConcurrentTreeMap);
+			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap);
 		}
 
 		@Test
 		void factory_comparator_storesComparator() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(Comparator.<String>reverseOrder());
-			assertNotNull(u.comparator());
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(Comparator.<String>reverseOrder());
+			assertNotNull(((ConcurrentTreeMap<String, Integer>) u).comparator());
 		}
 
 		@Test
 		void factory_entries_keepsContents() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(
+			ConcurrentTreeMap<String, Integer> u = (ConcurrentTreeMap<String, Integer>) Concurrent.newUnmodifiableTreeMap(
 				Map.entry("b", 2),
 				Map.entry("a", 1)
 			);
@@ -45,7 +42,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 
 		@Test
 		void factory_comparatorAndEntries_keepsContents() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(
+			ConcurrentTreeMap<String, Integer> u = (ConcurrentTreeMap<String, Integer>) Concurrent.newUnmodifiableTreeMap(
 				Comparator.reverseOrder(),
 				Map.entry("a", 1),
 				Map.entry("b", 2)
@@ -56,13 +53,13 @@ class ConcurrentUnmodifiableTreeMapTest {
 
 		@Test
 		void factory_map_keepsContents() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(Map.of("x", 1, "y", 2));
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(Map.of("x", 1, "y", 2));
 			assertEquals(2, u.size());
 		}
 
 		@Test
 		void factory_comparatorAndMap_keepsContents() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(
+			ConcurrentTreeMap<String, Integer> u = (ConcurrentTreeMap<String, Integer>) Concurrent.newUnmodifiableTreeMap(
 				Comparator.<String>reverseOrder(), Map.of("a", 1, "b", 2));
 			assertEquals("b", u.firstKey());
 		}
@@ -71,7 +68,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 		void toUnmodifiable_fromTreeMap_returnsTreeMapUnmodifiable() {
 			ConcurrentTreeMap<String, Integer> src = Concurrent.newTreeMap();
 			src.put("a", 1);
-			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiableTreeMap);
+			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentTreeMap);
 		}
 	}
 
@@ -79,10 +76,11 @@ class ConcurrentUnmodifiableTreeMapTest {
 	class Rejection {
 
 		@Test
+		@SuppressWarnings("unchecked")
 		void allMutators_throwUOE() {
 			ConcurrentTreeMap<String, Integer> src = Concurrent.newTreeMap();
 			src.put("a", 1);
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = (ConcurrentUnmodifiableTreeMap<String, Integer>) src.toUnmodifiable();
+			ConcurrentTreeMap<String, Integer> u = (ConcurrentTreeMap<String, Integer>) src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.put("b", 2));
 			assertThrows(UnsupportedOperationException.class, () -> u.putAll(Map.of("c", 3)));
@@ -101,7 +99,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 
 		@Test
 		void entrySet_iterator_remove_throwsUOE() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap(
 				Map.entry("a", 1)
 			);
 			Iterator<Map.Entry<String, Integer>> it = u.entrySet().iterator();
@@ -117,7 +115,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentTreeMap<String, Integer> src = Concurrent.newTreeMap();
 			src.put("a", 1);
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = (ConcurrentUnmodifiableTreeMap<String, Integer>) src.toUnmodifiable();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.put("b", 2);
@@ -135,7 +133,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 			src.put("c", 3);
 			src.put("a", 1);
 			src.put("b", 2);
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = (ConcurrentUnmodifiableTreeMap<String, Integer>) src.toUnmodifiable();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 
 			List<String> keys = new ArrayList<>();
 			for (Map.Entry<String, Integer> e : u.entrySet()) keys.add(e.getKey());
@@ -148,7 +146,7 @@ class ConcurrentUnmodifiableTreeMapTest {
 			src.put("a", 1);
 			src.put("c", 3);
 			src.put("b", 2);
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = (ConcurrentUnmodifiableTreeMap<String, Integer>) src.toUnmodifiable();
+			ConcurrentMap<String, Integer> u = src.toUnmodifiable();
 			List<String> keys = new ArrayList<>(u.keySet());
 			assertEquals(List.of("c", "b", "a"), keys);
 		}
@@ -158,15 +156,15 @@ class ConcurrentUnmodifiableTreeMapTest {
 	class Assignability {
 
 		@Test
-		void isAlsoConcurrentMapAndUnmodifiableMap() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap();
+		void isAlsoConcurrentMap() {
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap();
 			assertTrue(u instanceof ConcurrentMap);
-			assertTrue(u instanceof ConcurrentUnmodifiableMap);
+			assertTrue(u instanceof ConcurrentTreeMap);
 		}
 
 		@Test
 		void doubleWrap_returnsSameInstance() {
-			ConcurrentUnmodifiableTreeMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap();
+			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableTreeMap();
 			assertSame(u, u.toUnmodifiable());
 		}
 	}

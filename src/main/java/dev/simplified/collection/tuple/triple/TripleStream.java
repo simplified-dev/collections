@@ -63,9 +63,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
     /**
      * Creates a {@code TripleStream} wrapping the given stream of {@link Triple} objects.
      *
-     * @param <L>    the left element type
-     * @param <M>    the middle element type
-     * @param <R>    the right element type
+     * @param <L> the left element type
+     * @param <M> the middle element type
+     * @param <R> the right element type
      * @param stream the stream of triples to wrap
      * @return a {@code TripleStream} backed by {@code stream}
      */
@@ -77,9 +77,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * Creates a {@code TripleStream} from a stream of left elements by applying {@code middle}
      * and {@code right} to derive the other two elements of each triple.
      *
-     * @param <L>    the left element type
-     * @param <M>    the middle element type
-     * @param <R>    the right element type
+     * @param <L> the left element type
+     * @param <M> the middle element type
+     * @param <R> the right element type
      * @param stream a stream of left elements
      * @param middle a function producing the middle element from each left element
      * @param right a function producing the right element from each left element
@@ -305,9 +305,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * {@code TripleStream} produced by {@code mapper}, which receives the left, middle,
      * and right elements separately.
      *
-     * @param <RL>   the left type of the resulting stream
-     * @param <RM>   the middle type of the resulting stream
-     * @param <RR>   the right type of the resulting stream
+     * @param <RL> the left type of the resulting stream
+     * @param <RM> the middle type of the resulting stream
+     * @param <RR> the right type of the resulting stream
      * @param mapper a function receiving each triple's elements, returning a {@code TripleStream}
      * @return a flat-mapped {@code TripleStream}
      */
@@ -319,7 +319,7 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * Returns a {@link SingleStream} by replacing each triple with the contents of a stream
      * produced by {@code mapper}, which receives the left, middle, and right elements separately.
      *
-     * @param <RT>   the element type of the resulting stream
+     * @param <RT> the element type of the resulting stream
      * @param mapper a function receiving each triple's elements, returning a stream of results
      * @return a flat-mapped {@link SingleStream}
      */
@@ -449,9 +449,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * Returns a {@code TripleStream} by applying {@code mapper} to the left, middle, and
      * right elements of each triple, producing a new {@link Triple} for each.
      *
-     * @param <RL>   the left type of the resulting stream
-     * @param <RM>   the middle type of the resulting stream
-     * @param <RR>   the right type of the resulting stream
+     * @param <RL> the left type of the resulting stream
+     * @param <RM> the middle type of the resulting stream
+     * @param <RR> the right type of the resulting stream
      * @param mapper a function receiving each triple's elements, returning a new triple
      * @return a mapped {@code TripleStream}
      */
@@ -514,7 +514,7 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * Returns a {@code TripleStream} with each left element replaced by the result of
      * applying {@code mapper} to it, leaving middle and right elements unchanged.
      *
-     * @param <RT>   the new left element type
+     * @param <RT> the new left element type
      * @param mapper a function to apply to each left element
      * @return a {@code TripleStream} with transformed left elements
      */
@@ -526,7 +526,7 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * Returns a {@code TripleStream} with each middle element replaced by the result of
      * applying {@code mapper} to it, leaving left and right elements unchanged.
      *
-     * @param <RT>   the new middle element type
+     * @param <RT> the new middle element type
      * @param mapper a function to apply to each middle element
      * @return a {@code TripleStream} with transformed middle elements
      */
@@ -538,7 +538,7 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * Returns a {@code TripleStream} with each right element replaced by the result of
      * applying {@code mapper} to it, leaving left and middle elements unchanged.
      *
-     * @param <RT>   the new right element type
+     * @param <RT> the new right element type
      * @param mapper a function to apply to each right element
      * @return a {@code TripleStream} with transformed right elements
      */
@@ -764,10 +764,10 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * an accumulator that receives the left, middle, and right elements separately, and a
      * combiner for parallel execution.
      *
-     * @param <U>         the type of the result
-     * @param identity    the identity value for the accumulator
+     * @param <U> the type of the result
+     * @param identity the identity value for the accumulator
      * @param accumulator a function that folds the left, middle, and right elements into the result
-     * @param combiner    a function to combine two partial results in parallel execution
+     * @param combiner a function to combine two partial results in parallel execution
      * @return the reduced result
      */
     default <U> @NotNull U reduce(@NotNull U identity, @NotNull QuadFunction<U, ? super L, ? super M, ? super R, U> accumulator, @NotNull BinaryOperator<U> combiner) {
@@ -879,9 +879,9 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * }</pre>
      *
      * @param <T> the type of the mutable result container
-     * @param supplier a function that creates a new mutable result container.
-     *                 For a parallel execution, this function may be called
-     *                 multiple times and must return a fresh value each time.
+     * @param supplier a function that creates a new mutable result container; for parallel
+     *                 execution, this function may be called multiple times and must return a
+     *                 fresh value each time
      * @param accumulator an <a href="package-summary.html#Associativity">associative</a>,
      *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
      *                    <a href="package-summary.html#Statelessness">stateless</a>
@@ -926,7 +926,7 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * Collapses each triple into a single value by applying {@code mapper} to the left,
      * middle, and right elements, returning a {@link SingleStream} of the results.
      *
-     * @param <T>    the result element type
+     * @param <T> the result element type
      * @param mapper a function receiving each triple's elements, returning the collapsed result
      * @return a {@link SingleStream} of collapsed values
      */
@@ -938,8 +938,8 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * Collapses each triple into a {@link Pair} by applying {@code mapper} to the left,
      * middle, and right elements, returning a {@link PairStream} of the results.
      *
-     * @param <K>    the key type of the resulting pairs
-     * @param <V>    the value type of the resulting pairs
+     * @param <K> the key type of the resulting pairs
+     * @param <V> the value type of the resulting pairs
      * @param mapper a function receiving each triple's elements, returning a {@code Pair}
      * @return a {@link PairStream} of collapsed pairs
      */
@@ -982,7 +982,7 @@ public interface TripleStream<L, M, R> extends SingleStream<Triple<L, M, R>> {
      * {@link Collection} returned by {@code mapper}, avoiding a manual
      * {@code .flatMap(c -> c.stream())} call.
      *
-     * @param <T>    the element type of the resulting stream
+     * @param <T> the element type of the resulting stream
      * @param mapper a function receiving each triple's elements, returning a collection of results
      * @return a flat-mapped {@link SingleStream}
      */

@@ -34,7 +34,7 @@ public interface Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param compare the comparison function applied per predicate
      * @param predicates the field-extractor/value pairs to compare against
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return a filtered stream of matching elements
      * @throws dev.simplified.persistence.exception.JpaException if an invalid match type is provided
      */
@@ -67,7 +67,7 @@ public interface Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param compare the containment comparison function applied per predicate
      * @param predicates the list-field-extractor/value pairs to check containment against
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return a filtered stream of matching elements
      * @throws dev.simplified.persistence.exception.JpaException if an invalid match type is provided
      */
@@ -99,7 +99,7 @@ public interface Searchable<E> {
      *
      * @param function the list-field extractor
      * @param value the value to check for containment
-     * @param <S>      the element type within the list field
+     * @param <S> the element type within the list field
      * @return a stream of elements whose list field contains the value
      */
     default <S> @NotNull Stream<E> containsAll(@NotNull Function<E, List<S>> function, S value) {
@@ -110,7 +110,7 @@ public interface Searchable<E> {
      * Returns all elements whose list-valued fields contain the given values, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return a stream of elements matching all containment predicates
      */
     default <S> @NotNull Stream<E> containsAll(@NotNull Pair<Function<E, List<S>>, S>... predicates) {
@@ -121,7 +121,7 @@ public interface Searchable<E> {
      * Returns all elements whose list-valued fields contain the given values, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return a stream of elements matching all containment predicates
      */
     default <S> @NotNull Stream<E> containsAll(@NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
@@ -134,7 +134,7 @@ public interface Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param function the list-field extractor
      * @param value the value to check for containment
-     * @param <S>      the element type within the list field
+     * @param <S> the element type within the list field
      * @return a stream of elements whose list field contains the value
      */
     default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull Function<E, List<S>> function, S value) {
@@ -146,7 +146,7 @@ public interface Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return a stream of elements matching the containment predicates
      */
     default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, List<S>>, S>... predicates) {
@@ -159,7 +159,7 @@ public interface Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the list-field-extractor/value pairs to check
-     * @param <S>        the element type within the list field
+     * @param <S> the element type within the list field
      * @return a stream of elements matching the containment predicates
      */
     default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
@@ -184,7 +184,7 @@ public interface Searchable<E> {
      *
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return a stream of elements whose field equals the value
      */
     default <S> @NotNull SingleStream<E> findAll(@NotNull Function<E, S> function, S value) {
@@ -195,7 +195,7 @@ public interface Searchable<E> {
      * Returns all elements matching the given field-extractor/value pairs, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return a stream of elements matching all predicates
      */
     default <S> @NotNull SingleStream<E> findAll(@NotNull Pair<Function<E, S>, S>... predicates) {
@@ -206,7 +206,7 @@ public interface Searchable<E> {
      * Returns all elements matching the given field-extractor/value pairs, using {@link SearchFunction.Match#ALL ALL} mode.
      *
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return a stream of elements matching all predicates
      */
     default <S> @NotNull SingleStream<E> findAll(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
@@ -219,7 +219,7 @@ public interface Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
      * @param value the value to compare against
-     * @param <S>      the type of the compared value
+     * @param <S> the type of the compared value
      * @return a stream of elements whose field equals the value
      */
     default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) {
@@ -231,7 +231,7 @@ public interface Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return a stream of elements matching the predicates
      */
     default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
@@ -244,7 +244,7 @@ public interface Searchable<E> {
      *
      * @param match the match mode (ALL or ANY)
      * @param predicates the field-extractor/value pairs to match
-     * @param <S>        the type of the compared value
+     * @param <S> the type of the compared value
      * @return a stream of elements matching the predicates
      */
     default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {

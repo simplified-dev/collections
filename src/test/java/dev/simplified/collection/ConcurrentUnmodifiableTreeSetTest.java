@@ -1,8 +1,5 @@
-package dev.simplified.collection.unmodifiable;
+package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentSet;
-import dev.simplified.collection.ConcurrentTreeSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -20,39 +17,39 @@ class ConcurrentUnmodifiableTreeSetTest {
 
 		@Test
 		void factory_empty_isTreeSetSnapshot() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet();
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet();
 			assertEquals(0, u.size());
-			assertTrue(u instanceof ConcurrentTreeSet);
+			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet);
 		}
 
 		@Test
 		void factory_comparator_storesComparator() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet(Comparator.<String>reverseOrder());
-			assertNotNull(u.comparator());
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet(Comparator.<String>reverseOrder());
+			assertNotNull(((ConcurrentTreeSet<String>) u).comparator());
 		}
 
 		@Test
 		void factory_varargs_keepsContents() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet("c", "a", "b");
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet("c", "a", "b");
 			assertEquals(List.of("a", "b", "c"), new ArrayList<>(u));
 		}
 
 		@Test
 		void factory_comparatorAndVarargs_keepsContents() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet(
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet(
 				Comparator.<String>reverseOrder(), "a", "c", "b");
 			assertEquals(List.of("c", "b", "a"), new ArrayList<>(u));
 		}
 
 		@Test
 		void factory_collection_keepsContents() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet(List.of("c", "a", "b"));
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet(List.of("c", "a", "b"));
 			assertEquals(List.of("a", "b", "c"), new ArrayList<>(u));
 		}
 
 		@Test
 		void factory_comparatorAndCollection_keepsContents() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet(
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet(
 				Comparator.<String>reverseOrder(), List.of("a", "b", "c"));
 			assertEquals(List.of("c", "b", "a"), new ArrayList<>(u));
 		}
@@ -60,7 +57,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 		@Test
 		void toUnmodifiable_fromTreeSet_returnsTreeSetUnmodifiable() {
 			ConcurrentTreeSet<String> src = Concurrent.newTreeSet("a", "b");
-			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiableTreeSet);
+			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentTreeSet);
 		}
 	}
 
@@ -68,9 +65,10 @@ class ConcurrentUnmodifiableTreeSetTest {
 	class Rejection {
 
 		@Test
+		@SuppressWarnings("unchecked")
 		void allMutators_throwUOE() {
 			ConcurrentTreeSet<String> src = Concurrent.newTreeSet("a");
-			ConcurrentUnmodifiableTreeSet<String> u = (ConcurrentUnmodifiableTreeSet<String>) src.toUnmodifiable();
+			ConcurrentTreeSet<String> u = (ConcurrentTreeSet<String>) src.toUnmodifiable();
 
 			assertThrows(UnsupportedOperationException.class, () -> u.add("c"));
 			assertThrows(UnsupportedOperationException.class, () -> u.addAll(List.of("c")));
@@ -86,7 +84,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 
 		@Test
 		void iterator_remove_throwsUOE() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet("a", "b");
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet("a", "b");
 			Iterator<String> it = u.iterator();
 			it.next();
 			assertThrows(UnsupportedOperationException.class, it::remove);
@@ -100,7 +98,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 		void sourceMutations_notVisibleThroughWrapper() {
 			ConcurrentTreeSet<String> src = Concurrent.newTreeSet();
 			src.add("a");
-			ConcurrentUnmodifiableTreeSet<String> u = (ConcurrentUnmodifiableTreeSet<String>) src.toUnmodifiable();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 
 			assertEquals(1, u.size());
 			src.add("b");
@@ -119,7 +117,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 			src.add("c");
 			src.add("a");
 			src.add("b");
-			ConcurrentUnmodifiableTreeSet<String> u = (ConcurrentUnmodifiableTreeSet<String>) src.toUnmodifiable();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 			assertEquals(List.of("a", "b", "c"), new ArrayList<>(u));
 		}
 
@@ -129,7 +127,7 @@ class ConcurrentUnmodifiableTreeSetTest {
 			src.add("a");
 			src.add("c");
 			src.add("b");
-			ConcurrentUnmodifiableTreeSet<String> u = (ConcurrentUnmodifiableTreeSet<String>) src.toUnmodifiable();
+			ConcurrentSet<String> u = src.toUnmodifiable();
 			assertEquals(List.of("c", "b", "a"), new ArrayList<>(u));
 		}
 	}
@@ -138,15 +136,15 @@ class ConcurrentUnmodifiableTreeSetTest {
 	class Assignability {
 
 		@Test
-		void isAlsoConcurrentSetAndUnmodifiableSet() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet();
+		void isAlsoConcurrentSet() {
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet();
 			assertTrue(u instanceof ConcurrentSet);
-			assertTrue(u instanceof ConcurrentUnmodifiableSet);
+			assertTrue(u instanceof ConcurrentTreeSet);
 		}
 
 		@Test
 		void doubleWrap_returnsSameInstance() {
-			ConcurrentUnmodifiableTreeSet<String> u = Concurrent.newUnmodifiableTreeSet();
+			ConcurrentSet<String> u = Concurrent.newUnmodifiableTreeSet();
 			assertSame(u, u.toUnmodifiable());
 		}
 	}

@@ -1,6 +1,6 @@
 package dev.simplified.collection.atomic;
 
-import dev.simplified.collection.ConcurrentTreeMap;
+import dev.simplified.collection.ConcurrentMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @apiNote This is a low-level building block for custom concurrent implementations.
  * Most callers should use the corresponding {@code Concurrent*} type instead.
  */
-public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & NavigableMap<K, V>> extends AtomicMap<K, V, M> implements ConcurrentTreeMap<K, V> {
+public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & NavigableMap<K, V>> extends AtomicMap<K, V, M> implements ConcurrentMap<K, V>, NavigableMap<K, V> {
 
 	private transient volatile @Nullable NavigableMap<K, V> descendingMapView;
 	private transient volatile @Nullable NavigableSet<K> navigableKeySetView;
