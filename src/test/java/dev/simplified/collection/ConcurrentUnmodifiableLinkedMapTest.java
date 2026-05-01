@@ -19,7 +19,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 		void factory_empty_isLinkedMapSnapshot() {
 			ConcurrentMap<String, Integer> u = Concurrent.newUnmodifiableLinkedMap();
 			assertEquals(0, u.size());
-			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap);
+			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap);
 		}
 
 		@Test
@@ -43,7 +43,7 @@ class ConcurrentUnmodifiableLinkedMapTest {
 		void toUnmodifiable_fromLinkedMap_returnsLinkedMapUnmodifiable() {
 			ConcurrentMap<String, Integer> src = Concurrent.newLinkedMap();
 			src.put("a", 1);
-			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashMap);
+			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap);
 		}
 	}
 

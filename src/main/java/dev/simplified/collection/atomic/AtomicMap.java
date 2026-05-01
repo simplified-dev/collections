@@ -2,11 +2,11 @@ package dev.simplified.collection.atomic;
 
 import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.tuple.pair.PairStream;
-import dev.simplified.collection.StreamUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
@@ -30,6 +30,9 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 	protected final @NotNull M ref;
 	protected final @NotNull ReadWriteLock lock;
+	private final @NotNull Lock readLockView;
+	private final @NotNull Lock writeLockView;
+	private final @NotNull Object viewLock = new Object();
 
 	/** Lazily initialized live view of the entry set. */
 	private transient volatile @Nullable Set<Entry<K, V>> entrySetView;
@@ -57,15 +60,16 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	protected AtomicMap(@NotNull M ref, @Nullable Map<? extends K, ? extends V> items) {
-		if (Objects.nonNull(items)) ref.putAll(items);
-		this.ref = ref;
-		this.lock = new ReentrantReadWriteLock();
+		this(ref);
+		if (items != null) ref.putAll(items);
 	}
 
 	protected AtomicMap(@NotNull M ref, @Nullable Map.Entry<? extends K, ? extends V>... items) {
-		StreamUtil.ofArrays(items).filter(Objects::nonNull).forEach(entry -> ref.put(entry.getKey(), entry.getValue()));
-		this.ref = ref;
-		this.lock = new ReentrantReadWriteLock();
+		this(ref);
+		if (items != null) {
+			for (Map.Entry<? extends K, ? extends V> e : items)
+				if (e != null) ref.put(e.getKey(), e.getValue());
+		}
 	}
 
 	/**
@@ -79,6 +83,8 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected AtomicMap(@NotNull M ref, @NotNull ReadWriteLock lock) {
 		this.ref = ref;
 		this.lock = lock;
+		this.readLockView = lock.readLock();
+		this.writeLockView = lock.writeLock();
 	}
 
 	/**
@@ -86,9 +92,9 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * while still holding the write lock so the nullify is ordered before the unlock.
 	 */
 	protected void invalidateViewSnapshots() {
-		this.entrySetSnapshot = null;
-		this.keySetSnapshot = null;
-		this.valuesSnapshot = null;
+		if (this.entrySetSnapshot != null) this.entrySetSnapshot = null;
+		if (this.keySetSnapshot != null) this.keySetSnapshot = null;
+		if (this.valuesSnapshot != null) this.valuesSnapshot = null;
 		this.onSnapshotInvalidated();
 	}
 
@@ -99,6 +105,56 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected void onSnapshotInvalidated() {}
 
 	/**
+	 * Hook invoked at the entry of every view-side mutating operation that does not delegate to a
+	 * public {@code AtomicMap} mutator. Default is a no-op; {@code ConcurrentUnmodifiable*}
+	 * subclasses override to throw {@link UnsupportedOperationException} before the write lock is
+	 * acquired, avoiding the lock-acquire cost on rejected calls and protecting against future
+	 * mutation paths added to {@code AtomicMap} that bypass the explicit public mutator overrides.
+	 *
+	 * <p>Call sites: {@link KeySetView#remove(Object)}, {@link ValuesView#remove(Object)}, and
+	 * {@link ValuesIterator#remove()} - any view-side mutator that acquires the write lock without
+	 * first delegating to a public {@code AtomicMap} mutator (which has its own UOE override on
+	 * {@code Unmodifiable*} subclasses). View paths that delegate to public mutators
+	 * ({@link EntrySetView#remove(Object)}, {@link EntrySetView#clear()},
+	 * {@link KeySetView#clear()}, {@link ValuesView#clear()}, and the corresponding
+	 * {@code *Iterator.remove()} that route through {@code AtomicMap.remove}) intentionally skip
+	 * the hook because the public mutator's UOE override fires before the lock is acquired.
+	 */
+	protected void checkMutationAllowed() {}
+
+	/**
+	 * Returns the characteristic bits the {@link #entrySet()} spliterator advertises. Subclasses
+	 * with insertion-ordered backings (e.g. {@link java.util.LinkedHashMap}) override to OR in
+	 * {@link Spliterator#ORDERED}; navigable backings OR in {@link Spliterator#SORTED}.
+	 *
+	 * @return the entry-set spliterator characteristic bitmask
+	 */
+	protected int entrySetSpliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT;
+	}
+
+	/**
+	 * Returns the characteristic bits the {@link #keySet()} spliterator advertises. Subclasses
+	 * with insertion-ordered backings override to OR in {@link Spliterator#ORDERED}; navigable
+	 * backings OR in {@link Spliterator#SORTED}.
+	 *
+	 * @return the key-set spliterator characteristic bitmask
+	 */
+	protected int keySetSpliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT;
+	}
+
+	/**
+	 * Returns the characteristic bits the {@link #values()} spliterator advertises. Subclasses
+	 * with insertion-ordered backings override to OR in {@link Spliterator#ORDERED}.
+	 *
+	 * @return the values-collection spliterator characteristic bitmask
+	 */
+	protected int valuesSpliteratorCharacteristics() {
+		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE;
+	}
+
+	/**
 	 * Executes the given action with the read lock held and returns its result.
 	 *
 	 * @param action the action to execute under the read lock
@@ -106,12 +162,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return the value returned by {@code action}
 	 */
 	protected final <R> R withReadLock(@NotNull Supplier<R> action) {
-		this.lock.readLock().lock();
+		this.readLockView.lock();
 
 		try {
 			return action.get();
 		} finally {
-			this.lock.readLock().unlock();
+			this.readLockView.unlock();
 		}
 	}
 
@@ -121,12 +177,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @param action the action to execute under the read lock
 	 */
 	protected final void withReadLock(@NotNull Runnable action) {
-		this.lock.readLock().lock();
+		this.readLockView.lock();
 
 		try {
 			action.run();
 		} finally {
-			this.lock.readLock().unlock();
+			this.readLockView.unlock();
 		}
 	}
 
@@ -139,13 +195,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return the value returned by {@code action}
 	 */
 	protected final <R> R withWriteLock(@NotNull Supplier<R> action) {
-		this.lock.writeLock().lock();
+		this.writeLockView.lock();
 
 		try {
 			return action.get();
 		} finally {
 			this.invalidateViewSnapshots();
-			this.lock.writeLock().unlock();
+			this.writeLockView.unlock();
 		}
 	}
 
@@ -156,13 +212,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @param action the action to execute under the write lock
 	 */
 	protected final void withWriteLock(@NotNull Runnable action) {
-		this.lock.writeLock().lock();
+		this.writeLockView.lock();
 
 		try {
 			action.run();
 		} finally {
 			this.invalidateViewSnapshots();
-			this.lock.writeLock().unlock();
+			this.writeLockView.unlock();
 		}
 	}
 
@@ -229,7 +285,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Set<Entry<K, V>> view = this.entrySetView;
 
 		if (view == null) {
-			synchronized (this) {
+			synchronized (this.viewLock) {
 				view = this.entrySetView;
 
 				if (view == null) {
@@ -319,7 +375,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Set<K> view = this.keySetView;
 
 		if (view == null) {
-			synchronized (this) {
+			synchronized (this.viewLock) {
 				view = this.keySetView;
 
 				if (view == null) {
@@ -519,7 +575,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Collection<V> view = this.valuesView;
 
 		if (view == null) {
-			synchronized (this) {
+			synchronized (this.viewLock) {
 				view = this.valuesView;
 
 				if (view == null) {
@@ -619,6 +675,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		private final K key;
 		private final V value;
+		private int hash;
 
 		SnapshotEntry(K key, V value) {
 			this.key = key;
@@ -649,8 +706,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public int hashCode() {
-			return (this.key == null ? 0 : this.key.hashCode())
-				^ (this.value == null ? 0 : this.value.hashCode());
+			int h = this.hash;
+			if (h == 0) {
+				h = (this.key == null ? 0 : this.key.hashCode())
+					^ (this.value == null ? 0 : this.value.hashCode());
+				this.hash = h;
+			}
+			return h;
 		}
 
 		@Override
@@ -756,6 +818,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			return new EntrySetIterator(AtomicMap.this.entrySetSnapshot());
 		}
 
+		@Override
+		public @NotNull Spliterator<Entry<K, V>> spliterator() {
+			return Spliterators.spliterator(AtomicMap.this.entrySetSnapshot(),
+				AtomicMap.this.entrySetSpliteratorCharacteristics());
+		}
+
 	}
 
 	/**
@@ -780,6 +848,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
+			AtomicMap.this.checkMutationAllowed();
 			return AtomicMap.this.withWriteLock(() -> {
 				if (!AtomicMap.this.ref.containsKey(o))
 					return false;
@@ -797,6 +866,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		@Override
 		public @NotNull Iterator<K> iterator() {
 			return new KeySetIterator(AtomicMap.this.keySetSnapshot());
+		}
+
+		@Override
+		public @NotNull Spliterator<K> spliterator() {
+			return Spliterators.spliterator(AtomicMap.this.keySetSnapshot(),
+				AtomicMap.this.keySetSpliteratorCharacteristics());
 		}
 
 	}
@@ -826,14 +901,15 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
+			AtomicMap.this.checkMutationAllowed();
 			return AtomicMap.this.withWriteLock(() -> {
-				for (Entry<K, V> entry : AtomicMap.this.ref.entrySet()) {
-					if (Objects.equals(entry.getValue(), o)) {
-						AtomicMap.this.remove(entry.getKey());
+				Iterator<Entry<K, V>> it = AtomicMap.this.ref.entrySet().iterator();
+				while (it.hasNext()) {
+					if (Objects.equals(it.next().getValue(), o)) {
+						it.remove();
 						return true;
 					}
 				}
-
 				return false;
 			});
 		}
@@ -846,6 +922,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		@Override
 		public @NotNull Iterator<V> iterator() {
 			return new ValuesIterator(AtomicMap.this.valuesSnapshot());
+		}
+
+		@Override
+		public @NotNull Spliterator<V> spliterator() {
+			return Spliterators.spliterator(AtomicMap.this.valuesSnapshot(),
+				AtomicMap.this.valuesSpliteratorCharacteristics());
 		}
 
 	}
@@ -940,11 +1022,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 				throw new IllegalStateException();
 
 			Object value = this.snapshot[this.last];
+			AtomicMap.this.checkMutationAllowed();
 
 			AtomicMap.this.withWriteLock(() -> {
-				for (Entry<K, V> entry : AtomicMap.this.ref.entrySet()) {
-					if (Objects.equals(entry.getValue(), value)) {
-						AtomicMap.this.remove(entry.getKey());
+				Iterator<Entry<K, V>> it = AtomicMap.this.ref.entrySet().iterator();
+				while (it.hasNext()) {
+					if (Objects.equals(it.next().getValue(), value)) {
+						it.remove();
 						break;
 					}
 				}

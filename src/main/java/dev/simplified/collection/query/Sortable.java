@@ -1,15 +1,14 @@
 package dev.simplified.collection.query;
 
-import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.tuple.pair.Pair;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.StreamSupport;
 
 /**
  * A functional interface extending {@link Searchable} with methods that return single results
@@ -79,7 +78,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, List<S>>, S>... predicates) {
-        return this.containsFirst(match, Concurrent.newList(predicates));
+        return this.containsFirst(match, Arrays.asList(predicates));
     }
 
     /**
@@ -129,7 +128,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, List<S>>, S>... predicates) {
-        return this.containsFirstOrNull(match, Concurrent.newList(predicates));
+        return this.containsFirstOrNull(match, Arrays.asList(predicates));
     }
 
     /**
@@ -152,7 +151,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull Pair<Function<E, List<S>>, S>... predicates) {
-        return this.containsFirstOrNull(Concurrent.newList(predicates));
+        return this.containsFirstOrNull(Arrays.asList(predicates));
     }
 
     /**
@@ -224,7 +223,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
-        return this.findFirst(match, Concurrent.newList(predicates));
+        return this.findFirst(match, Arrays.asList(predicates));
     }
 
     /**
@@ -284,7 +283,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
-        return this.findFirstOrNull(match, Concurrent.newList(predicates));
+        return this.findFirstOrNull(match, Arrays.asList(predicates));
     }
 
     /**
@@ -307,7 +306,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull Pair<Function<E, S>, S>... predicates) {
-        return this.findFirstOrNull(Concurrent.newList(predicates));
+        return this.findFirstOrNull(Arrays.asList(predicates));
     }
 
     /**
@@ -379,7 +378,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
-        return this.findLast(match, Concurrent.newList(predicates));
+        return this.findLast(match, Arrays.asList(predicates));
     }
 
     /**
@@ -441,7 +440,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
-        return this.findLastOrNull(match, Concurrent.newList(predicates));
+        return this.findLastOrNull(match, Arrays.asList(predicates));
     }
 
     /**
@@ -464,7 +463,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull Pair<Function<E, S>, S>... predicates) {
-        return this.findLastOrNull(Concurrent.newList(predicates));
+        return this.findLastOrNull(Arrays.asList(predicates));
     }
 
     /**
@@ -487,7 +486,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default @NotNull Optional<E> matchFirst(@NotNull Predicate<E>... predicates) {
-        return this.matchFirst(Concurrent.newList(predicates));
+        return this.matchFirst(Arrays.asList(predicates));
     }
 
     /**
@@ -508,7 +507,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default @NotNull Optional<E> matchFirst(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) {
-        return this.matchFirst(match, Concurrent.newList(predicates));
+        return this.matchFirst(match, Arrays.asList(predicates));
     }
 
     /**
@@ -520,19 +519,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default @NotNull Optional<E> matchFirst(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) {
-        return this.compare(
-            match,
-            (predicate, it, value) -> {
-                try {
-                    return predicate.apply(it);
-                } catch (NullPointerException nullPointerException) {
-                    return false;
-                }
-            },
-            StreamSupport.stream(predicates.spliterator(), false)
-                .map(predicate -> Pair.<Function<E, Boolean>, Boolean>of(predicate::test, true))
-                .collect(Concurrent.toList())
-        ).findFirst();
+        return this.matchAll(match, predicates).findFirst();
     }
 
     /**
@@ -542,7 +529,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the first matching element, or {@code null}
      */
     default E matchFirstOrNull(@NotNull Predicate<E>... predicates) {
-        return this.matchFirstOrNull(Concurrent.newList(predicates));
+        return this.matchFirstOrNull(Arrays.asList(predicates));
     }
 
     /**
@@ -563,7 +550,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the first matching element, or {@code null}
      */
     default E matchFirstOrNull(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) {
-        return this.matchFirstOrNull(match, Concurrent.newList(predicates));
+        return this.matchFirstOrNull(match, Arrays.asList(predicates));
     }
 
     /**
@@ -586,7 +573,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default @NotNull Optional<E> matchLast(@NotNull Predicate<E>... predicates) {
-        return this.matchLast(Concurrent.newList(predicates));
+        return this.matchLast(Arrays.asList(predicates));
     }
 
     /**
@@ -607,7 +594,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default @NotNull Optional<E> matchLast(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) {
-        return this.matchLast(match, Concurrent.newList(predicates));
+        return this.matchLast(match, Arrays.asList(predicates));
     }
 
     /**
@@ -619,19 +606,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default @NotNull Optional<E> matchLast(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) {
-        return this.compare(
-            match,
-            (predicate, it, value) -> {
-                try {
-                    return predicate.apply(it);
-                } catch (NullPointerException nullPointerException) {
-                    return false;
-                }
-            },
-            StreamSupport.stream(predicates.spliterator(), false)
-                .map(predicate -> Pair.<Function<E, Boolean>, Boolean>of(predicate::test, true))
-                .collect(Concurrent.toList())
-        ).reduce((first, second) -> second);
+        return this.matchAll(match, predicates).reduce((first, second) -> second);
     }
 
     /**
@@ -641,7 +616,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the last matching element, or {@code null}
      */
     default E matchLastOrNull(@NotNull Predicate<E>... predicates) {
-        return this.matchLastOrNull(Concurrent.newList(predicates));
+        return this.matchLastOrNull(Arrays.asList(predicates));
     }
 
     /**
@@ -662,7 +637,7 @@ public interface Sortable<E> extends Searchable<E> {
      * @return the last matching element, or {@code null}
      */
     default E matchLastOrNull(@NotNull SearchFunction.Match match, @NotNull Predicate<E>... predicates) {
-        return this.matchLastOrNull(match, Concurrent.newList(predicates));
+        return this.matchLastOrNull(match, Arrays.asList(predicates));
     }
 
     /**

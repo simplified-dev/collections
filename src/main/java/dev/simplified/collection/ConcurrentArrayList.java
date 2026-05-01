@@ -100,6 +100,14 @@ public class ConcurrentArrayList<E> extends AtomicList<E, List<E>> implements Co
 	}
 
 	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	protected @NotNull AtomicList<E, List<E>> adoptSnapshot(@NotNull List<E> snapshot) {
+		return new ConcurrentArrayList<>(snapshot);
+	}
+
+	/**
 	 * Returns an immutable snapshot of this {@code ConcurrentArrayList}.
 	 *
 	 * <p>The returned wrapper owns a fresh copy of the current elements - subsequent mutations on

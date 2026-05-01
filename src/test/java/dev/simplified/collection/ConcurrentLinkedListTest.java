@@ -1,7 +1,5 @@
-package dev.simplified.collection.linked;
+package dev.simplified.collection;
 
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentLinkedList;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

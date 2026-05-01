@@ -4,18 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentCollection;
-import dev.simplified.collection.ConcurrentDeque;
-import dev.simplified.collection.ConcurrentLinkedHashMap;
-import dev.simplified.collection.ConcurrentLinkedHashSet;
-import dev.simplified.collection.ConcurrentLinkedList;
-import dev.simplified.collection.ConcurrentList;
-import dev.simplified.collection.ConcurrentMap;
-import dev.simplified.collection.ConcurrentQueue;
-import dev.simplified.collection.ConcurrentSet;
-import dev.simplified.collection.ConcurrentTreeMap;
-import dev.simplified.collection.ConcurrentTreeSet;
+import dev.simplified.collection.*;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -75,11 +64,11 @@ class ConcurrentTypeAdapterFactoryTest {
 
         @Test
         void deserialize_concurrentLinkedHashSet() {
-            ConcurrentLinkedHashSet<String> result = GSON.fromJson(
+            ConcurrentLinkedSet<String> result = GSON.fromJson(
                 "[\"a\",\"b\"]",
-                new TypeToken<ConcurrentLinkedHashSet<String>>() {}.getType()
+                new TypeToken<ConcurrentLinkedSet<String>>() {}.getType()
             );
-            assertThat(result, instanceOf(ConcurrentLinkedHashSet.class));
+            assertThat(result, instanceOf(ConcurrentLinkedSet.class));
             assertThat(result, containsInAnyOrder("a", "b"));
         }
 
@@ -131,11 +120,11 @@ class ConcurrentTypeAdapterFactoryTest {
 
         @Test
         void deserialize_concurrentLinkedHashMap() {
-            ConcurrentLinkedHashMap<String, Integer> result = GSON.fromJson(
+            ConcurrentLinkedMap<String, Integer> result = GSON.fromJson(
                 "{\"a\":1,\"b\":2}",
-                new TypeToken<ConcurrentLinkedHashMap<String, Integer>>() {}.getType()
+                new TypeToken<ConcurrentLinkedMap<String, Integer>>() {}.getType()
             );
-            assertThat(result, instanceOf(ConcurrentLinkedHashMap.class));
+            assertThat(result, instanceOf(ConcurrentLinkedMap.class));
             assertThat(result, hasEntry("a", 1));
         }
 
