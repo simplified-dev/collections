@@ -230,6 +230,7 @@ final class ConcurrentUnmodifiable {
 		@Override public boolean remove(Object key, Object value) { throw new UnsupportedOperationException(); }
 		@Override public boolean removeIf(@NotNull BiPredicate<? super K, ? super V> predicate) { throw new UnsupportedOperationException(); }
 		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
+		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
@@ -266,6 +267,7 @@ final class ConcurrentUnmodifiable {
 		@Override public boolean remove(Object key, Object value) { throw new UnsupportedOperationException(); }
 		@Override public boolean removeIf(@NotNull BiPredicate<? super K, ? super V> predicate) { throw new UnsupportedOperationException(); }
 		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
+		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
@@ -469,6 +471,7 @@ final class ConcurrentUnmodifiable {
 		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
 		@Override public Map.Entry<K, V> pollFirstEntry() { throw new UnsupportedOperationException(); }
 		@Override public Map.Entry<K, V> pollLastEntry() { throw new UnsupportedOperationException(); }
+		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override public @NotNull NavigableMap<K, V> descendingMap() { return Collections.unmodifiableNavigableMap(super.descendingMap()); }
 		@Override public @NotNull NavigableSet<K> navigableKeySet() { return Collections.unmodifiableNavigableSet(super.navigableKeySet()); }

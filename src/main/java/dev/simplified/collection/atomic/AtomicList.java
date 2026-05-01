@@ -251,6 +251,16 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	protected abstract @NotNull AtomicList<E, T> newEmpty();
 
 	/**
+	 * Adopts the given pre-built snapshot list as the backing of a fresh {@code AtomicList} of
+	 * this list's runtime type. Used by {@link #sorted}, {@link #reversed}, and {@link #subList}
+	 * to publish their pre-populated result without re-iterating through {@link #addAll}.
+	 *
+	 * @param snapshot the already-populated backing list to adopt
+	 * @return a new {@code AtomicList} backed by {@code snapshot}
+	 */
+	protected abstract @NotNull AtomicList<E, T> adoptSnapshot(@NotNull T snapshot);
+
+	/**
 	 * Returns a new list containing all elements from this list, sorted in descending order
 	 * according to the specified comparison functions. The original list is not modified.
 	 *
@@ -315,12 +325,9 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 			comparator = comparator.thenComparing(next);
 		}
 
-		List<E> snapshot = this.snapshot();
+		T snapshot = (T) this.snapshot();
 		snapshot.sort(sortOrder == SortOrder.ASCENDING ? comparator : comparator.reversed());
-
-		AtomicList<E, T> result = this.newEmpty();
-		result.addAll(snapshot);
-		return result;
+		return this.adoptSnapshot(snapshot);
 	}
 
 	/**
@@ -332,12 +339,11 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return a new sorted list
 	 */
 	@Override
+	@SuppressWarnings("unchecked")
 	public @NotNull AtomicList<E, T> sorted(Comparator<? super E> comparator) {
-		List<E> snapshot = this.snapshot();
+		T snapshot = (T) this.snapshot();
 		snapshot.sort(comparator);
-		AtomicList<E, T> result = this.newEmpty();
-		result.addAll(snapshot);
-		return result;
+		return this.adoptSnapshot(snapshot);
 	}
 
 	/**
@@ -347,12 +353,11 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return a new reversed list
 	 */
 	@Override
+	@SuppressWarnings("unchecked")
 	public @NotNull AtomicList<E, T> reversed() {
-		List<E> snapshot = this.snapshot();
+		T snapshot = (T) this.snapshot();
 		Collections.reverse(snapshot);
-		AtomicList<E, T> result = this.newEmpty();
-		result.addAll(snapshot);
-		return result;
+		return this.adoptSnapshot(snapshot);
 	}
 
 	/**
@@ -366,11 +371,13 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @throws IndexOutOfBoundsException if either index is out of range
 	 */
 	@Override
+	@SuppressWarnings("unchecked")
 	public @NotNull AtomicList<E, T> subList(int fromIndex, int toIndex) {
-		List<E> snapshot = this.snapshot();
-		AtomicList<E, T> result = this.newEmpty();
-		result.addAll(snapshot.subList(fromIndex, toIndex));
-		return result;
+		List<E> full = this.snapshot();
+		T sliced = (T) (full instanceof LinkedList<?>
+			? new LinkedList<>(full.subList(fromIndex, toIndex))
+			: new ArrayList<>(full.subList(fromIndex, toIndex)));
+		return this.adoptSnapshot(sliced);
 	}
 
 	/**
