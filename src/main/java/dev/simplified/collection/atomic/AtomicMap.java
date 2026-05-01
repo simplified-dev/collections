@@ -32,6 +32,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected final @NotNull ReadWriteLock lock;
 	private final @NotNull Lock readLockView;
 	private final @NotNull Lock writeLockView;
+	private final @NotNull Object viewLock = new Object();
 
 	/** Lazily initialized live view of the entry set. */
 	private transient volatile @Nullable Set<Entry<K, V>> entrySetView;
@@ -91,9 +92,9 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * while still holding the write lock so the nullify is ordered before the unlock.
 	 */
 	protected void invalidateViewSnapshots() {
-		this.entrySetSnapshot = null;
-		this.keySetSnapshot = null;
-		this.valuesSnapshot = null;
+		if (this.entrySetSnapshot != null) this.entrySetSnapshot = null;
+		if (this.keySetSnapshot != null) this.keySetSnapshot = null;
+		if (this.valuesSnapshot != null) this.valuesSnapshot = null;
 		this.onSnapshotInvalidated();
 	}
 
@@ -234,7 +235,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Set<Entry<K, V>> view = this.entrySetView;
 
 		if (view == null) {
-			synchronized (this) {
+			synchronized (this.viewLock) {
 				view = this.entrySetView;
 
 				if (view == null) {
@@ -324,7 +325,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Set<K> view = this.keySetView;
 
 		if (view == null) {
-			synchronized (this) {
+			synchronized (this.viewLock) {
 				view = this.keySetView;
 
 				if (view == null) {
@@ -524,7 +525,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Collection<V> view = this.valuesView;
 
 		if (view == null) {
-			synchronized (this) {
+			synchronized (this.viewLock) {
 				view = this.valuesView;
 
 				if (view == null) {
@@ -624,6 +625,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		private final K key;
 		private final V value;
+		private int hash;
 
 		SnapshotEntry(K key, V value) {
 			this.key = key;
@@ -654,8 +656,13 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public int hashCode() {
-			return (this.key == null ? 0 : this.key.hashCode())
-				^ (this.value == null ? 0 : this.value.hashCode());
+			int h = this.hash;
+			if (h == 0) {
+				h = (this.key == null ? 0 : this.key.hashCode())
+					^ (this.value == null ? 0 : this.value.hashCode());
+				this.hash = h;
+			}
+			return h;
 		}
 
 		@Override
