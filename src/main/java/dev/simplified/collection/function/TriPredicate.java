@@ -11,8 +11,8 @@ import java.util.function.Predicate;
  * whose functional method is {@link #test(Object, Object, Object)}.
  *
  * @param <L> the type of the first argument to the predicate
- * @param <M> the type of the second argument the predicate
- * @param <R> the type of the third argument the predicate
+ * @param <M> the type of the second argument to the predicate
+ * @param <R> the type of the third argument to the predicate
  *
  * @see Predicate
  */

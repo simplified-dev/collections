@@ -35,7 +35,7 @@ public interface SearchFunction<T, R> extends Function<T, R> {
      * and then applies the {@code after} function to the result.
      *
      * @param after the function to apply after this function
-     * @param <V>   the output type of the {@code after} function
+     * @param <V> the output type of the {@code after} function
      * @return a composed {@link SearchFunction} that applies this function then {@code after}
      */
     @Override

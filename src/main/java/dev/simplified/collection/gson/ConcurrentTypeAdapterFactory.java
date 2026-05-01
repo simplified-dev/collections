@@ -1,6 +1,7 @@
 package dev.simplified.collection.gson;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
@@ -20,25 +21,26 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  * Gson {@link TypeAdapterFactory} that teaches Gson how to deserialize the
  * {@code dev.simplified.collection.Concurrent*} interface types.
  * <p>
- * Each interface is mapped to its inner {@code Impl} class - a concrete
- * {@link java.util.Collection} or {@link java.util.Map} subtype with a public
- * no-arg constructor that Gson's built-in collection and map adapters can
- * instantiate. When Gson resolves a field declared as one of the supported
- * interfaces, this factory returns the adapter for the matching {@code Impl},
- * preserving the declared generic arguments so element, key, and value types
- * round-trip correctly.
+ * Each interface is mapped to a concrete {@link Collection} or {@link Map} subtype
+ * (such as {@link ConcurrentArrayList} or {@link ConcurrentHashMap}) with a public
+ * no-arg constructor that Gson's built-in collection and map adapters can instantiate.
+ * When Gson resolves a field declared as one of the supported interfaces, this factory
+ * returns the adapter for the matching concrete type, preserving the declared generic
+ * arguments so element, key, and value types round-trip correctly.
  * <p>
  * The factory is registered as a Gson SPI via
  * {@code META-INF/services/com.google.gson.TypeAdapterFactory}, so any consumer
- * that loads {@link TypeAdapterFactory} via {@link java.util.ServiceLoader}
+ * that loads {@link TypeAdapterFactory} via {@link ServiceLoader}
  * picks it up automatically. Manual users can also register an instance
- * directly with {@link com.google.gson.GsonBuilder#registerTypeAdapterFactory}.
+ * directly with {@link GsonBuilder#registerTypeAdapterFactory}.
  *
  * @see TypeAdapterFactory
  */
@@ -53,7 +55,9 @@ public final class ConcurrentTypeAdapterFactory implements TypeAdapterFactory {
         Map.entry(ConcurrentMap.class, ConcurrentHashMap.class)
     );
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T> @Nullable TypeAdapter<T> create(@NotNull Gson gson, @NotNull TypeToken<T> typeToken) {
         Class<? super T> rawType = typeToken.getRawType();
