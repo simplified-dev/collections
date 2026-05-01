@@ -61,3 +61,14 @@ tasks {
         }
     }
 }
+
+jmh {
+    val include = providers.gradleProperty("jmhInclude").orNull
+    if (include != null) includes.set(listOf(include))
+    val forkProp = providers.gradleProperty("jmhFork").orNull
+    if (forkProp != null) fork.set(forkProp.toInt())
+    val warmupProp = providers.gradleProperty("jmhWarmup").orNull
+    if (warmupProp != null) warmupIterations.set(warmupProp.toInt())
+    val iterProp = providers.gradleProperty("jmhIter").orNull
+    if (iterProp != null) iterations.set(iterProp.toInt())
+}
