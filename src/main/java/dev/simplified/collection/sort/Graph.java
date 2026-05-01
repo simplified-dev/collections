@@ -10,10 +10,19 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Stack;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -26,12 +35,24 @@ import java.util.stream.Stream;
  * @param <T> the type of values stored in graph nodes
  */
 @Getter
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class Graph<T> {
 
     private final @NotNull ConcurrentList<Node<T>> nodes;
     private final @NotNull ConcurrentList<T> edges;
     private final @NotNull ConcurrentMap<T, ConcurrentList<T>> nodeEdges;
+    private final @NotNull Map<T, Node<T>> nodeIndex;
+
+    private Graph(@NotNull ConcurrentList<Node<T>> nodes,
+                  @NotNull ConcurrentList<T> edges,
+                  @NotNull ConcurrentMap<T, ConcurrentList<T>> nodeEdges) {
+        this.nodes = nodes;
+        this.edges = edges;
+        this.nodeEdges = nodeEdges;
+        Map<T, Node<T>> index = HashMap.newHashMap(nodes.size());
+        for (Node<T> node : nodes) index.put(node.getValue(), node);
+        assert index.size() == nodes.size();
+        this.nodeIndex = index;
+    }
 
     /**
      * Creates a new graph builder parameterized by the given type instance.
@@ -45,58 +66,71 @@ public class Graph<T> {
     }
 
     /**
-     * Finds the node with the given value.
+     * Finds the node with the given value via the {@link #nodeIndex} O(1) lookup.
      *
      * @param value the value to search for
      * @return the matching node
      */
     private @NotNull Node<T> findNode(@NotNull T value) {
-        return this.getNodes().findFirstOrNull(Node::getValue, value);
+        Node<T> node = this.nodeIndex.get(value);
+        if (node == null) throw new NoSuchElementException("Node not found: " + value);
+        return node;
     }
 
     /**
      * Returns the graph's nodes in topological sort order.
      *
+     * <p>Performs an iterative post-order DFS using explicit stacks so deeply chained graphs do
+     * not blow the JVM call stack. Cycles in the graph trigger an
+     * {@link IllegalStateException}.</p>
+     *
      * @return an unmodifiable concurrent list of node values in topological order
      */
     public @NotNull ConcurrentList<T> topologicalSort() {
-        Stack<T> stack = new Stack<>();
+        List<T> result = new ArrayList<>(this.nodes.size());
+        Set<Node<T>> visited = new HashSet<>();
+        Set<Node<T>> onStack = new HashSet<>();
+        Deque<Iterator<T>> iterStack = new ArrayDeque<>();
+        Deque<Node<T>> nodeStack = new ArrayDeque<>();
 
-        // iterate through all the nodes and their neighbours if not already visited.
-        for (Node<T> node : this.getNodes()) {
-            if (node.notVisited())
-                this.sort(node, stack);
-        }
+        for (Node<T> root : this.nodes) {
+            if (visited.contains(root))
+                continue;
 
-        return Concurrent.newUnmodifiableList(stack);
-    }
+            nodeStack.push(root);
+            onStack.add(root);
+            iterStack.push(this.neighborIterator(root));
 
-    /**
-     * Recursively iterates through all nodes and their neighbours, pushing visited items onto the
-     * stack.
-     *
-     * @param node the current node
-     * @param stack the combined stack
-     */
-    private void sort(@NotNull Node<T> node, @NotNull Stack<T> stack){
-        node.setVisited(true);
+            while (!nodeStack.isEmpty()) {
+                Iterator<T> it = iterStack.peek();
 
-        // The leaf nodes have no neighbours
-        if (this.getNodeEdges().containsKey(node.getValue())) {
-            // Get all neighbour nodes
-            Iterator<T> iterator = this.getNodeEdges().get(node.getValue()).iterator();
-            Node<T> neighborNode;
+                if (it.hasNext()) {
+                    Node<T> next = this.findNode(it.next());
 
-            while (iterator.hasNext()) {
-                neighborNode = this.findNode(iterator.next());
+                    if (onStack.contains(next))
+                        throw new IllegalStateException("Cycle detected at: " + next.getValue());
+                    if (visited.contains(next))
+                        continue;
 
-                if (neighborNode.notVisited())
-                    this.sort(neighborNode, stack); // Visit neighbour node
+                    nodeStack.push(next);
+                    onStack.add(next);
+                    iterStack.push(this.neighborIterator(next));
+                } else {
+                    Node<T> done = nodeStack.pop();
+                    iterStack.pop();
+                    onStack.remove(done);
+                    visited.add(done);
+                    result.add(done.getValue());
+                }
             }
         }
 
-        // Push the latest node to the stack
-        stack.push(node.getValue());
+        return Concurrent.newUnmodifiableList(result);
+    }
+
+    private @NotNull Iterator<T> neighborIterator(@NotNull Node<T> node) {
+        ConcurrentList<T> neighbors = this.nodeEdges.get(node.getValue());
+        return neighbors == null ? Collections.<T>emptyIterator() : neighbors.iterator();
     }
 
     /**
@@ -195,7 +229,7 @@ public class Graph<T> {
     }
 
     /**
-     * A node in the graph holding a value and a visited flag for traversal.
+     * A node in the graph holding a value.
      *
      * @param <T> the type of the node value
      */
@@ -204,17 +238,6 @@ public class Graph<T> {
     static class Node<T> {
 
         private final @NotNull T value;
-        @Setter(AccessLevel.PRIVATE)
-        private boolean visited;
-
-        /**
-         * Returns {@code true} if this node has not yet been visited during traversal.
-         *
-         * @return {@code true} if not visited
-         */
-        public boolean notVisited() {
-            return !this.isVisited();
-        }
 
     }
 
