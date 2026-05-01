@@ -33,7 +33,7 @@ public class ConcurrentHashMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> 
 	 */
 	@SafeVarargs
 	public ConcurrentHashMap(@Nullable Map.Entry<K, V>... pairs) {
-		super(new HashMap<>(), pairs);
+		super(HashMap.newHashMap(pairs == null ? 0 : pairs.length), pairs);
 	}
 
 	/**
@@ -42,7 +42,7 @@ public class ConcurrentHashMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> 
 	 * @param map the source map to copy from
 	 */
 	public ConcurrentHashMap(@Nullable Map<? extends K, ? extends V> map) {
-		super(new HashMap<>(), map);
+		super(HashMap.newHashMap(map == null ? 0 : map.size()), map);
 	}
 
 	/**
