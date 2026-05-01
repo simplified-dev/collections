@@ -24,6 +24,13 @@ import java.util.Map;
 public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
 
     /**
+     * Cached null-safe natural-order comparator used by {@link #compareTo(Pair)} so each call
+     * does not allocate a fresh comparator chain.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    Comparator<Object> NULL_SAFE_NATURAL = Comparator.nullsFirst((Comparator) Comparator.naturalOrder());
+
+    /**
      * Returns an immutable pair of two objects, inferring the generic types.
      *
      * @param <L> the left element type
@@ -108,11 +115,9 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
      */
     @Override
     default int compareTo(@NotNull Pair<L, R> other) {
-        @SuppressWarnings("unchecked")
-        Comparator<Object> nullSafeComparator = (Comparator<Object>) (Comparator<?>) Comparator.nullsFirst(Comparator.naturalOrder());
-        int result = nullSafeComparator.compare(left(), other.left());
+        int result = NULL_SAFE_NATURAL.compare(left(), other.left());
         if (result != 0) return result;
-        return nullSafeComparator.compare(right(), other.right());
+        return NULL_SAFE_NATURAL.compare(right(), other.right());
     }
 
     /**
