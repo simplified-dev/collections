@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.AbstractMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Spliterator;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -114,6 +115,39 @@ public class ConcurrentLinkedMap<K, V> extends ConcurrentHashMap<K, V> {
 	@Override
 	public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
 		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>((LinkedHashMap<K, V>) this.cloneRef());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so the entry-set spliterator preserves the
+	 * {@link LinkedHashMap} insertion order on parallel-stream consumers.
+	 */
+	@Override
+	protected int entrySetSpliteratorCharacteristics() {
+		return super.entrySetSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so the key-set spliterator preserves the
+	 * {@link LinkedHashMap} insertion order on parallel-stream consumers.
+	 */
+	@Override
+	protected int keySetSpliteratorCharacteristics() {
+		return super.keySetSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so the values-collection spliterator preserves the
+	 * {@link LinkedHashMap} insertion order on parallel-stream consumers.
+	 */
+	@Override
+	protected int valuesSpliteratorCharacteristics() {
+		return super.valuesSpliteratorCharacteristics() | Spliterator.ORDERED;
 	}
 
 	/**

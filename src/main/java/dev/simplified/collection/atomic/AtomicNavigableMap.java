@@ -76,6 +76,44 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map entry traversal preserves key order
+	 * through stream operations. {@link Spliterator#SORTED} is intentionally not advertised on the
+	 * entry-set view because the JDK array spliterator cannot expose a key-based
+	 * {@link java.util.Comparator} for {@link java.util.Map.Entry} elements.
+	 */
+	@Override
+	protected int entrySetSpliteratorCharacteristics() {
+		return super.entrySetSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map key traversal preserves key order.
+	 * {@link Spliterator#SORTED} is not advertised here because the snapshot-array spliterator
+	 * cannot expose the backing map's {@link java.util.Comparator}; callers needing the SORTED
+	 * contract must go through {@link #navigableKeySet()}, which returns a view that wraps the
+	 * spliterator with the configured comparator.
+	 */
+	@Override
+	protected int keySetSpliteratorCharacteristics() {
+		return super.keySetSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map value traversal preserves the
+	 * encounter order induced by the backing map's key ordering.
+	 */
+	@Override
+	protected int valuesSpliteratorCharacteristics() {
+		return super.valuesSpliteratorCharacteristics() | Spliterator.ORDERED;
+	}
+
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Comparator<? super K> comparator() {
