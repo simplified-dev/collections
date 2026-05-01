@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * JMH benchmark suite for {@link ConcurrentLinkedHashMap}, comparing throughput against
+ * JMH benchmark suite for {@link ConcurrentLinkedMap}, comparing throughput against
  * {@link LinkedHashMap} and {@code Collections.synchronizedMap(new LinkedHashMap<>())}.
  */
 @BenchmarkMode(Mode.Throughput)
@@ -17,23 +17,23 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 1)
 @Fork(2)
 @State(Scope.Benchmark)
-public class ConcurrentLinkedHashMapBenchmark {
+public class ConcurrentLinkedMapBenchmark {
 
     @Param({"100", "1000", "10000"})
     private int size;
 
-    private ConcurrentLinkedHashMap<Integer, Integer> concurrentLinkedHashMap;
+    private ConcurrentLinkedMap<Integer, Integer> concurrentLinkedMap;
     private LinkedHashMap<Integer, Integer> linkedHashMap;
     private Map<Integer, Integer> syncLinkedHashMap;
 
     @Setup(Level.Iteration)
     public void setup() {
-        concurrentLinkedHashMap = new ConcurrentLinkedHashMap<>();
+        concurrentLinkedMap = new ConcurrentLinkedMap<>();
         linkedHashMap = new LinkedHashMap<>();
         syncLinkedHashMap = Collections.synchronizedMap(new LinkedHashMap<>());
 
         for (int i = 0; i < size; i++) {
-            concurrentLinkedHashMap.put(i, i);
+            concurrentLinkedMap.put(i, i);
             linkedHashMap.put(i, i);
             syncLinkedHashMap.put(i, i);
         }
@@ -43,7 +43,7 @@ public class ConcurrentLinkedHashMapBenchmark {
 
     @Benchmark
     public Integer concurrentLinkedHashMap_get() {
-        return concurrentLinkedHashMap.get(size / 2);
+        return concurrentLinkedMap.get(size / 2);
     }
 
     @Benchmark
@@ -60,7 +60,7 @@ public class ConcurrentLinkedHashMapBenchmark {
 
     @Benchmark
     public Integer concurrentLinkedHashMap_put() {
-        return concurrentLinkedHashMap.put(size + 1, 42);
+        return concurrentLinkedMap.put(size + 1, 42);
     }
 
     @Benchmark
@@ -77,7 +77,7 @@ public class ConcurrentLinkedHashMapBenchmark {
 
     @Benchmark
     public boolean concurrentLinkedHashMap_containsKey() {
-        return concurrentLinkedHashMap.containsKey(size / 2);
+        return concurrentLinkedMap.containsKey(size / 2);
     }
 
     @Benchmark
@@ -95,7 +95,7 @@ public class ConcurrentLinkedHashMapBenchmark {
     @Benchmark
     public int concurrentLinkedHashMap_iterate() {
         int sum = 0;
-        for (Map.Entry<Integer, Integer> e : concurrentLinkedHashMap.entrySet()) sum += e.getValue();
+        for (Map.Entry<Integer, Integer> e : concurrentLinkedMap.entrySet()) sum += e.getValue();
         return sum;
     }
 
@@ -119,7 +119,7 @@ public class ConcurrentLinkedHashMapBenchmark {
 
     @Benchmark
     public int concurrentLinkedHashMap_size() {
-        return concurrentLinkedHashMap.size();
+        return concurrentLinkedMap.size();
     }
 
     @Benchmark
@@ -136,7 +136,7 @@ public class ConcurrentLinkedHashMapBenchmark {
 
     @Benchmark
     public Integer concurrentLinkedHashMap_remove() {
-        return concurrentLinkedHashMap.remove(size / 2);
+        return concurrentLinkedMap.remove(size / 2);
     }
 
     @Benchmark

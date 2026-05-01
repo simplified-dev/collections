@@ -1,7 +1,5 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.ConcurrentTreeMap;
-import dev.simplified.collection.ConcurrentTreeSet;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -275,7 +273,7 @@ class ConcurrentFactoryTest {
 
 		@Test
 		void newUnmodifiableLinkedMap_isLinkedHashMap() {
-			assertTrue(Concurrent.newUnmodifiableLinkedMap(entry("a", 1)) instanceof ConcurrentLinkedHashMap);
+			assertTrue(Concurrent.newUnmodifiableLinkedMap(entry("a", 1)) instanceof ConcurrentLinkedMap);
 		}
 
 		@Test

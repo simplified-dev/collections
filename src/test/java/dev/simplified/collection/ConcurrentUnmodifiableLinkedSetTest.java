@@ -18,7 +18,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 		void factory_empty_isLinkedSetSnapshot() {
 			ConcurrentSet<String> u = Concurrent.newUnmodifiableLinkedSet();
 			assertEquals(0, u.size());
-			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet);
+			assertTrue(u instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet);
 		}
 
 		@Test
@@ -37,7 +37,7 @@ class ConcurrentUnmodifiableLinkedSetTest {
 		@Test
 		void toUnmodifiable_fromLinkedSet_returnsLinkedSetUnmodifiable() {
 			ConcurrentSet<String> src = Concurrent.newLinkedSet("a", "b");
-			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet);
+			assertTrue(src.toUnmodifiable() instanceof ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet);
 		}
 	}
 
