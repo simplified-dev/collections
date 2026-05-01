@@ -648,7 +648,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableMap(@NotNull Map.Entry<K, V>... entries) {
-		HashMap<K, V> snapshot = new HashMap<>();
+		HashMap<K, V> snapshot = HashMap.newHashMap(entries.length);
 		for (Map.Entry<K, V> entry : entries) {
 			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
 		}
@@ -702,7 +702,9 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableSet(@NotNull E... array) {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>(Arrays.asList(array)));
+		HashSet<E> snapshot = HashSet.newHashSet(array.length);
+		for (E element : array) snapshot.add(element);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(snapshot);
 	}
 
 	/**
@@ -868,7 +870,9 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <E> @NotNull ConcurrentSet<E> newUnmodifiableLinkedSet(@NotNull E... array) {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>(new LinkedHashSet<>(Arrays.asList(array)));
+		LinkedHashSet<E> snapshot = LinkedHashSet.newLinkedHashSet(array.length);
+		for (E element : array) snapshot.add(element);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedHashSet<>(snapshot);
 	}
 
 	/**
@@ -909,7 +913,7 @@ public final class Concurrent {
 	 */
 	@SafeVarargs
 	public static <K, V> @NotNull ConcurrentMap<K, V> newUnmodifiableLinkedMap(@NotNull Map.Entry<K, V>... pairs) {
-		LinkedHashMap<K, V> snapshot = new LinkedHashMap<>();
+		LinkedHashMap<K, V> snapshot = LinkedHashMap.newLinkedHashMap(pairs.length);
 		for (Map.Entry<K, V> entry : pairs) {
 			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
 		}

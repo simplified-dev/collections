@@ -40,7 +40,7 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 * @param map the source map to copy from
 	 */
 	public ConcurrentLinkedHashMap(@Nullable Map<? extends K, ? extends V> map) {
-		super(new MaxSizeLinkedMap<>(), map);
+		super(MaxSizeLinkedMap.sized(-1, map == null ? 0 : map.size()), map);
 	}
 
 	/**
@@ -50,7 +50,7 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 	 * @param maxSize the maximum number of entries allowed in the map
 	 */
 	public ConcurrentLinkedHashMap(@Nullable Map<? extends K, ? extends V> map, int maxSize) {
-		super(new MaxSizeLinkedMap<>(maxSize), map);
+		super(MaxSizeLinkedMap.sized(maxSize, map == null ? 0 : map.size()), map);
 	}
 
 	/**
@@ -135,6 +135,16 @@ public class ConcurrentLinkedHashMap<K, V> extends ConcurrentHashMap<K, V> {
 
 		MaxSizeLinkedMap(int maxSize) {
 			this.maxSize = maxSize;
+		}
+
+		private MaxSizeLinkedMap(int maxSize, int initialCapacity, float loadFactor) {
+			super(initialCapacity, loadFactor);
+			this.maxSize = maxSize;
+		}
+
+		static <K, V> @NotNull MaxSizeLinkedMap<K, V> sized(int maxSize, int numMappings) {
+			if (numMappings <= 0) return new MaxSizeLinkedMap<>(maxSize);
+			return new MaxSizeLinkedMap<>(maxSize, (int) Math.ceil(numMappings / 0.75d), 0.75f);
 		}
 
 		@Override
