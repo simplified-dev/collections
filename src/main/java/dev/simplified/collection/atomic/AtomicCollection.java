@@ -15,7 +15,6 @@ import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
@@ -38,8 +37,6 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 	protected final @NotNull T ref;
 	protected final @NotNull ReadWriteLock lock;
-	private final @NotNull Lock readLockView;
-	private final @NotNull Lock writeLockView;
 
 	/**
 	 * Cached {@link #toArray} snapshot used by iterators. Published under the read lock,
@@ -62,8 +59,6 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	protected AtomicCollection(@NotNull T ref, @NotNull ReadWriteLock lock) {
 		this.ref = ref;
 		this.lock = lock;
-		this.readLockView = lock.readLock();
-		this.writeLockView = lock.writeLock();
 	}
 
 	/**
@@ -83,12 +78,12 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @return the value returned by {@code action}
 	 */
 	protected final <R> R withReadLock(@NotNull java.util.function.Supplier<R> action) {
-		this.readLockView.lock();
+		this.lock.readLock().lock();
 
 		try {
 			return action.get();
 		} finally {
-			this.readLockView.unlock();
+			this.lock.readLock().unlock();
 		}
 	}
 
@@ -98,12 +93,12 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @param action the action to execute under the read lock
 	 */
 	protected final void withReadLock(@NotNull Runnable action) {
-		this.readLockView.lock();
+		this.lock.readLock().lock();
 
 		try {
 			action.run();
 		} finally {
-			this.readLockView.unlock();
+			this.lock.readLock().unlock();
 		}
 	}
 
@@ -116,13 +111,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @return the value returned by {@code action}
 	 */
 	protected final <R> R withWriteLock(@NotNull java.util.function.Supplier<R> action) {
-		this.writeLockView.lock();
+		this.lock.writeLock().lock();
 
 		try {
 			return action.get();
 		} finally {
 			this.invalidateSnapshot();
-			this.writeLockView.unlock();
+			this.lock.writeLock().unlock();
 		}
 	}
 
@@ -133,13 +128,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @param action the action to execute under the write lock
 	 */
 	protected final void withWriteLock(@NotNull Runnable action) {
-		this.writeLockView.lock();
+		this.lock.writeLock().lock();
 
 		try {
 			action.run();
 		} finally {
 			this.invalidateSnapshot();
-			this.writeLockView.unlock();
+			this.lock.writeLock().unlock();
 		}
 	}
 
