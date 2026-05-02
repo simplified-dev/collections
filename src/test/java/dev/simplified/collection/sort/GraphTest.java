@@ -4,7 +4,10 @@ import dev.simplified.collection.ConcurrentList;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -232,6 +235,141 @@ class GraphTest {
 			assertEquals(Set.of("A"), Set.copyOf(layers.get(1)));
 		}
 
+	}
+
+	@Nested
+	class AsLinearSort {
+
+		@Test
+		void ordersArbitrarySubsetByGraphPosition() {
+			// chain: 1 -> 2 -> 3, so linear order is [3, 2, 1]
+			Graph<Integer> graph = Graph.<Integer>builder()
+				.withValues(1, 2, 3, 4, 5)
+				.withEdge(1, 2)
+				.withEdge(2, 3)
+				.withEdge(4, 5)
+				.build();
+
+			SortAlgorithm<Integer> algorithm = graph.asLinearSort();
+
+			List<Integer> subset = new ArrayList<>(List.of(1, 3, 5));
+			algorithm.sort(subset);
+
+			// linear order across all nodes is [3, 5, 2, 4, 1] (one valid order; subset preserves relative)
+			// the subset {1, 3, 5} should reorder so 3 and 5 (leaves) come before 1 (root)
+			List<Integer> fullOrder = new ArrayList<>(graph.linearTopologicalSort());
+			subset.sort((a, b) -> Integer.compare(fullOrder.indexOf(a), fullOrder.indexOf(b)));
+			List<Integer> expected = subset;
+
+			List<Integer> actual = new ArrayList<>(List.of(1, 3, 5));
+			algorithm.sort(actual);
+			assertEquals(expected, actual);
+		}
+
+		@Test
+		void reusableAcrossMultipleSorts() {
+			Graph<Integer> graph = Graph.<Integer>builder()
+				.withValues(1, 2, 3)
+				.withEdge(1, 2)
+				.withEdge(2, 3)
+				.build();
+
+			SortAlgorithm<Integer> algorithm = graph.asLinearSort();
+
+			List<Integer> first = new ArrayList<>(List.of(1, 2, 3));
+			algorithm.sort(first);
+			assertEquals(List.of(3, 2, 1), first);
+
+			List<Integer> second = new ArrayList<>(List.of(2, 1));
+			algorithm.sort(second);
+			assertEquals(List.of(2, 1), second);
+		}
+
+		@Test
+		void elementNotInGraphThrows() {
+			Graph<String> graph = Graph.<String>builder().withValues("A", "B").withEdge("A", "B").build();
+			SortAlgorithm<String> algorithm = graph.asLinearSort();
+
+			List<String> bad = new ArrayList<>(List.of("A", "ZZZ"));
+			assertThrows(NoSuchElementException.class, () -> algorithm.sort(bad));
+		}
+
+		@Test
+		void cycleInGraphSurfacesAsIllegalState() {
+			Graph<Integer> graph = Graph.<Integer>builder()
+				.withValues(1, 2, 3)
+				.withEdge(1, 2)
+				.withEdge(2, 3)
+				.withEdge(3, 1)
+				.build();
+			assertThrows(IllegalStateException.class, graph::asLinearSort);
+		}
+	}
+
+	@Nested
+	class AsLayeredSort {
+
+		@Test
+		void ordersByLayerIndexStableWithinLayer() {
+			// A -> B, A -> C, B -> D, C -> D
+			// layers: 0 = {D}, 1 = {B, C}, 2 = {A}
+			Graph<String> graph = Graph.<String>builder()
+				.withValues("A", "B", "C", "D")
+				.withEdge("A", "B")
+				.withEdge("A", "C")
+				.withEdge("B", "D")
+				.withEdge("C", "D")
+				.build();
+
+			SortAlgorithm<String> algorithm = graph.asLayeredSort();
+
+			// Input order: A, C, B, D — within layer 1 {B,C} the input order C-then-B should be preserved
+			List<String> input = new ArrayList<>(List.of("A", "C", "B", "D"));
+			algorithm.sort(input);
+
+			// Expected: D (layer 0), then C, B (layer 1, input order), then A (layer 2)
+			assertEquals(List.of("D", "C", "B", "A"), input);
+		}
+
+		@Test
+		void reusableAcrossMultipleSorts() {
+			Graph<String> graph = Graph.<String>builder()
+				.withValues("A", "B", "C")
+				.withEdge("A", "B")
+				.withEdge("A", "C")
+				.build();
+
+			SortAlgorithm<String> algorithm = graph.asLayeredSort();
+
+			List<String> first = new ArrayList<>(List.of("A", "B", "C"));
+			algorithm.sort(first);
+			// layers: 0 = {B, C}, 1 = {A}
+			assertEquals(List.of("B", "C", "A"), first);
+
+			List<String> second = new ArrayList<>(List.of("C", "A", "B"));
+			algorithm.sort(second);
+			assertEquals(List.of("C", "B", "A"), second);
+		}
+
+		@Test
+		void elementNotInGraphThrows() {
+			Graph<String> graph = Graph.<String>builder().withValues("A", "B").withEdge("A", "B").build();
+			SortAlgorithm<String> algorithm = graph.asLayeredSort();
+
+			List<String> bad = new ArrayList<>(List.of("A", "ZZZ"));
+			assertThrows(NoSuchElementException.class, () -> algorithm.sort(bad));
+		}
+
+		@Test
+		void cycleInGraphSurfacesAsIllegalState() {
+			Graph<Integer> graph = Graph.<Integer>builder()
+				.withValues(1, 2, 3)
+				.withEdge(1, 2)
+				.withEdge(2, 3)
+				.withEdge(3, 1)
+				.build();
+			assertThrows(IllegalStateException.class, graph::asLayeredSort);
+		}
 	}
 
 }

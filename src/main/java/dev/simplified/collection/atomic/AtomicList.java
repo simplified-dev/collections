@@ -2,6 +2,8 @@ package dev.simplified.collection.atomic;
 
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.collection.query.SortOrder;
+import dev.simplified.collection.sort.Comparison;
+import dev.simplified.collection.sort.SortAlgorithm;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -339,10 +341,22 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return a new sorted list
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	public @NotNull AtomicList<E, T> sorted(Comparator<? super E> comparator) {
+		return this.sorted(Comparison.timsort(comparator));
+	}
+
+	/**
+	 * Returns a new list containing all elements of this list, sorted by the given pluggable
+	 * {@link SortAlgorithm}. The original list is not modified.
+	 *
+	 * @param algorithm the sort strategy to apply
+	 * @return a new sorted list
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public @NotNull AtomicList<E, T> sorted(@NotNull SortAlgorithm<E> algorithm) {
 		T snapshot = (T) this.snapshot();
-		snapshot.sort(comparator);
+		algorithm.sort(snapshot);
 		return this.adoptSnapshot(snapshot);
 	}
 

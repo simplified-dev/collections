@@ -2,6 +2,7 @@ package dev.simplified.collection;
 
 import dev.simplified.collection.query.SortOrder;
 import dev.simplified.collection.query.Sortable;
+import dev.simplified.collection.sort.SortAlgorithm;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
@@ -94,6 +95,19 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @return a new sorted list
 	 */
 	@NotNull ConcurrentList<E> sorted(Comparator<? super E> comparator);
+
+	/**
+	 * Returns a new list containing all elements from this list, sorted by the given pluggable
+	 * {@link SortAlgorithm}. The original list is not modified.
+	 * <p>
+	 * Use this overload when a workload-specific algorithm beats the default Timsort - typically
+	 * {@code RadixSort.byInt(...)} for large integer-keyed collections, {@code Comparison.timsort(cmp)}
+	 * to be explicit, or a lambda for a one-off custom strategy.
+	 *
+	 * @param algorithm the sort strategy to apply
+	 * @return a new sorted list
+	 */
+	@NotNull ConcurrentList<E> sorted(@NotNull SortAlgorithm<E> algorithm);
 
 	/**
 	 * {@inheritDoc}
