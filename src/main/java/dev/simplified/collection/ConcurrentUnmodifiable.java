@@ -60,7 +60,7 @@ final class ConcurrentUnmodifiable {
 			return INSTANCE;
 		}
 
-		private static final class NoOpLock implements Lock {
+		private static final class NoOpLock implements Lock, Serializable {
 
 			@Override
 			public void lock() {}
@@ -84,6 +84,11 @@ final class ConcurrentUnmodifiable {
 			@Override
 			public @NotNull Condition newCondition() {
 				throw new UnsupportedOperationException("Conditions not supported on NoOpReadWriteLock");
+			}
+
+			@Serial
+			private Object readResolve() {
+				return NO_OP_LOCK;
 			}
 
 		}
