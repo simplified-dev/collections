@@ -14,7 +14,7 @@ class GraphTest {
 
 		@Test
 		void simpleChain() {
-			Graph<Integer> graph = Graph.builder(0)
+			Graph<Integer> graph = Graph.<Integer>builder()
 				.withValues(1, 2, 3)
 				.withEdge(1, 2)
 				.withEdge(2, 3)
@@ -33,7 +33,7 @@ class GraphTest {
 			Integer[] values = new Integer[n];
 			for (int i = 0; i < n; i++) values[i] = i;
 
-			Graph.Builder<Integer> b = Graph.builder(0).withValues(values);
+			Graph.Builder<Integer> b = Graph.<Integer>builder().withValues(values);
 			for (int i = 0; i < n - 1; i++) b.withEdge(i, i + 1);
 
 			ConcurrentList<Integer> sorted = b.build().topologicalSort();
@@ -44,7 +44,7 @@ class GraphTest {
 
 		@Test
 		void cycleDetected() {
-			Graph<Integer> graph = Graph.builder(0)
+			Graph<Integer> graph = Graph.<Integer>builder()
 				.withValues(1, 2, 3)
 				.withEdge(1, 2)
 				.withEdge(2, 3)
