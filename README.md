@@ -14,6 +14,7 @@ Thread-safe concurrent collection implementations with atomic operations backed 
 - [Usage](#usage)
   - [Concurrent Collections](#concurrent-collections)
   - [Tuple Types](#tuple-types)
+  - [Sorting Algorithms](#sorting-algorithms)
 - [Project Structure](#project-structure)
 - [Building](#building)
   - [Running Tests](#running-tests)
@@ -33,7 +34,8 @@ Thread-safe concurrent collection implementations with atomic operations backed 
 - **`ReadWriteLock`-based concurrency** - `withReadLock` / `withWriteLock` lambda helpers on `AtomicCollection` and `AtomicMap` wrap the lock + snapshot-invalidation pattern uniformly. `AtomicMap` exposes a `checkMutationAllowed` hook subclasses override to gate writes.
 - **Tuple types** - `Pair`, `Triple`, and `Single` with mutable/immutable variants and streaming support (`PairStream`, `TripleStream`, `SingleStream`, `LifecycleSingleStream`).
 - **Searchable / Sortable interfaces** - Generic query abstractions backing the search and sort surfaces.
-- **Graph topological sort** - `Graph` indexes nodes for O(1) lookup and uses an iterative algorithm to avoid deep recursion.
+- **Pluggable sorting algorithms** - `SortAlgorithm<E>` `@FunctionalInterface` plugged into `AtomicList.sorted(...)`. Pre-built strategies on `Comparison` (timsort/heap/insertion/shell/quicksort/mergesort), `RadixSort` (`byInt`/`byLong`), and `CountingSort` (`byInt` for bounded ranges). `Graph.asLinearSort()` / `asLayeredSort()` project graph topology as `SortAlgorithm` strategies. See [Sorting Algorithms](#sorting-algorithms) below.
+- **Graph dependency ordering** - `Graph` exposes linear and layered topological sorts (iterative DFS post-order for sequential workloads, Kahn's BFS for parallel scheduling) plus structural queries (`successors`, `predecessors`, `roots`, `leaves`, `reverse`).
 - **Stream utilities** - `StreamUtil` for enhanced stream operations including `distinctByKey` (parallel + sequential variants).
 - **Functional interfaces** - `TriConsumer`, `TriFunction`, `TriPredicate`, `ToInt/Long/DoubleTriFunction`, `QuadFunction`, plus `IndexedConsumer/Function/Predicate`.
 - **Optional Gson SPI** - `ConcurrentTypeAdapterFactory` registered via `META-INF/services` so consumers with Gson on the classpath get JSON support automatically; Gson is `compileOnly`, never pulled into runtime otherwise.
@@ -159,6 +161,71 @@ PairStream.of(map)
 Triple<String, Integer, Boolean> triple = Triple.of("name", 42, true);
 ```
 
+### Sorting Algorithms
+
+`AtomicList` (and its `ConcurrentArrayList` / `ConcurrentLinkedList` impls) hardcodes JDK Timsort via `sorted(Comparator)`. The pluggable `sorted(SortAlgorithm)` overload lets you opt into a workload-specific algorithm when Timsort isn't the right fit. The `SortAlgorithm<E>` type is a `@FunctionalInterface` so it accepts lambdas and pre-built factories alike:
+
+```java
+import dev.simplified.collection.ConcurrentArrayList;
+import dev.simplified.collection.sort.Comparison;
+import dev.simplified.collection.sort.CountingSort;
+import dev.simplified.collection.sort.RadixSort;
+
+ConcurrentArrayList<Integer> ids = new ConcurrentArrayList<>(/* large list of ints */);
+
+// Default Timsort — sorted(Comparator) routes through Comparison.timsort internally
+ConcurrentList<Integer> a = ids.sorted(Integer::compare);
+
+// LSD base-256 radix on int keys — ~10× faster than Timsort once n >= 100k
+ConcurrentList<Integer> b = ids.sorted(RadixSort.byInt(Integer::intValue));
+
+// Counting sort — ~15-20× faster than Timsort when the key range is small
+ConcurrentList<Integer> c = ids.sorted(CountingSort.byInt(Integer::intValue, 0, 99));
+
+// Custom one-off via lambda
+ConcurrentList<Integer> d = ids.sorted(list -> list.sort(Comparator.reverseOrder()));
+```
+
+**Algorithm families** (full Time/Space complexity in each method's javadoc):
+
+| Family | Static factory | Best for |
+|---|---|---|
+| **Comparison** | `timsort(cmp)` | Default; partially-sorted real-world data |
+|  | `heap(cmp)` | Strict O(n log n) worst case, low memory |
+|  | `insertion(cmp)` | Tiny inputs (n ≤ ~32) |
+|  | `shell(cmp)` | Mid-sized arrays, low memory |
+|  | `quicksort(cmp)` | Random data, no stability needed |
+|  | `mergesort(cmp)` | Stability + worst-case guarantee |
+| **RadixSort** | `byInt(keyFn)` | Large int-keyed data (n ≥ ~10k) |
+|  | `byLong(keyFn)` | Long-keyed data at small-medium n (~1k); ties Timsort at scale |
+| **CountingSort** | `byInt(keyFn, min, max)` | Bounded-range int data (small `max - min`) |
+
+`Graph` projects its topological order as a `SortAlgorithm`, letting you reorder arbitrary subsets by graph dependencies without re-running the sort:
+
+```java
+import dev.simplified.collection.sort.Graph;
+
+Graph<EntityType> dependencies = Graph.<EntityType>builder()
+    .withValues(allEntities)
+    .withEdgeFunction(entity -> entity.referencedTypes())
+    .build();
+
+// Reusable algorithm — index map computed once at construction
+SortAlgorithm<EntityType> dependencyOrder = dependencies.asLinearSort();
+
+// Apply to any subset
+List<EntityType> subset = userSelection();
+dependencyOrder.sort(subset);
+
+// Or feed straight into AtomicList.sorted
+ConcurrentList<EntityType> sorted = concurrentEntities.sorted(dependencyOrder);
+```
+
+`asLayeredSort()` is the Kahn's-algorithm variant that buckets by topological layer while preserving each layer's input order via Timsort stability — useful when the input list already has a meaningful priority and you only need layer-respecting bucketing.
+
+> [!TIP]
+> Empirically measured deltas (random int data): radix beats Timsort by ~10× at n ≥ 100k; counting sort beats Timsort by ~15-20× on bounded ranges (k=100); insertion sort beats Timsort by ~30% at n ≤ 32; `Comparison.timsort` is byte-zero overhead vs raw `list.sort(cmp)`. The `Comparison`/`RadixSort`/`CountingSort` algorithm bodies all use `ListIterator`-based writeback so they're O(n) on `LinkedList`-backed lists, not O(n²).
+
 ## Project Structure
 
 ```
@@ -173,7 +240,9 @@ collections/
 │   │   │                       # QuadFunction, IndexedConsumer/Function/Predicate
 │   │   ├── gson/               # ConcurrentTypeAdapterFactory (opt-in Gson SPI)
 │   │   ├── query/              # Searchable, SearchFunction, Sortable, SortOrder
-│   │   ├── sort/               # Graph (O(1) lookup, iterative topological sort)
+│   │   ├── sort/               # SortAlgorithm (FunctionalInterface), Comparison,
+│   │   │                       # RadixSort, CountingSort, Graph (linear/layered topo
+│   │   │                       # sort + asLinearSort/asLayeredSort projections)
 │   │   ├── tuple/
 │   │   │   ├── pair/           # Pair, ImmutablePair, MutablePair, PairOptional, PairStream
 │   │   │   ├── single/         # SingleStream, LifecycleSingleStream
@@ -188,7 +257,9 @@ collections/
 │   │   ├── ConcurrentArrayQueue.java, ConcurrentArrayDeque.java
 │   │   └── StreamUtil.java     # Stream utility methods
 │   ├── test/java/              # JUnit 5 tests (ConcurrentListTest, ConcurrentMapTest, etc.)
-│   └── jmh/java/               # 12 JMH benchmarks across all impls + contention scenarios
+│   └── jmh/java/               # 16 JMH benchmarks: per-impl + contention + 4 sort suites
+│                               # (SortAlgorithm, SortAlgorithmLong, SortAlgorithmTiny,
+│                               # SortAlgorithmBoundedRange)
 ├── build.gradle.kts
 ├── settings.gradle.kts
 └── LICENSE.md
@@ -226,8 +297,10 @@ Run JMH benchmarks for concurrent collection performance:
 
 Benchmarks cover every concrete impl (`ConcurrentArrayList`, `ConcurrentLinkedList`,
 `ConcurrentHashSet`, `ConcurrentLinkedSet`, `ConcurrentTreeSet`, `ConcurrentHashMap`,
-`ConcurrentLinkedMap`, `ConcurrentTreeMap`, `ConcurrentArrayQueue`, `ConcurrentArrayDeque`)
-plus list/map contention scenarios under concurrent access.
+`ConcurrentLinkedMap`, `ConcurrentTreeMap`, `ConcurrentArrayQueue`, `ConcurrentArrayDeque`),
+list/map contention scenarios under concurrent access, plus a four-class suite for the
+[Sorting Algorithms](#sorting-algorithms): random ints, random longs, tiny inputs (insertion's
+sweet spot), and bounded-range inputs (counting sort's sweet spot).
 
 For focused runs, pass Gradle properties to filter or tune the JMH harness:
 

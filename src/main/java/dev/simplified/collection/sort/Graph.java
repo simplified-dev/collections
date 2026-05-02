@@ -13,12 +13,14 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -30,8 +32,10 @@ import java.util.stream.Stream;
  * Nodes and edges are added via the {@link Builder}; nodes referenced only via {@code withEdge}
  * or the edge function are auto-registered at {@link Builder#build() build} time. The resulting
  * graph exposes a flat {@link #linearTopologicalSort() linear topological sort}, a layered
- * variant ({@link #layeredTopologicalSort()}) suitable for parallel scheduling, and structural
- * queries ({@link #predecessors}, {@link #successors}, {@link #roots}, {@link #leaves}, etc.).
+ * variant ({@link #layeredTopologicalSort()}) suitable for parallel scheduling, the same orderings
+ * projected as {@link SortAlgorithm} strategies via {@link #asLinearSort()} and
+ * {@link #asLayeredSort()}, and structural queries ({@link #predecessors}, {@link #successors},
+ * {@link #roots}, {@link #leaves}, etc.).
  *
  * <p>An edge {@code A -> B} is interpreted as "{@code A} depends on {@code B}" - so {@code B}
  * appears earlier in the topological order than {@code A}.
@@ -169,20 +173,24 @@ public class Graph<T> {
     }
 
     /**
-     * Returns the graph's nodes in a single linearized topological order, suitable for sequential
-     * processing where each node must be handled strictly after all of its dependencies.
+     * Sorts the graph's nodes into a single linearized topological order via iterative DFS
+     * post-order with explicit stacks - producing one valid sequence where every node follows
+     * all of its dependencies.
+     * <p>
+     * Reach for this when sequential processing requires strict dependency-first ordering and
+     * only one node can be acted on at a time (e.g. Hibernate entity registration over a
+     * high-latency link). For graphs with multiple valid orderings (independent branches,
+     * diamonds), the chosen order follows the DFS post-order seeded by {@link #getNodes()
+     * registration order}. Cycles trigger an {@link IllegalStateException} naming the first
+     * back-edge target encountered; for full-cycle reporting prefer
+     * {@link #layeredTopologicalSort()}.
      *
-     * <p>Each node appears exactly once and is preceded by every node it depends on. The output
-     * is one valid topological ordering; for graphs with multiple valid orderings (independent
-     * branches, diamonds), the chosen order follows the iterative DFS post-order traversal seeded
-     * by {@link #getNodes() registration order}.
-     *
-     * <p>Implemented as an iterative post-order DFS using explicit stacks in O(N + E) so deeply
-     * chained graphs do not blow the JVM call stack. Cycles trigger an
-     * {@link IllegalStateException} naming the first back-edge target encountered. For parallel
-     * scheduling or full-cycle reporting, prefer {@link #layeredTopologicalSort()}.
+     * <p><b>Time:</b> {@code O(N + E)} - each node visited once, each edge traversed once.
+     * <p><b>Space:</b> {@code O(N)} for the visited and on-stack sets plus the explicit DFS
+     * stacks (replacing the JVM call stack so deeply chained graphs don't overflow).
      *
      * @return an unmodifiable concurrent list of node values in topological order
+     * @throws IllegalStateException if the graph contains a cycle
      */
     public @NotNull ConcurrentList<T> linearTopologicalSort() {
         List<T> result = new ArrayList<>(this.nodes.size());
@@ -227,18 +235,23 @@ public class Graph<T> {
     }
 
     /**
-     * Returns the graph's nodes grouped by topological layer, suitable for parallel scheduling.
-     *
-     * <p>Layer 0 contains nodes with no outgoing edges; layer {@code N} contains nodes whose
-     * dependencies all lie in layers {@code 0..N-1}. All nodes within a single layer are
+     * Sorts the graph's nodes into topological layers via Kahn's algorithm - layer 0 contains
+     * nodes with no outgoing edges, layer {@code N} contains nodes whose dependencies all live
+     * in layers {@code 0..N-1}.
+     * <p>
+     * Reach for this when scheduling work in parallel: every node within a single layer is
      * mutually independent and may be processed concurrently. Flattening the result yields a
-     * valid topological order (though not necessarily the same one as
-     * {@link #linearTopologicalSort()}).
+     * valid topological order, though not necessarily the same one as
+     * {@link #linearTopologicalSort()}. Cycles trigger an {@link IllegalStateException} naming
+     * the full set of unprocessed nodes - more diagnostic than the linear variant's
+     * first-cycle-element message.
      *
-     * <p>Implemented via Kahn's algorithm in O(N + E) using BFS over remaining-dependency
-     * counters. Cycles trigger an {@link IllegalStateException} naming the unprocessed nodes.
+     * <p><b>Time:</b> {@code O(N + E)} via BFS over remaining-dependency counters.
+     * <p><b>Space:</b> {@code O(N)} for the remaining-dependency counter map and the
+     * per-layer queues.
      *
      * @return an unmodifiable concurrent list of layers, each itself an unmodifiable concurrent list
+     * @throws IllegalStateException if the graph contains a cycle
      */
     public @NotNull ConcurrentList<ConcurrentList<T>> layeredTopologicalSort() {
         Map<T, Integer> remaining = HashMap.newHashMap(this.nodes.size());
@@ -272,6 +285,74 @@ public class Graph<T> {
         }
 
         return Concurrent.newUnmodifiableList(layers);
+    }
+
+    /**
+     * Builds a {@link SortAlgorithm} that orders any list of {@code T} by this graph's linear
+     * topological position - elements appear in dependency-first order, equivalent to indexing
+     * each input element into the result of {@link #linearTopologicalSort()}.
+     * <p>
+     * Reach for this when reordering an arbitrary subset of the graph's nodes (or feeding graph
+     * topology into {@code AtomicList.sorted(SortAlgorithm)}) without re-running the topological
+     * sort per call. The returned algorithm caches the topological index map at construction
+     * time and is reusable across many lists. Elements not registered in this graph trigger a
+     * {@link NoSuchElementException} at sort time.
+     *
+     * <p><b>Time:</b> {@code O(N + E)} once at construction (delegates to
+     * {@link #linearTopologicalSort()}); {@code O(m log m)} per sort invocation where {@code m}
+     * is the input list size.
+     * <p><b>Space:</b> {@code O(N)} for the cached {@code T -> position} index map.
+     *
+     * @return a {@link SortAlgorithm} that orders lists by linear topological position
+     * @throws IllegalStateException if the graph contains a cycle
+     */
+    public @NotNull SortAlgorithm<T> asLinearSort() {
+        ConcurrentList<T> ordered = this.linearTopologicalSort();
+        Map<T, Integer> index = HashMap.newHashMap(ordered.size());
+
+        for (int i = 0; i < ordered.size(); i++)
+            index.put(ordered.get(i), i);
+
+        return list -> list.sort(Comparator.comparingInt(t -> {
+            Integer pos = index.get(t);
+            if (pos == null) throw new NoSuchElementException("Element not in graph: " + t);
+            return pos;
+        }));
+    }
+
+    /**
+     * Builds a {@link SortAlgorithm} that orders any list of {@code T} by this graph's
+     * topological layer index - elements within the same layer keep their input order (Timsort
+     * stability), elements in earlier layers come first.
+     * <p>
+     * Reach for this when the input list already has a meaningful order (priority, insertion
+     * order, alphabetical) and you want to enforce graph-layer bucketing while preserving that
+     * intra-layer order. Useful for hybrid pipelines where layer index gates parallelism but
+     * within each layer some other ordering criterion still matters. Elements not registered in
+     * this graph trigger a {@link NoSuchElementException} at sort time.
+     *
+     * <p><b>Time:</b> {@code O(N + E)} once at construction (delegates to
+     * {@link #layeredTopologicalSort()}); {@code O(m log m)} per sort invocation where
+     * {@code m} is the input list size.
+     * <p><b>Space:</b> {@code O(N)} for the cached {@code T -> layer index} map.
+     *
+     * @return a {@link SortAlgorithm} that orders lists by topological layer index, stable within layers
+     * @throws IllegalStateException if the graph contains a cycle
+     */
+    public @NotNull SortAlgorithm<T> asLayeredSort() {
+        ConcurrentList<ConcurrentList<T>> layers = this.layeredTopologicalSort();
+        Map<T, Integer> layerIndex = HashMap.newHashMap(this.nodes.size());
+
+        for (int layer = 0; layer < layers.size(); layer++) {
+            for (T node : layers.get(layer))
+                layerIndex.put(node, layer);
+        }
+
+        return list -> list.sort(Comparator.comparingInt(t -> {
+            Integer layer = layerIndex.get(t);
+            if (layer == null) throw new NoSuchElementException("Element not in graph: " + t);
+            return layer;
+        }));
     }
 
     private @NotNull Iterator<T> neighborIterator(@NotNull T value) {
