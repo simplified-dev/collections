@@ -23,18 +23,20 @@ Thread-safe concurrent collection implementations with atomic operations backed 
 
 ## Features
 
-- **Atomic bases** - `AtomicCollection`, `AtomicList`, `AtomicSet`, `AtomicMap`, `AtomicQueue`, `AtomicDeque`, plus the navigable bases `AtomicNavigableSet` and `AtomicNavigableMap`. Each directly implements its corresponding `Concurrent*` interface and is the canonical extension point for custom concurrent types.
-- **Concurrent interfaces** - `ConcurrentList`, `ConcurrentMap`, `ConcurrentSet`, `ConcurrentDeque`, and `ConcurrentQueue` with thin nested `Impl` construction shims over the matching `Atomic*`.
-- **Linked variants** - `ConcurrentLinkedList`, `ConcurrentLinkedMap`, `ConcurrentLinkedSet` preserving insertion order; `ConcurrentLinkedMap` supports an optional eldest-entry eviction cap via `withMaxSize(int)`.
-- **Tree variants** - `ConcurrentTreeMap` and `ConcurrentTreeSet` for sorted/navigable views over a `TreeMap`/`TreeSet`.
-- **Unmodifiable wrappers** - Immutable snapshots paired with a no-op lock for wait-free reads, available for every mutable variant via `toUnmodifiable()`. `NoOpReadWriteLock` is `Serializable` so snapshots round-trip through serialization without losing their lock semantics.
-- **Static factories on every interface** - `empty()`, `of(...)`, `from(...)`, `adopt(...)` (zero-copy publication). List adds `withCapacity(int)`; Tree variants add `withComparator(...)`; `ConcurrentLinkedMap` adds `withMaxSize(int)`.
-- **`ReadWriteLock`-based concurrency** - `withReadLock` / `withWriteLock` lambda helpers on `AtomicCollection` and `AtomicMap` wrap the lock + snapshot-invalidation pattern uniformly.
-- **Tuple types** - `Pair`, `Triple`, and `Single` with mutable/immutable variants and streaming support (`PairStream`, `TripleStream`, `SingleStream`).
+- **Atomic bases** - `AtomicCollection`, `AtomicList`, `AtomicSet`, `AtomicMap`, `AtomicQueue`, `AtomicDeque`, plus the navigable bases `AtomicNavigableSet` and `AtomicNavigableMap`. Each is the canonical extension point for custom concurrent types and uses a `ReadWriteLock` for atomic guarantees.
+- **Concurrent interfaces** - `ConcurrentCollection`, `ConcurrentList`, `ConcurrentMap`, `ConcurrentSet`, `ConcurrentDeque`, and `ConcurrentQueue` carry only contract methods - no nested `Impl`, no static factories.
+- **Public impl classes** - 10 concrete classes named after the JDK type they wrap: `ConcurrentArrayList`, `ConcurrentLinkedList`, `ConcurrentHashSet`, `ConcurrentLinkedSet`, `ConcurrentTreeSet`, `ConcurrentHashMap`, `ConcurrentLinkedMap`, `ConcurrentTreeMap`, `ConcurrentArrayQueue`, `ConcurrentArrayDeque`. Construct directly with `new` (extra knobs like initial capacity, comparator, or max size are constructor params) or via `Xxx.adopt(backing)` for zero-copy publication.
+- **Linked variants** - `ConcurrentLinkedList` (extends `AtomicList` directly, mirroring the JDK), `ConcurrentLinkedSet extends ConcurrentHashSet`, `ConcurrentLinkedMap extends ConcurrentHashMap` (insertion-ordered; `ConcurrentLinkedMap` supports an optional eldest-entry eviction cap via constructor).
+- **Tree variants** - `ConcurrentTreeMap` and `ConcurrentTreeSet` for sorted/navigable views; backed by a `SortedSnapshotSpliterator` exposing `SORTED | ORDERED | DISTINCT` characteristics.
+- **Unmodifiable snapshots** - Immutable wrappers live as package-private nested classes inside `ConcurrentUnmodifiable` (mirrors `Collections.UnmodifiableMap`). Pair an immutable snapshot with `NoOpReadWriteLock` for wait-free reads; obtain via `toUnmodifiable()` on any mutable instance or `Concurrent.newUnmodifiableX(...)`. `NoOpReadWriteLock` is `Serializable` so snapshots round-trip through serialization without losing their lock semantics.
+- **`Concurrent` factory hub** - Static `newX(...)`, `toX(...)`, `adoptX(...)`, and `newUnmodifiableX(...)` helpers organized alphabetically; return types narrow to the concrete impl class (e.g. `newLinkedMap` returns `ConcurrentLinkedMap<K,V>`).
+- **`ReadWriteLock`-based concurrency** - `withReadLock` / `withWriteLock` lambda helpers on `AtomicCollection` and `AtomicMap` wrap the lock + snapshot-invalidation pattern uniformly. `AtomicMap` exposes a `checkMutationAllowed` hook subclasses override to gate writes.
+- **Tuple types** - `Pair`, `Triple`, and `Single` with mutable/immutable variants and streaming support (`PairStream`, `TripleStream`, `SingleStream`, `LifecycleSingleStream`).
 - **Searchable / Sortable interfaces** - Generic query abstractions backing the search and sort surfaces.
-- **`Concurrent` factory** - Legacy `Concurrent.newList()` / `newMap()` / etc. style entry point; still supported alongside the per-interface statics.
-- **Stream utilities** - `StreamUtil` for enhanced stream operations.
-- **Functional interfaces** - `TriConsumer`, `TriFunction`, `TriPredicate` for three-argument operations.
+- **Graph topological sort** - `Graph` indexes nodes for O(1) lookup and uses an iterative algorithm to avoid deep recursion.
+- **Stream utilities** - `StreamUtil` for enhanced stream operations including `distinctByKey` (parallel + sequential variants).
+- **Functional interfaces** - `TriConsumer`, `TriFunction`, `TriPredicate`, `ToInt/Long/DoubleTriFunction`, `QuadFunction`, plus `IndexedConsumer/Function/Predicate`.
+- **Optional Gson SPI** - `ConcurrentTypeAdapterFactory` registered via `META-INF/services` so consumers with Gson on the classpath get JSON support automatically; Gson is `compileOnly`, never pulled into runtime otherwise.
 
 ## Getting Started
 
@@ -102,23 +104,30 @@ dependencies {
 Create thread-safe collections by instantiating the public concrete classes directly or via the `Concurrent` factory hub:
 
 ```java
+import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentArrayList;
 import dev.simplified.collection.ConcurrentHashMap;
 import dev.simplified.collection.ConcurrentHashSet;
+import dev.simplified.collection.ConcurrentLinkedMap;
 import dev.simplified.collection.ConcurrentTreeMap;
 
-// Construct via the new public impl classes
-ConcurrentList<String>           list  = new ConcurrentArrayList<>();
-ConcurrentList<String>           seed  = new ConcurrentArrayList<>("a", "b", "c");
-ConcurrentMap<String, Integer>   map   = new ConcurrentHashMap<>(existingMap);
-ConcurrentSet<String>            set   = new ConcurrentHashSet<>();
+// Construct via the public impl classes
+ConcurrentArrayList<String>      list  = new ConcurrentArrayList<>();
+ConcurrentArrayList<String>      seed  = new ConcurrentArrayList<>("a", "b", "c");
+ConcurrentHashMap<String, Long>  map   = new ConcurrentHashMap<>(existingMap);
+ConcurrentHashSet<String>        set   = new ConcurrentHashSet<>();
 ConcurrentTreeMap<String, Long>  tree  = new ConcurrentTreeMap<>(byPriority);
+ConcurrentLinkedMap<String, Integer> lru = new ConcurrentLinkedMap<>(/* maxSize */ 1_000);
+
+// Or go through the Concurrent factory hub (return types narrow to the concrete impl)
+ConcurrentArrayList<String>      via   = Concurrent.newList("a", "b");
+ConcurrentLinkedMap<String, Long> lhm  = Concurrent.newLinkedMap();
 
 // Zero-copy publication of a single-threaded build result
-ConcurrentList<String> adopted = ConcurrentArrayList.adopt(prebuilt);
+ConcurrentArrayList<String> adopted = ConcurrentArrayList.adopt(prebuilt);
 
 list.add("hello");
-map.put("key", 42);
+map.put("key", 42L);
 set.add("unique");
 ```
 
@@ -126,7 +135,8 @@ set.add("unique");
 > All concurrent collections use `ReadWriteLock` internally, allowing multiple
 > concurrent readers while ensuring exclusive write access. Call
 > `toUnmodifiable()` on any mutable instance to take a wait-free immutable
-> snapshot backed by `NoOpReadWriteLock`.
+> snapshot backed by `NoOpReadWriteLock` - snapshots are `Serializable` and
+> round-trip without losing their lock semantics.
 
 ### Tuple Types
 
@@ -157,25 +167,28 @@ collections/
 │   ├── main/java/dev/simplified/collection/
 │   │   ├── atomic/             # AtomicCollection, AtomicList, AtomicSet, AtomicMap,
 │   │   │                       # AtomicQueue, AtomicDeque, AtomicNavigableSet,
-│   │   │                       # AtomicNavigableMap, AtomicIterator
-│   │   ├── function/           # TriConsumer, TriFunction, TriPredicate
+│   │   │                       # AtomicNavigableMap, AtomicIterator,
+│   │   │                       # SortedSnapshotSpliterator
+│   │   ├── function/           # TriConsumer/Function/Predicate, ToInt/Long/DoubleTriFunction,
+│   │   │                       # QuadFunction, IndexedConsumer/Function/Predicate
+│   │   ├── gson/               # ConcurrentTypeAdapterFactory (opt-in Gson SPI)
 │   │   ├── query/              # Searchable, SearchFunction, Sortable, SortOrder
-│   │   ├── sort/               # Graph (topological sort)
+│   │   ├── sort/               # Graph (O(1) lookup, iterative topological sort)
 │   │   ├── tuple/
 │   │   │   ├── pair/           # Pair, ImmutablePair, MutablePair, PairOptional, PairStream
-│   │   │   ├── single/         # SingleStream
+│   │   │   ├── single/         # SingleStream, LifecycleSingleStream
 │   │   │   └── triple/         # Triple, ImmutableTriple, MutableTriple, TripleStream
-│   │   ├── Concurrent.java     # Factory for creating concurrent collections
-│   │   ├── ConcurrentUnmodifiable.java  # Package-private snapshot wrappers (mirrors Collections)
+│   │   ├── Concurrent.java     # Factory hub; return types narrow to concrete impls
+│   │   ├── ConcurrentUnmodifiable.java  # Package-private snapshot wrappers + NoOpReadWriteLock
 │   │   ├── ConcurrentCollection.java, ConcurrentList.java, ConcurrentSet.java, ConcurrentMap.java
 │   │   ├── ConcurrentQueue.java, ConcurrentDeque.java                # base interfaces
 │   │   ├── ConcurrentArrayList.java, ConcurrentLinkedList.java       # list impls
-│   │   ├── ConcurrentHashSet.java, ConcurrentLinkedHashSet.java, ConcurrentTreeSet.java
-│   │   ├── ConcurrentHashMap.java, ConcurrentLinkedHashMap.java, ConcurrentTreeMap.java
+│   │   ├── ConcurrentHashSet.java, ConcurrentLinkedSet.java, ConcurrentTreeSet.java
+│   │   ├── ConcurrentHashMap.java, ConcurrentLinkedMap.java, ConcurrentTreeMap.java
 │   │   ├── ConcurrentArrayQueue.java, ConcurrentArrayDeque.java
 │   │   └── StreamUtil.java     # Stream utility methods
 │   ├── test/java/              # JUnit 5 tests (ConcurrentListTest, ConcurrentMapTest, etc.)
-│   └── jmh/java/               # JMH benchmarks (list, map contention benchmarks)
+│   └── jmh/java/               # 12 JMH benchmarks across all impls + contention scenarios
 ├── build.gradle.kts
 ├── settings.gradle.kts
 └── LICENSE.md
@@ -211,8 +224,23 @@ Run JMH benchmarks for concurrent collection performance:
 ./gradlew jmh
 ```
 
-Benchmarks cover list operations, map operations, and contention scenarios under
-concurrent access.
+Benchmarks cover every concrete impl (`ConcurrentArrayList`, `ConcurrentLinkedList`,
+`ConcurrentHashSet`, `ConcurrentLinkedSet`, `ConcurrentTreeSet`, `ConcurrentHashMap`,
+`ConcurrentLinkedMap`, `ConcurrentTreeMap`, `ConcurrentArrayQueue`, `ConcurrentArrayDeque`)
+plus list/map contention scenarios under concurrent access.
+
+For focused runs, pass Gradle properties to filter or tune the JMH harness:
+
+```bash
+./gradlew jmh -PjmhInclude=ConcurrentTreeMapBenchmark -PjmhFork=1 -PjmhWarmup=2 -PjmhIter=3
+```
+
+| Property | Effect |
+|----------|--------|
+| `-PjmhInclude=<regex>` | Run only benchmarks whose class name matches the regex |
+| `-PjmhFork=<n>` | Override the JVM fork count |
+| `-PjmhWarmup=<n>` | Override warm-up iterations |
+| `-PjmhIter=<n>` | Override measurement iterations |
 
 ## Contributing
 
