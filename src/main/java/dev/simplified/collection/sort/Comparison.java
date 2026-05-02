@@ -168,7 +168,7 @@ public final class Comparison {
 
 	// --- Algorithm kernels ---
 
-	private static <E> void heapSort(@NotNull E[] array, @NotNull Comparator<? super E> comparator) {
+	private static <E> void heapSort(E @NotNull [] array, @NotNull Comparator<? super E> comparator) {
 		int n = array.length;
 		for (int i = n / 2 - 1; i >= 0; i--) siftDown(array, i, n, comparator);
 		for (int end = n - 1; end > 0; end--) {
@@ -208,7 +208,7 @@ public final class Comparison {
 		}
 	}
 
-	private static <E> void shellSort(@NotNull E[] array, @NotNull Comparator<? super E> comparator) {
+	private static <E> void shellSort(E @NotNull [] array, @NotNull Comparator<? super E> comparator) {
 		int n = array.length;
 		int gap = 1;
 		while (gap < n / 3) gap = gap * 3 + 1;

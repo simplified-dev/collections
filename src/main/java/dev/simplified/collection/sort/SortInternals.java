@@ -24,7 +24,7 @@ final class SortInternals {
 	 * @param source the sorted array to copy
 	 * @param <E> the element type
 	 */
-	static <E> void writeBack(@NotNull List<E> list, @NotNull E[] source) {
+	static <E> void writeBack(@NotNull List<E> list, E @NotNull [] source) {
 		ListIterator<E> it = list.listIterator();
 		for (E e : source) {
 			it.next();
