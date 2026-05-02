@@ -1,5 +1,7 @@
 package dev.simplified.collection;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,9 +27,8 @@ import java.util.function.UnaryOperator;
  * <p>The wrappers are package-private; consumers obtain them through {@code toUnmodifiable()} on
  * any mutable concurrent collection or through the {@link Concurrent} factory finishers.</p>
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class ConcurrentUnmodifiable {
-
-	private ConcurrentUnmodifiable() {}
 
 	/**
 	 * A no-op {@link ReadWriteLock} used by snapshot wrappers to bypass synchronization on read
@@ -37,13 +38,12 @@ final class ConcurrentUnmodifiable {
 	 * {@link UnsupportedOperationException} before reaching {@link #writeLock()}, so the write
 	 * lock is never actually exercised.
 	 */
+	@NoArgsConstructor(access = AccessLevel.PRIVATE)
 	static final class NoOpReadWriteLock implements ReadWriteLock, Serializable {
 
 		static final @NotNull NoOpReadWriteLock INSTANCE = new NoOpReadWriteLock();
 
 		private static final @NotNull Lock NO_OP_LOCK = new NoOpLock();
-
-		private NoOpReadWriteLock() {}
 
 		@Override
 		public @NotNull Lock readLock() {
@@ -278,7 +278,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(E element) { throw new UnsupportedOperationException(); }
+		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
 		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
 		@Override public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
 		@Override public void clear() { throw new UnsupportedOperationException(); }
@@ -308,7 +308,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(E element) { throw new UnsupportedOperationException(); }
+		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
 		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
 		@Override public void addFirst(E element) { throw new UnsupportedOperationException(); }
 		@Override public void addLast(E element) { throw new UnsupportedOperationException(); }
