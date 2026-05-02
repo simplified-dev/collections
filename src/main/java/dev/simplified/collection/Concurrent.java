@@ -193,20 +193,6 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentArrayList} without copying.
-	 * <p>
-	 * Delegates to {@link ConcurrentArrayList#adopt(List)}; see that method for the ownership
-	 * contract.
-	 *
-	 * @param backing the list to adopt
-	 * @param <E> the element type
-	 * @return a concurrent array list backed by {@code backing}
-	 */
-	public static <E> @NotNull ConcurrentArrayList<E> adoptList(@NotNull List<E> backing) {
-		return ConcurrentArrayList.adopt(backing);
-	}
-
-	/**
 	 * Creates a new empty {@link ConcurrentLinkedList}.
 	 *
 	 * @param <E> the element type
@@ -240,6 +226,110 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull ConcurrentLinkedList<E> newLinkedList(@NotNull Collection<? extends E> collection) {
 		return new ConcurrentLinkedList<>(collection);
+	}
+
+	/**
+	 * Creates a new empty {@code Unmodifiable} {@link ConcurrentLinkedList}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty unmodifiable concurrent linked list
+	 */
+	public static <E> @NotNull ConcurrentLinkedList<E> newUnmodifiableLinkedList() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>());
+	}
+
+	/**
+	 * Creates a new {@code Unmodifiable} {@link ConcurrentLinkedList} containing the given elements.
+	 *
+	 * @param array the elements to include
+	 * @param <E> the element type
+	 * @return a new unmodifiable concurrent linked list containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentLinkedList<E> newUnmodifiableLinkedList(@NotNull E... array) {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>(Arrays.asList(array)));
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given collection as a linked list, preserving
+	 * insertion order.
+	 *
+	 * @param collection the source collection
+	 * @param <E> the element type
+	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentLinkedList}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> @NotNull ConcurrentLinkedList<E> newUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
+		if (collection instanceof ConcurrentLinkedList)
+			return (ConcurrentLinkedList<E>) ((ConcurrentLinkedList<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>(collection));
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
+	 * (lock-free during accumulation), then wraps it as a
+	 * {@code Unmodifiable} {@link ConcurrentLinkedList} at finish, preserving
+	 * insertion order.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent linked list
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentLinkedList<E>> toUnmodifiableLinkedList() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList::new
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
+	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentList} at finish.
+	 * <p>
+	 * Wide variant of {@link #toLinkedList()} that declares the base {@link ConcurrentList} as
+	 * the result type for callers that hit generic-invariance issues with the strict-typed sibling.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentList}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentList<E>> toWideLinkedList() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
+			Concurrent::adoptLinkedList
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentList} at finish,
+	 * preserving insertion order.
+	 * <p>
+	 * Wide variant of {@link #toUnmodifiableLinkedList()} that declares the base
+	 * {@link ConcurrentList} as the result type for callers that hit generic-invariance issues
+	 * with the strict-typed sibling.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent linked list
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentList<E>> toWideUnmodifiableLinkedList() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList::new
+		);
+	}
+
+	/**
+	 * Wraps {@code backing} as a {@link ConcurrentArrayList} without copying.
+	 * <p>
+	 * Delegates to {@link ConcurrentArrayList#adopt(List)}; see that method for the ownership
+	 * contract.
+	 *
+	 * @param backing the list to adopt
+	 * @param <E> the element type
+	 * @return a concurrent array list backed by {@code backing}
+	 */
+	public static <E> @NotNull ConcurrentArrayList<E> adoptList(@NotNull List<E> backing) {
+		return ConcurrentArrayList.adopt(backing);
 	}
 
 	/**
@@ -288,44 +378,6 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull ConcurrentArrayList<E> newList(@Nullable Collection<? extends E> collection) {
 		return new ConcurrentArrayList<>(collection);
-	}
-
-	/**
-	 * Creates a new empty {@code Unmodifiable} {@link ConcurrentLinkedList}.
-	 *
-	 * @param <E> the element type
-	 * @return a new empty unmodifiable concurrent linked list
-	 */
-	public static <E> @NotNull ConcurrentLinkedList<E> newUnmodifiableLinkedList() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>());
-	}
-
-	/**
-	 * Creates a new {@code Unmodifiable} {@link ConcurrentLinkedList} containing the given elements.
-	 *
-	 * @param array the elements to include
-	 * @param <E> the element type
-	 * @return a new unmodifiable concurrent linked list containing the specified elements
-	 */
-	@SafeVarargs
-	public static <E> @NotNull ConcurrentLinkedList<E> newUnmodifiableLinkedList(@NotNull E... array) {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>(Arrays.asList(array)));
-	}
-
-	/**
-	 * Creates an immutable snapshot of the given collection as a linked list, preserving
-	 * insertion order.
-	 *
-	 * @param collection the source collection
-	 * @param <E> the element type
-	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentLinkedList}
-	 */
-	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentLinkedList<E> newUnmodifiableLinkedList(@NotNull Collection<? extends E> collection) {
-		if (collection instanceof ConcurrentLinkedList)
-			return (ConcurrentLinkedList<E>) ((ConcurrentLinkedList<E>) collection).toUnmodifiable();
-
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList<>(new LinkedList<>(collection));
 	}
 
 	/**
@@ -410,22 +462,6 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
-	 * (lock-free during accumulation), then wraps it as a
-	 * {@code Unmodifiable} {@link ConcurrentLinkedList} at finish, preserving
-	 * insertion order.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing an unmodifiable concurrent linked list
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentLinkedList<E>> toUnmodifiableLinkedList() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList::new
-		);
-	}
-
-	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link ArrayList}
 	 * (lock-free during accumulation), then wraps it as a
 	 * {@code Unmodifiable} {@link ConcurrentArrayList} at finish.
@@ -437,23 +473,6 @@ public final class Concurrent {
 		return Collectors.collectingAndThen(
 			Collectors.<E, ArrayList<E>>toCollection(ArrayList::new),
 			ConcurrentUnmodifiable.UnmodifiableConcurrentArrayList::new
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
-	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentList} at finish.
-	 * <p>
-	 * Wide variant of {@link #toLinkedList()} that declares the base {@link ConcurrentList} as
-	 * the result type for callers that hit generic-invariance issues with the strict-typed sibling.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing a {@link ConcurrentList}
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentList<E>> toWideLinkedList() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
-			Concurrent::adoptLinkedList
 		);
 	}
 
@@ -471,25 +490,6 @@ public final class Concurrent {
 		return Collectors.collectingAndThen(
 			Collectors.<E, ArrayList<E>>toCollection(ArrayList::new),
 			Concurrent::adoptList
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link LinkedList}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentList} at finish,
-	 * preserving insertion order.
-	 * <p>
-	 * Wide variant of {@link #toUnmodifiableLinkedList()} that declares the base
-	 * {@link ConcurrentList} as the result type for callers that hit generic-invariance issues
-	 * with the strict-typed sibling.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing an unmodifiable concurrent linked list
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentList<E>> toWideUnmodifiableLinkedList() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedList<E>>toCollection(LinkedList::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedList::new
 		);
 	}
 
@@ -514,21 +514,6 @@ public final class Concurrent {
 	// ---- Map ----
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentLinkedMap} without copying.
-	 * <p>
-	 * Delegates to {@link ConcurrentLinkedMap#adopt(LinkedHashMap)}; see that method for the
-	 * ownership contract.
-	 *
-	 * @param backing the linked hash map to adopt
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a concurrent linked map backed by {@code backing}
-	 */
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> adoptLinkedMap(@NotNull LinkedHashMap<K, V> backing) {
-		return ConcurrentLinkedMap.adopt(backing);
-	}
-
-	/**
 	 * Wraps {@code backing} as a {@link ConcurrentHashMap} without copying.
 	 * <p>
 	 * Delegates to {@link ConcurrentHashMap#adopt(AbstractMap)}; see that method for the ownership
@@ -544,18 +529,334 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentTreeMap} without copying.
-	 * <p>
-	 * Delegates to {@link ConcurrentTreeMap#adopt(TreeMap)}; see that method for the ownership
-	 * contract.
+	 * Creates a new {@link ConcurrentHashMap} containing the given map entries.
 	 *
-	 * @param backing the tree map to adopt
+	 * @param entries the entries to include
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a concurrent tree map backed by {@code backing}
+	 * @return a new concurrent hash map containing the specified entries
 	 */
-	public static <K, V> @NotNull ConcurrentTreeMap<K, V> adoptTreeMap(@NotNull TreeMap<K, V> backing) {
-		return ConcurrentTreeMap.adopt(backing);
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentHashMap<K, V> newMap(@NotNull Map.Entry<K, V>... entries) {
+		return new ConcurrentHashMap<>(entries);
+	}
+
+	/**
+	 * Creates a new {@link ConcurrentHashMap} by copying all entries from {@code map}.
+	 * <p>
+	 * The returned map owns its own backing storage; subsequent modifications to {@code map} do
+	 * not affect the returned map and vice versa.
+	 *
+	 * @param map the source map to copy from
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new concurrent hash map containing the source entries
+	 */
+	public static <K, V> @NotNull ConcurrentHashMap<K, V> newMap(@NotNull Map<? extends K, ? extends V> map) {
+		return new ConcurrentHashMap<>(map);
+	}
+
+	/**
+	 * Creates a new {@code Unmodifiable} {@link ConcurrentHashMap} containing the given map entries.
+	 *
+	 * @param entries the entries to include
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a new unmodifiable concurrent hash map containing the specified entries
+	 */
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentHashMap<K, V> newUnmodifiableMap(Map.Entry<K, V> @NotNull ... entries) {
+		HashMap<K, V> snapshot = HashMap.newHashMap(entries.length);
+		for (Map.Entry<K, V> entry : entries) {
+			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
+		}
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap<>(snapshot);
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given map.
+	 *
+	 * <p>The snapshot copies the input's entries at construction time; subsequent mutations
+	 * on the source are not reflected. If the source is a {@link ConcurrentHashMap} but
+	 * neither a {@link ConcurrentTreeMap} nor a {@link ConcurrentLinkedMap}, its
+	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy.
+	 * {@link ConcurrentTreeMap} and {@link ConcurrentLinkedMap} sources are routed through
+	 * the {@link HashMap HashMap}-backed fallback to honor this factory's
+	 * {@code Unmodifiable} {@link ConcurrentHashMap} return contract.</p>
+	 *
+	 * @param map the source map
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentHashMap}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K, V> @NotNull ConcurrentHashMap<K, V> newUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
+		// ConcurrentTreeMap and ConcurrentLinkedMap override toUnmodifiable() to
+		// yield TreeMap/LinkedHashMap-backed siblings; route those sources to the HashMap-backed
+		// fallback so this factory keeps returning a ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap as documented.
+		if (map instanceof ConcurrentHashMap && !(map instanceof ConcurrentLinkedMap))
+			return (ConcurrentHashMap<K, V>) ((ConcurrentMap<K, V>) map).toUnmodifiable();
+
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap<>(new HashMap<>(map));
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
+	 * {@link HashMap} (lock-free during accumulation), then adopts it as a {@link ConcurrentHashMap}
+	 * at finish. Throws on duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentHashMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toMap() {
+		return toMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
+	 * {@link HashMap} (lock-free during accumulation), using the specified merge function for
+	 * duplicate keys, then adopts it as a {@link ConcurrentHashMap} at finish.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentHashMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashMap}
+	 * (lock-free during accumulation) using the given key and value mappers, then adopts it as a
+	 * {@link ConcurrentHashMap} at finish. Throws on duplicate keys.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@link ConcurrentHashMap}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+		return toMapInternal(keyMapper, valueMapper, throwingMerger(), HashMap::new);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashMap}
+	 * (lock-free during accumulation) using the given key mapper, value mapper, and merge function
+	 * for duplicate keys, then adopts it as a {@link ConcurrentHashMap} at finish.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@link ConcurrentHashMap}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+		return toMapInternal(keyMapper, valueMapper, mergeFunction, HashMap::new);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 * by casting each element to {@link Map.Entry}. Throws on duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toUnmodifiableMap() {
+		return toUnmodifiableMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap},
+	 * using the specified merge function for duplicate keys.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toUnmodifiableMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 * using the given key and value mappers. Throws on duplicate keys.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+		return toUnmodifiableMap(keyMapper, valueMapper, throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 * using the given key mapper, value mapper, and merge function for duplicate keys.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+		return toUnmodifiableMapInternal(keyMapper, valueMapper, mergeFunction, HashMap::new);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashMap}
+	 * (lock-free during accumulation) by casting each element to {@link Map.Entry}, then adopts
+	 * it as a {@link ConcurrentMap} at finish. Throws on duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakMap() {
+		return Collectors.collectingAndThen(
+			Collectors.<T, K, V, HashMap<K, V>>toMap(
+				entry -> ((Map.Entry<K, V>) entry).getKey(),
+				entry -> ((Map.Entry<K, V>) entry).getValue(),
+				throwingMerger(),
+				HashMap::new
+			),
+			Concurrent::adoptMap
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 * by casting each element to {@link Map.Entry}. Throws on duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakUnmodifiableMap() {
+		return Collectors.collectingAndThen(
+			Collectors.<T, K, V, HashMap<K, V>>toMap(
+				entry -> ((Map.Entry<K, V>) entry).getKey(),
+				entry -> ((Map.Entry<K, V>) entry).getValue(),
+				throwingMerger(),
+				HashMap::new
+			),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap::new
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
+	 * {@link HashMap} (lock-free during accumulation), then adopts it as a {@link ConcurrentMap}
+	 * at finish. Throws on duplicate keys.
+	 * <p>
+	 * Wide variant of {@link #toMap()} that declares the base {@link ConcurrentMap} as the
+	 * result type for callers that hit generic-invariance issues with the strict-typed sibling.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideMap() {
+		return toWideMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
+	 * {@link HashMap} (lock-free during accumulation), using the specified merge function for
+	 * duplicate keys, then adopts it as a {@link ConcurrentMap} at finish.
+	 * <p>
+	 * Wide variant of {@link #toMap(BinaryOperator)} that declares the base {@link ConcurrentMap}
+	 * as the result type for callers that hit generic-invariance issues with the strict-typed
+	 * sibling.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return Collectors.collectingAndThen(
+			Collectors.<T, K, V, HashMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction, HashMap::new),
+			Concurrent::adoptMap
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a
+	 * {@code Unmodifiable} {@link ConcurrentHashMap} by casting each element to
+	 * {@link Map.Entry}. Throws on duplicate keys.
+	 * <p>
+	 * Wide variant of {@link #toUnmodifiableMap()} that declares the base {@link ConcurrentMap}
+	 * as the result type for callers that hit generic-invariance issues with the strict-typed
+	 * sibling.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideUnmodifiableMap() {
+		return toWideUnmodifiableMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@code Unmodifiable} {@link ConcurrentHashMap}, using the specified merge
+	 * function for duplicate keys.
+	 * <p>
+	 * Wide variant of {@link #toUnmodifiableMap(BinaryOperator)} that declares the base
+	 * {@link ConcurrentMap} as the result type for callers that hit generic-invariance issues
+	 * with the strict-typed sibling.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideUnmodifiableMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return Collectors.collectingAndThen(
+			Collectors.<T, K, V, HashMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction, HashMap::new),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap::new
+		);
+	}
+
+	/**
+	 * Wraps {@code backing} as a {@link ConcurrentLinkedMap} without copying.
+	 * <p>
+	 * Delegates to {@link ConcurrentLinkedMap#adopt(LinkedHashMap)}; see that method for the
+	 * ownership contract.
+	 *
+	 * @param backing the linked hash map to adopt
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a concurrent linked map backed by {@code backing}
+	 */
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> adoptLinkedMap(@NotNull LinkedHashMap<K, V> backing) {
+		return ConcurrentLinkedMap.adopt(backing);
 	}
 
 	/**
@@ -615,31 +916,293 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentHashMap} containing the given map entries.
+	 * Creates a new empty {@code Unmodifiable} {@link ConcurrentLinkedMap}.
 	 *
-	 * @param entries the entries to include
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a new concurrent hash map containing the specified entries
+	 * @return a new empty unmodifiable concurrent linked map
 	 */
-	@SafeVarargs
-	public static <K, V> @NotNull ConcurrentHashMap<K, V> newMap(@NotNull Map.Entry<K, V>... entries) {
-		return new ConcurrentHashMap<>(entries);
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newUnmodifiableLinkedMap() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(new LinkedHashMap<>());
 	}
 
 	/**
-	 * Creates a new {@link ConcurrentHashMap} by copying all entries from {@code map}.
-	 * <p>
-	 * The returned map owns its own backing storage; subsequent modifications to {@code map} do
-	 * not affect the returned map and vice versa.
+	 * Creates a new {@code Unmodifiable} {@link ConcurrentLinkedMap} containing the given entries,
+	 * preserving insertion order.
 	 *
-	 * @param map the source map to copy from
+	 * @param pairs the entries to include
 	 * @param <K> the key type
 	 * @param <V> the value type
-	 * @return a new concurrent hash map containing the source entries
+	 * @return a new unmodifiable concurrent linked map containing the specified entries
 	 */
-	public static <K, V> @NotNull ConcurrentHashMap<K, V> newMap(@NotNull Map<? extends K, ? extends V> map) {
-		return new ConcurrentHashMap<>(map);
+	@SafeVarargs
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newUnmodifiableLinkedMap(Map.Entry<K, V> @NotNull ... pairs) {
+		LinkedHashMap<K, V> snapshot = LinkedHashMap.newLinkedHashMap(pairs.length);
+
+		for (Map.Entry<K, V> entry : pairs)
+			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
+
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(snapshot);
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given map as a linked map, preserving insertion
+	 * order.
+	 *
+	 * @param map the source map
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentLinkedMap}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newUnmodifiableLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
+		if (map instanceof ConcurrentLinkedMap)
+			return (ConcurrentLinkedMap<K, V>) ((ConcurrentLinkedMap<K, V>) map).toUnmodifiable();
+
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(new LinkedHashMap<>(map));
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
+	 * {@link LinkedHashMap} (lock-free during accumulation), then adopts it as a
+	 * {@link ConcurrentLinkedMap} at finish, preserving insertion order. Throws on duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap() {
+		return toLinkedMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
+	 * {@link LinkedHashMap} (lock-free during accumulation), using the specified merge function
+	 * for duplicate keys, then adopts it as a {@link ConcurrentLinkedMap} at finish.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return toLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh
+	 * {@link LinkedHashMap} (lock-free during accumulation) using the given key and value mappers,
+	 * then adopts it as a {@link ConcurrentLinkedMap} at finish. Throws on duplicate keys.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+		return toLinkedMapInternal(keyMapper, valueMapper, throwingMerger(), LinkedHashMap::new);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh
+	 * {@link LinkedHashMap} (lock-free during accumulation) using the given key mapper, value
+	 * mapper, and merge function for duplicate keys, then adopts it as a {@link ConcurrentLinkedMap}
+	 * at finish.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@link ConcurrentLinkedMap}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+		return toLinkedMapInternal(keyMapper, valueMapper, mergeFunction, LinkedHashMap::new);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@code Unmodifiable} {@link ConcurrentLinkedMap}, preserving insertion order. Throws on
+	 * duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentLinkedMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toUnmodifiableLinkedMap() {
+		return toUnmodifiableLinkedMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@code Unmodifiable} {@link ConcurrentLinkedMap}, preserving insertion order, using the
+	 * specified merge function for duplicate keys.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentLinkedMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return toUnmodifiableLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a
+	 * {@code Unmodifiable} {@link ConcurrentLinkedMap} using the given key and value mappers,
+	 * preserving insertion order. Throws on duplicate keys.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentLinkedMap}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
+		return toUnmodifiableLinkedMap(keyMapper, valueMapper, throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a
+	 * {@code Unmodifiable} {@link ConcurrentLinkedMap} using the given key mapper, value mapper, and
+	 * merge function for duplicate keys, preserving insertion order.
+	 *
+	 * @param keyMapper the function to extract map keys from stream elements
+	 * @param valueMapper the function to extract map values from stream elements
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentLinkedMap}
+	 */
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
+		return toUnmodifiableLinkedMapInternal(keyMapper, valueMapper, mergeFunction, LinkedHashMap::new);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh
+	 * {@link LinkedHashMap} (lock-free during accumulation) by casting each element to
+	 * {@link Map.Entry}, then adopts it as a {@link ConcurrentLinkedMap} at finish, preserving
+	 * insertion order. Throws on duplicate keys.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakLinkedMap() {
+		return Collectors.collectingAndThen(
+			Collectors.<T, K, V, LinkedHashMap<K, V>>toMap(
+				entry -> ((Map.Entry<K, V>) entry).getKey(),
+				entry -> ((Map.Entry<K, V>) entry).getValue(),
+				throwingMerger(),
+				LinkedHashMap::new
+			),
+			Concurrent::adoptLinkedMap
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
+	 * {@link LinkedHashMap} (lock-free during accumulation), then adopts it as a
+	 * {@link ConcurrentMap} at finish, preserving insertion order. Throws on duplicate keys.
+	 * <p>
+	 * Wide variant of {@link #toLinkedMap()} that declares the base {@link ConcurrentMap} as the
+	 * result type for callers that hit generic-invariance issues with the strict-typed sibling.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideLinkedMap() {
+		return toWideLinkedMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
+	 * {@link LinkedHashMap} (lock-free during accumulation), using the specified merge function
+	 * for duplicate keys, then adopts it as a {@link ConcurrentMap} at finish.
+	 * <p>
+	 * Wide variant of {@link #toLinkedMap(BinaryOperator)} that declares the base
+	 * {@link ConcurrentMap} as the result type for callers that hit generic-invariance issues
+	 * with the strict-typed sibling.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return Collectors.collectingAndThen(
+			Collectors.<T, K, V, LinkedHashMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction, LinkedHashMap::new),
+			Concurrent::adoptLinkedMap
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@code Unmodifiable} {@link ConcurrentLinkedMap}, preserving insertion order. Throws on
+	 * duplicate keys.
+	 * <p>
+	 * Wide variant of {@link #toUnmodifiableLinkedMap()} that declares the base
+	 * {@link ConcurrentMap} as the result type for callers that hit generic-invariance issues
+	 * with the strict-typed sibling.
+	 *
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideUnmodifiableLinkedMap() {
+		return toWideUnmodifiableLinkedMap(throwingMerger());
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
+	 * {@code Unmodifiable} {@link ConcurrentLinkedMap}, preserving insertion order, using the
+	 * specified merge function for duplicate keys.
+	 * <p>
+	 * Wide variant of {@link #toUnmodifiableLinkedMap(BinaryOperator)} that declares the base
+	 * {@link ConcurrentMap} as the result type for callers that hit generic-invariance issues
+	 * with the strict-typed sibling.
+	 *
+	 * @param mergeFunction the function to resolve collisions between values associated with the same key
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @param <T> the stream element type (must extend {@link Map.Entry})
+	 * @return a collector producing a {@link ConcurrentMap}
+	 */
+	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideUnmodifiableLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
+		return Collectors.collectingAndThen(
+			Collectors.<T, K, V, LinkedHashMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction, LinkedHashMap::new),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap::new
+		);
+	}
+
+	/**
+	 * Wraps {@code backing} as a {@link ConcurrentTreeMap} without copying.
+	 * <p>
+	 * Delegates to {@link ConcurrentTreeMap#adopt(TreeMap)}; see that method for the ownership
+	 * contract.
+	 *
+	 * @param backing the tree map to adopt
+	 * @param <K> the key type
+	 * @param <V> the value type
+	 * @return a concurrent tree map backed by {@code backing}
+	 */
+	public static <K, V> @NotNull ConcurrentTreeMap<K, V> adoptTreeMap(@NotNull TreeMap<K, V> backing) {
+		return ConcurrentTreeMap.adopt(backing);
 	}
 
 	/**
@@ -725,96 +1288,6 @@ public final class Concurrent {
 	 */
 	public static <K, V> @NotNull ConcurrentTreeMap<K, V> newTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Map<? extends K, ? extends V> map) {
 		return new ConcurrentTreeMap<>(comparator, map);
-	}
-
-	/**
-	 * Creates a new empty {@code Unmodifiable} {@link ConcurrentLinkedMap}.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a new empty unmodifiable concurrent linked map
-	 */
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newUnmodifiableLinkedMap() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(new LinkedHashMap<>());
-	}
-
-	/**
-	 * Creates a new {@code Unmodifiable} {@link ConcurrentLinkedMap} containing the given entries,
-	 * preserving insertion order.
-	 *
-	 * @param pairs the entries to include
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a new unmodifiable concurrent linked map containing the specified entries
-	 */
-	@SafeVarargs
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newUnmodifiableLinkedMap(@NotNull Map.Entry<K, V>... pairs) {
-		LinkedHashMap<K, V> snapshot = LinkedHashMap.newLinkedHashMap(pairs.length);
-		for (Map.Entry<K, V> entry : pairs) {
-			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
-		}
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(snapshot);
-	}
-
-	/**
-	 * Creates an immutable snapshot of the given map as a linked map, preserving insertion
-	 * order.
-	 *
-	 * @param map the source map
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentLinkedMap}
-	 */
-	@SuppressWarnings("unchecked")
-	public static <K, V> @NotNull ConcurrentLinkedMap<K, V> newUnmodifiableLinkedMap(@NotNull Map<? extends K, ? extends V> map) {
-		if (map instanceof ConcurrentLinkedMap)
-			return (ConcurrentLinkedMap<K, V>) ((ConcurrentLinkedMap<K, V>) map).toUnmodifiable();
-
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap<>(new LinkedHashMap<>(map));
-	}
-
-	/**
-	 * Creates a new {@code Unmodifiable} {@link ConcurrentHashMap} containing the given map entries.
-	 *
-	 * @param entries the entries to include
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a new unmodifiable concurrent hash map containing the specified entries
-	 */
-	@SafeVarargs
-	public static <K, V> @NotNull ConcurrentHashMap<K, V> newUnmodifiableMap(@NotNull Map.Entry<K, V>... entries) {
-		HashMap<K, V> snapshot = HashMap.newHashMap(entries.length);
-		for (Map.Entry<K, V> entry : entries) {
-			if (entry != null) snapshot.put(entry.getKey(), entry.getValue());
-		}
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap<>(snapshot);
-	}
-
-	/**
-	 * Creates an immutable snapshot of the given map.
-	 *
-	 * <p>The snapshot copies the input's entries at construction time; subsequent mutations
-	 * on the source are not reflected. If the source is a {@link ConcurrentHashMap} but
-	 * neither a {@link ConcurrentTreeMap} nor a {@link ConcurrentLinkedMap}, its
-	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy.
-	 * {@link ConcurrentTreeMap} and {@link ConcurrentLinkedMap} sources are routed through
-	 * the {@link HashMap HashMap}-backed fallback to honor this factory's
-	 * {@code Unmodifiable} {@link ConcurrentHashMap} return contract.</p>
-	 *
-	 * @param map the source map
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentHashMap}
-	 */
-	@SuppressWarnings("unchecked")
-	public static <K, V> @NotNull ConcurrentHashMap<K, V> newUnmodifiableMap(@NotNull Map<? extends K, ? extends V> map) {
-		// ConcurrentTreeMap and ConcurrentLinkedMap override toUnmodifiable() to
-		// yield TreeMap/LinkedHashMap-backed siblings; route those sources to the HashMap-backed
-		// fallback so this factory keeps returning a ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap as documented.
-		if (map instanceof ConcurrentHashMap && !(map instanceof ConcurrentLinkedMap))
-			return (ConcurrentHashMap<K, V>) ((ConcurrentMap<K, V>) map).toUnmodifiable();
-
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap<>(new HashMap<>(map));
 	}
 
 	/**
@@ -917,131 +1390,6 @@ public final class Concurrent {
 
 	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
-	 * {@link LinkedHashMap} (lock-free during accumulation), then adopts it as a
-	 * {@link ConcurrentLinkedMap} at finish, preserving insertion order. Throws on duplicate keys.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentLinkedMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap() {
-		return toLinkedMap(throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
-	 * {@link LinkedHashMap} (lock-free during accumulation), using the specified merge function
-	 * for duplicate keys, then adopts it as a {@link ConcurrentLinkedMap} at finish.
-	 *
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentLinkedMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
-		return toLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh
-	 * {@link LinkedHashMap} (lock-free during accumulation) using the given key and value mappers,
-	 * then adopts it as a {@link ConcurrentLinkedMap} at finish. Throws on duplicate keys.
-	 *
-	 * @param keyMapper the function to extract map keys from stream elements
-	 * @param valueMapper the function to extract map values from stream elements
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentLinkedMap}
-	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
-		return toLinkedMapInternal(keyMapper, valueMapper, throwingMerger(), LinkedHashMap::new);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh
-	 * {@link LinkedHashMap} (lock-free during accumulation) using the given key mapper, value
-	 * mapper, and merge function for duplicate keys, then adopts it as a {@link ConcurrentLinkedMap}
-	 * at finish.
-	 *
-	 * @param keyMapper the function to extract map keys from stream elements
-	 * @param valueMapper the function to extract map values from stream elements
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentLinkedMap}
-	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
-		return toLinkedMapInternal(keyMapper, valueMapper, mergeFunction, LinkedHashMap::new);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
-	 * {@link HashMap} (lock-free during accumulation), then adopts it as a {@link ConcurrentHashMap}
-	 * at finish. Throws on duplicate keys.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentHashMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toMap() {
-		return toMap(throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
-	 * {@link HashMap} (lock-free during accumulation), using the specified merge function for
-	 * duplicate keys, then adopts it as a {@link ConcurrentHashMap} at finish.
-	 *
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentHashMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toMap(@NotNull BinaryOperator<V> mergeFunction) {
-		return toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashMap}
-	 * (lock-free during accumulation) using the given key and value mappers, then adopts it as a
-	 * {@link ConcurrentHashMap} at finish. Throws on duplicate keys.
-	 *
-	 * @param keyMapper the function to extract map keys from stream elements
-	 * @param valueMapper the function to extract map values from stream elements
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentHashMap}
-	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
-		return toMapInternal(keyMapper, valueMapper, throwingMerger(), HashMap::new);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashMap}
-	 * (lock-free during accumulation) using the given key mapper, value mapper, and merge function
-	 * for duplicate keys, then adopts it as a {@link ConcurrentHashMap} at finish.
-	 *
-	 * @param keyMapper the function to extract map keys from stream elements
-	 * @param valueMapper the function to extract map values from stream elements
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentHashMap}
-	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
-		return toMapInternal(keyMapper, valueMapper, mergeFunction, HashMap::new);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
 	 * {@link TreeMap} ordered by {@code comparator} (lock-free during accumulation), then adopts
 	 * it as a {@link ConcurrentTreeMap} at finish. Throws on duplicate keys.
 	 *
@@ -1104,126 +1452,6 @@ public final class Concurrent {
 	 */
 	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentTreeMap<K, V>> toTreeMap(@NotNull Comparator<? super K> comparator, @NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
 		return toTreeMapInternal(keyMapper, valueMapper, mergeFunction, () -> new TreeMap<>(comparator));
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@code Unmodifiable} {@link ConcurrentLinkedMap}, preserving insertion order. Throws on
-	 * duplicate keys.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentLinkedMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toUnmodifiableLinkedMap() {
-		return toUnmodifiableLinkedMap(throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@code Unmodifiable} {@link ConcurrentLinkedMap}, preserving insertion order, using the
-	 * specified merge function for duplicate keys.
-	 *
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentLinkedMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
-		return toUnmodifiableLinkedMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@code Unmodifiable} {@link ConcurrentLinkedMap} using the given key and value mappers,
-	 * preserving insertion order. Throws on duplicate keys.
-	 *
-	 * @param keyMapper the function to extract map keys from stream elements
-	 * @param valueMapper the function to extract map values from stream elements
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentLinkedMap}
-	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
-		return toUnmodifiableLinkedMap(keyMapper, valueMapper, throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@code Unmodifiable} {@link ConcurrentLinkedMap} using the given key mapper, value mapper, and
-	 * merge function for duplicate keys, preserving insertion order.
-	 *
-	 * @param keyMapper the function to extract map keys from stream elements
-	 * @param valueMapper the function to extract map values from stream elements
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentLinkedMap}
-	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentLinkedMap<K, V>> toUnmodifiableLinkedMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
-		return toUnmodifiableLinkedMapInternal(keyMapper, valueMapper, mergeFunction, LinkedHashMap::new);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 * by casting each element to {@link Map.Entry}. Throws on duplicate keys.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toUnmodifiableMap() {
-		return toUnmodifiableMap(throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap},
-	 * using the specified merge function for duplicate keys.
-	 *
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toUnmodifiableMap(@NotNull BinaryOperator<V> mergeFunction) {
-		return toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 * using the given key and value mappers. Throws on duplicate keys.
-	 *
-	 * @param keyMapper the function to extract map keys from stream elements
-	 * @param valueMapper the function to extract map values from stream elements
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper) {
-		return toUnmodifiableMap(keyMapper, valueMapper, throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 * using the given key mapper, value mapper, and merge function for duplicate keys.
-	 *
-	 * @param keyMapper the function to extract map keys from stream elements
-	 * @param valueMapper the function to extract map values from stream elements
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 */
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentHashMap<K, V>> toUnmodifiableMap(@NotNull Function<? super T, ? extends K> keyMapper, @NotNull Function<? super T, ? extends V> valueMapper, @NotNull BinaryOperator<V> mergeFunction) {
-		return toUnmodifiableMapInternal(keyMapper, valueMapper, mergeFunction, HashMap::new);
 	}
 
 	/**
@@ -1294,153 +1522,6 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh
-	 * {@link LinkedHashMap} (lock-free during accumulation) by casting each element to
-	 * {@link Map.Entry}, then adopts it as a {@link ConcurrentLinkedMap} at finish, preserving
-	 * insertion order. Throws on duplicate keys.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	@SuppressWarnings("unchecked")
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakLinkedMap() {
-		return Collectors.collectingAndThen(
-			Collectors.<T, K, V, LinkedHashMap<K, V>>toMap(
-				entry -> ((Map.Entry<K, V>) entry).getKey(),
-				entry -> ((Map.Entry<K, V>) entry).getValue(),
-				throwingMerger(),
-				LinkedHashMap::new
-			),
-			Concurrent::adoptLinkedMap
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashMap}
-	 * (lock-free during accumulation) by casting each element to {@link Map.Entry}, then adopts
-	 * it as a {@link ConcurrentMap} at finish. Throws on duplicate keys.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	@SuppressWarnings("unchecked")
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakMap() {
-		return Collectors.collectingAndThen(
-			Collectors.<T, K, V, HashMap<K, V>>toMap(
-				entry -> ((Map.Entry<K, V>) entry).getKey(),
-				entry -> ((Map.Entry<K, V>) entry).getValue(),
-				throwingMerger(),
-				HashMap::new
-			),
-			Concurrent::adoptMap
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 * by casting each element to {@link Map.Entry}. Throws on duplicate keys.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type
-	 * @return a collector producing a {@code Unmodifiable} {@link ConcurrentHashMap}
-	 */
-	@SuppressWarnings("unchecked")
-	public static <K, V, T> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWeakUnmodifiableMap() {
-		return Collectors.collectingAndThen(
-			Collectors.<T, K, V, HashMap<K, V>>toMap(
-				entry -> ((Map.Entry<K, V>) entry).getKey(),
-				entry -> ((Map.Entry<K, V>) entry).getValue(),
-				throwingMerger(),
-				HashMap::new
-			),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap::new
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
-	 * {@link LinkedHashMap} (lock-free during accumulation), then adopts it as a
-	 * {@link ConcurrentMap} at finish, preserving insertion order. Throws on duplicate keys.
-	 * <p>
-	 * Wide variant of {@link #toLinkedMap()} that declares the base {@link ConcurrentMap} as the
-	 * result type for callers that hit generic-invariance issues with the strict-typed sibling.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideLinkedMap() {
-		return toWideLinkedMap(throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
-	 * {@link LinkedHashMap} (lock-free during accumulation), using the specified merge function
-	 * for duplicate keys, then adopts it as a {@link ConcurrentMap} at finish.
-	 * <p>
-	 * Wide variant of {@link #toLinkedMap(BinaryOperator)} that declares the base
-	 * {@link ConcurrentMap} as the result type for callers that hit generic-invariance issues
-	 * with the strict-typed sibling.
-	 *
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
-		return Collectors.collectingAndThen(
-			Collectors.<T, K, V, LinkedHashMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction, LinkedHashMap::new),
-			Concurrent::adoptLinkedMap
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
-	 * {@link HashMap} (lock-free during accumulation), then adopts it as a {@link ConcurrentMap}
-	 * at finish. Throws on duplicate keys.
-	 * <p>
-	 * Wide variant of {@link #toMap()} that declares the base {@link ConcurrentMap} as the
-	 * result type for callers that hit generic-invariance issues with the strict-typed sibling.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideMap() {
-		return toWideMap(throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
-	 * {@link HashMap} (lock-free during accumulation), using the specified merge function for
-	 * duplicate keys, then adopts it as a {@link ConcurrentMap} at finish.
-	 * <p>
-	 * Wide variant of {@link #toMap(BinaryOperator)} that declares the base {@link ConcurrentMap}
-	 * as the result type for callers that hit generic-invariance issues with the strict-typed
-	 * sibling.
-	 *
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideMap(@NotNull BinaryOperator<V> mergeFunction) {
-		return Collectors.collectingAndThen(
-			Collectors.<T, K, V, HashMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction, HashMap::new),
-			Concurrent::adoptMap
-		);
-	}
-
-	/**
 	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a fresh
 	 * {@link TreeMap} ordered by {@code comparator} (lock-free during accumulation), then adopts
 	 * it as a {@link ConcurrentMap} at finish. Throws on duplicate keys.
@@ -1459,86 +1540,6 @@ public final class Concurrent {
 		return Collectors.collectingAndThen(
 			Collectors.<T, K, V, TreeMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, throwingMerger(), () -> new TreeMap<>(comparator)),
 			Concurrent::adoptTreeMap
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@code Unmodifiable} {@link ConcurrentLinkedMap}, preserving insertion order. Throws on
-	 * duplicate keys.
-	 * <p>
-	 * Wide variant of {@link #toUnmodifiableLinkedMap()} that declares the base
-	 * {@link ConcurrentMap} as the result type for callers that hit generic-invariance issues
-	 * with the strict-typed sibling.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideUnmodifiableLinkedMap() {
-		return toWideUnmodifiableLinkedMap(throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@code Unmodifiable} {@link ConcurrentLinkedMap}, preserving insertion order, using the
-	 * specified merge function for duplicate keys.
-	 * <p>
-	 * Wide variant of {@link #toUnmodifiableLinkedMap(BinaryOperator)} that declares the base
-	 * {@link ConcurrentMap} as the result type for callers that hit generic-invariance issues
-	 * with the strict-typed sibling.
-	 *
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideUnmodifiableLinkedMap(@NotNull BinaryOperator<V> mergeFunction) {
-		return Collectors.collectingAndThen(
-			Collectors.<T, K, V, LinkedHashMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction, LinkedHashMap::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedMap::new
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a
-	 * {@code Unmodifiable} {@link ConcurrentHashMap} by casting each element to
-	 * {@link Map.Entry}. Throws on duplicate keys.
-	 * <p>
-	 * Wide variant of {@link #toUnmodifiableMap()} that declares the base {@link ConcurrentMap}
-	 * as the result type for callers that hit generic-invariance issues with the strict-typed
-	 * sibling.
-	 *
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideUnmodifiableMap() {
-		return toWideUnmodifiableMap(throwingMerger());
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates {@link Map.Entry} stream elements into a
-	 * {@code Unmodifiable} {@link ConcurrentHashMap}, using the specified merge
-	 * function for duplicate keys.
-	 * <p>
-	 * Wide variant of {@link #toUnmodifiableMap(BinaryOperator)} that declares the base
-	 * {@link ConcurrentMap} as the result type for callers that hit generic-invariance issues
-	 * with the strict-typed sibling.
-	 *
-	 * @param mergeFunction the function to resolve collisions between values associated with the same key
-	 * @param <K> the key type
-	 * @param <V> the value type
-	 * @param <T> the stream element type (must extend {@link Map.Entry})
-	 * @return a collector producing a {@link ConcurrentMap}
-	 */
-	public static <K, V, T extends Map.Entry<K, V>> @NotNull Collector<T, ?, ConcurrentMap<K, V>> toWideUnmodifiableMap(@NotNull BinaryOperator<V> mergeFunction) {
-		return Collectors.collectingAndThen(
-			Collectors.<T, K, V, HashMap<K, V>>toMap(Map.Entry::getKey, Map.Entry::getValue, mergeFunction, HashMap::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentHashMap::new
 		);
 	}
 
@@ -1722,34 +1723,6 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Wraps {@code backing} as a {@link ConcurrentHashSet} without copying.
-	 * <p>
-	 * Delegates to {@link ConcurrentHashSet#adopt(AbstractSet)}; see that method for the ownership
-	 * contract.
-	 *
-	 * @param backing the set to adopt
-	 * @param <E> the element type
-	 * @return a concurrent hash set backed by {@code backing}
-	 */
-	public static <E> @NotNull ConcurrentHashSet<E> adoptSet(@NotNull AbstractSet<E> backing) {
-		return ConcurrentHashSet.adopt(backing);
-	}
-
-	/**
-	 * Wraps {@code backing} as a {@link ConcurrentTreeSet} without copying.
-	 * <p>
-	 * Delegates to {@link ConcurrentTreeSet#adopt(TreeSet)}; see that method for the ownership
-	 * contract.
-	 *
-	 * @param backing the tree set to adopt
-	 * @param <E> the element type
-	 * @return a concurrent tree set backed by {@code backing}
-	 */
-	public static <E> @NotNull ConcurrentTreeSet<E> adoptTreeSet(@NotNull TreeSet<E> backing) {
-		return ConcurrentTreeSet.adopt(backing);
-	}
-
-	/**
 	 * Creates a new empty {@link ConcurrentLinkedSet}.
 	 *
 	 * @param <E> the element type
@@ -1783,6 +1756,109 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull ConcurrentLinkedSet<E> newLinkedSet(@NotNull Collection<? extends E> collection) {
 		return new ConcurrentLinkedSet<>(collection);
+	}
+
+	/**
+	 * Creates a new empty {@code Unmodifiable} {@link ConcurrentLinkedSet}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty unmodifiable concurrent linked set
+	 */
+	public static <E> @NotNull ConcurrentLinkedSet<E> newUnmodifiableLinkedSet() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(new LinkedHashSet<>());
+	}
+
+	/**
+	 * Creates a new {@code Unmodifiable} {@link ConcurrentLinkedSet} containing the given elements.
+	 *
+	 * @param array the elements to include
+	 * @param <E> the element type
+	 * @return a new unmodifiable concurrent linked set containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentLinkedSet<E> newUnmodifiableLinkedSet(E @NotNull ... array) {
+		LinkedHashSet<E> snapshot = LinkedHashSet.newLinkedHashSet(array.length);
+		Collections.addAll(snapshot, array);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(snapshot);
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given collection as a linked set, preserving
+	 * insertion order.
+	 *
+	 * @param collection the source collection
+	 * @param <E> the element type
+	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentLinkedSet}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> @NotNull ConcurrentLinkedSet<E> newUnmodifiableLinkedSet(@NotNull Collection<? extends E> collection) {
+		if (collection instanceof ConcurrentLinkedSet)
+			return (ConcurrentLinkedSet<E>) ((ConcurrentLinkedSet<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(new LinkedHashSet<>(collection));
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh
+	 * {@link LinkedHashSet} (lock-free during accumulation), then adopts it as a
+	 * {@link ConcurrentLinkedSet} at finish, preserving insertion order.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentLinkedSet}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentLinkedSet<E>> toLinkedSet() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
+			Concurrent::adoptLinkedSet
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh
+	 * {@link LinkedHashSet} (lock-free during accumulation), then wraps it as a
+	 * {@code Unmodifiable} {@link ConcurrentLinkedSet} at finish, preserving
+	 * insertion order.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent linked set
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentLinkedSet<E>> toUnmodifiableLinkedSet() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet::new
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh
+	 * {@link LinkedHashSet} (lock-free during accumulation), then adopts it as a
+	 * {@link ConcurrentSet} at finish, preserving insertion order.
+	 * <p>
+	 * Wide variant of {@link #toLinkedSet()} that declares the base {@link ConcurrentSet} as the
+	 * result type for callers that hit generic-invariance issues with the strict-typed sibling.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentSet}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toWideLinkedSet() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
+			Concurrent::adoptLinkedSet
+		);
+	}
+
+	/**
+	 * Wraps {@code backing} as a {@link ConcurrentHashSet} without copying.
+	 * <p>
+	 * Delegates to {@link ConcurrentHashSet#adopt(AbstractSet)}; see that method for the ownership
+	 * contract.
+	 *
+	 * @param backing the set to adopt
+	 * @param <E> the element type
+	 * @return a concurrent hash set backed by {@code backing}
+	 */
+	public static <E> @NotNull ConcurrentHashSet<E> adoptSet(@NotNull AbstractSet<E> backing) {
+		return ConcurrentHashSet.adopt(backing);
 	}
 
 	/**
@@ -1820,6 +1896,154 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull ConcurrentHashSet<E> newSet(@Nullable Collection<? extends E> collection) {
 		return new ConcurrentHashSet<>(collection);
+	}
+
+	/**
+	 * Creates a new empty {@code Unmodifiable} {@link ConcurrentHashSet} backed by a fresh
+	 * {@link ConcurrentHashSet}.
+	 *
+	 * @param <E> the element type
+	 * @return a new empty unmodifiable concurrent hash set
+	 */
+	public static <E> @NotNull ConcurrentHashSet<E> newUnmodifiableSet() {
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>());
+	}
+
+	/**
+	 * Creates a new {@code Unmodifiable} {@link ConcurrentHashSet} containing the given elements.
+	 *
+	 * @param array the elements to include
+	 * @param <E> the element type
+	 * @return a new unmodifiable concurrent hash set containing the specified elements
+	 */
+	@SafeVarargs
+	public static <E> @NotNull ConcurrentHashSet<E> newUnmodifiableSet(E @NotNull ... array) {
+		HashSet<E> snapshot = HashSet.newHashSet(array.length);
+		Collections.addAll(snapshot, array);
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(snapshot);
+	}
+
+	/**
+	 * Creates an immutable snapshot of the given collection as a set.
+	 *
+	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
+	 * on the source are not reflected. If the source is a {@link ConcurrentHashSet} but
+	 * neither a {@link ConcurrentTreeSet} nor a {@link ConcurrentLinkedSet}, its
+	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy.
+	 * {@link ConcurrentTreeSet} and {@link ConcurrentLinkedSet} sources are routed through
+	 * the {@link HashSet HashSet}-backed fallback to honor this factory's
+	 * {@code Unmodifiable} {@link ConcurrentHashSet} return contract.</p>
+	 *
+	 * @param collection the source collection
+	 * @param <E> the element type
+	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentHashSet}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> @NotNull ConcurrentHashSet<E> newUnmodifiableSet(@NotNull Collection<? extends E> collection) {
+		// ConcurrentTreeSet and ConcurrentLinkedSet override toUnmodifiable() to
+		// yield TreeSet/LinkedHashSet-backed siblings; route those sources to the HashSet-backed
+		// fallback so this factory keeps returning a ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet as documented.
+		if (collection instanceof ConcurrentSet && !(collection instanceof ConcurrentTreeSet) && !(collection instanceof ConcurrentLinkedSet))
+			return (ConcurrentHashSet<E>) ((ConcurrentSet<E>) collection).toUnmodifiable();
+
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>(collection));
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
+	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentHashSet} at finish.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentHashSet}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentHashSet<E>> toSet() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
+			Concurrent::adoptSet
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
+	 * (lock-free during accumulation), then wraps it as a
+	 * {@code Unmodifiable} {@link ConcurrentHashSet} at finish.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent hash set
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentHashSet<E>> toUnmodifiableSet() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet::new
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
+	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentSet} at finish.
+	 * <p>
+	 * Wide variant of {@link #toSet()} that declares the base {@link ConcurrentSet} as the
+	 * result type for callers that hit generic-invariance issues with the strict-typed sibling.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing a {@link ConcurrentSet}
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toWideSet() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
+			Concurrent::adoptSet
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh
+	 * {@link LinkedHashSet} (lock-free during accumulation), then wraps it as a
+	 * {@link ConcurrentSet} at finish, preserving insertion order.
+	 * <p>
+	 * Wide variant of {@link #toUnmodifiableLinkedSet()} that declares the base
+	 * {@link ConcurrentSet} as the result type for callers that hit generic-invariance issues
+	 * with the strict-typed sibling.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent linked set
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toWideUnmodifiableLinkedSet() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet::new
+		);
+	}
+
+	/**
+	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
+	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentSet} at finish.
+	 * <p>
+	 * Wide variant of {@link #toUnmodifiableSet()} that declares the base {@link ConcurrentSet}
+	 * as the result type for callers that hit generic-invariance issues with the strict-typed
+	 * sibling.
+	 *
+	 * @param <E> the element type
+	 * @return a collector producing an unmodifiable concurrent set
+	 */
+	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toWideUnmodifiableSet() {
+		return Collectors.collectingAndThen(
+			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
+			ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet::new
+		);
+	}
+
+	/**
+	 * Wraps {@code backing} as a {@link ConcurrentTreeSet} without copying.
+	 * <p>
+	 * Delegates to {@link ConcurrentTreeSet#adopt(TreeSet)}; see that method for the ownership
+	 * contract.
+	 *
+	 * @param backing the tree set to adopt
+	 * @param <E> the element type
+	 * @return a concurrent tree set backed by {@code backing}
+	 */
+	public static <E> @NotNull ConcurrentTreeSet<E> adoptTreeSet(@NotNull TreeSet<E> backing) {
+		return ConcurrentTreeSet.adopt(backing);
 	}
 
 	/**
@@ -1899,97 +2123,6 @@ public final class Concurrent {
 	 */
 	public static <E> @NotNull ConcurrentTreeSet<E> newTreeSet(@NotNull Comparator<? super E> comparator, @NotNull Collection<? extends E> collection) {
 		return new ConcurrentTreeSet<>(comparator, collection);
-	}
-
-	/**
-	 * Creates a new empty {@code Unmodifiable} {@link ConcurrentLinkedSet}.
-	 *
-	 * @param <E> the element type
-	 * @return a new empty unmodifiable concurrent linked set
-	 */
-	public static <E> @NotNull ConcurrentLinkedSet<E> newUnmodifiableLinkedSet() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(new LinkedHashSet<>());
-	}
-
-	/**
-	 * Creates a new {@code Unmodifiable} {@link ConcurrentLinkedSet} containing the given elements.
-	 *
-	 * @param array the elements to include
-	 * @param <E> the element type
-	 * @return a new unmodifiable concurrent linked set containing the specified elements
-	 */
-	@SafeVarargs
-	public static <E> @NotNull ConcurrentLinkedSet<E> newUnmodifiableLinkedSet(E @NotNull ... array) {
-		LinkedHashSet<E> snapshot = LinkedHashSet.newLinkedHashSet(array.length);
-		Collections.addAll(snapshot, array);
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(snapshot);
-	}
-
-	/**
-	 * Creates an immutable snapshot of the given collection as a linked set, preserving
-	 * insertion order.
-	 *
-	 * @param collection the source collection
-	 * @param <E> the element type
-	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentLinkedSet}
-	 */
-	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentLinkedSet<E> newUnmodifiableLinkedSet(@NotNull Collection<? extends E> collection) {
-		if (collection instanceof ConcurrentLinkedSet)
-			return (ConcurrentLinkedSet<E>) ((ConcurrentLinkedSet<E>) collection).toUnmodifiable();
-
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet<>(new LinkedHashSet<>(collection));
-	}
-
-	/**
-	 * Creates a new empty {@code Unmodifiable} {@link ConcurrentHashSet} backed by a fresh
-	 * {@link ConcurrentHashSet}.
-	 *
-	 * @param <E> the element type
-	 * @return a new empty unmodifiable concurrent hash set
-	 */
-	public static <E> @NotNull ConcurrentHashSet<E> newUnmodifiableSet() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>());
-	}
-
-	/**
-	 * Creates a new {@code Unmodifiable} {@link ConcurrentHashSet} containing the given elements.
-	 *
-	 * @param array the elements to include
-	 * @param <E> the element type
-	 * @return a new unmodifiable concurrent hash set containing the specified elements
-	 */
-	@SafeVarargs
-	public static <E> @NotNull ConcurrentHashSet<E> newUnmodifiableSet(E @NotNull ... array) {
-		HashSet<E> snapshot = HashSet.newHashSet(array.length);
-		Collections.addAll(snapshot, array);
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(snapshot);
-	}
-
-	/**
-	 * Creates an immutable snapshot of the given collection as a set.
-	 *
-	 * <p>The snapshot copies the input's contents at construction time; subsequent mutations
-	 * on the source are not reflected. If the source is a {@link ConcurrentHashSet} but
-	 * neither a {@link ConcurrentTreeSet} nor a {@link ConcurrentLinkedSet}, its
-	 * {@code toUnmodifiable()} is delegated to so the source's read lock guards the copy.
-	 * {@link ConcurrentTreeSet} and {@link ConcurrentLinkedSet} sources are routed through
-	 * the {@link HashSet HashSet}-backed fallback to honor this factory's
-	 * {@code Unmodifiable} {@link ConcurrentHashSet} return contract.</p>
-	 *
-	 * @param collection the source collection
-	 * @param <E> the element type
-	 * @return a snapshot {@code Unmodifiable} {@link ConcurrentHashSet}
-	 */
-	@SuppressWarnings("unchecked")
-	public static <E> @NotNull ConcurrentHashSet<E> newUnmodifiableSet(@NotNull Collection<? extends E> collection) {
-		// ConcurrentTreeSet and ConcurrentLinkedSet override toUnmodifiable() to
-		// yield TreeSet/LinkedHashSet-backed siblings; route those sources to the HashSet-backed
-		// fallback so this factory keeps returning a ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet as documented.
-		if (collection instanceof ConcurrentSet && !(collection instanceof ConcurrentTreeSet) && !(collection instanceof ConcurrentLinkedSet))
-			return (ConcurrentHashSet<E>) ((ConcurrentSet<E>) collection).toUnmodifiable();
-
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet<>(new HashSet<>(collection));
 	}
 
 	/**
@@ -2076,35 +2209,6 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh
-	 * {@link LinkedHashSet} (lock-free during accumulation), then adopts it as a
-	 * {@link ConcurrentLinkedSet} at finish, preserving insertion order.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing a {@link ConcurrentLinkedSet}
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentLinkedSet<E>> toLinkedSet() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
-			Concurrent::adoptLinkedSet
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
-	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentHashSet} at finish.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing a {@link ConcurrentHashSet}
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentHashSet<E>> toSet() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
-			Concurrent::adoptSet
-		);
-	}
-
-	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link TreeSet}
 	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentTreeSet} at finish.
 	 *
@@ -2131,37 +2235,6 @@ public final class Concurrent {
 		return Collectors.collectingAndThen(
 			Collectors.<E, TreeSet<E>>toCollection(() -> new TreeSet<>(comparator)),
 			Concurrent::adoptTreeSet
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh
-	 * {@link LinkedHashSet} (lock-free during accumulation), then wraps it as a
-	 * {@code Unmodifiable} {@link ConcurrentLinkedSet} at finish, preserving
-	 * insertion order.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing an unmodifiable concurrent linked set
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentLinkedSet<E>> toUnmodifiableLinkedSet() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet::new
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
-	 * (lock-free during accumulation), then wraps it as a
-	 * {@code Unmodifiable} {@link ConcurrentHashSet} at finish.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing an unmodifiable concurrent hash set
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentHashSet<E>> toUnmodifiableSet() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet::new
 		);
 	}
 
@@ -2197,41 +2270,6 @@ public final class Concurrent {
 	}
 
 	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh
-	 * {@link LinkedHashSet} (lock-free during accumulation), then adopts it as a
-	 * {@link ConcurrentSet} at finish, preserving insertion order.
-	 * <p>
-	 * Wide variant of {@link #toLinkedSet()} that declares the base {@link ConcurrentSet} as the
-	 * result type for callers that hit generic-invariance issues with the strict-typed sibling.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing a {@link ConcurrentSet}
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toWideLinkedSet() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
-			Concurrent::adoptLinkedSet
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
-	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentSet} at finish.
-	 * <p>
-	 * Wide variant of {@link #toSet()} that declares the base {@link ConcurrentSet} as the
-	 * result type for callers that hit generic-invariance issues with the strict-typed sibling.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing a {@link ConcurrentSet}
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toWideSet() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
-			Concurrent::adoptSet
-		);
-	}
-
-	/**
 	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link TreeSet}
 	 * (lock-free during accumulation), then adopts it as a {@link ConcurrentSet} at finish.
 	 * <p>
@@ -2245,43 +2283,6 @@ public final class Concurrent {
 		return Collectors.collectingAndThen(
 			Collectors.<E, TreeSet<E>>toCollection(TreeSet::new),
 			Concurrent::adoptTreeSet
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh
-	 * {@link LinkedHashSet} (lock-free during accumulation), then wraps it as a
-	 * {@link ConcurrentSet} at finish, preserving insertion order.
-	 * <p>
-	 * Wide variant of {@link #toUnmodifiableLinkedSet()} that declares the base
-	 * {@link ConcurrentSet} as the result type for callers that hit generic-invariance issues
-	 * with the strict-typed sibling.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing an unmodifiable concurrent linked set
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toWideUnmodifiableLinkedSet() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, LinkedHashSet<E>>toCollection(LinkedHashSet::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentLinkedSet::new
-		);
-	}
-
-	/**
-	 * Returns a {@link Collector} that accumulates stream elements into a fresh {@link HashSet}
-	 * (lock-free during accumulation), then wraps it as a {@link ConcurrentSet} at finish.
-	 * <p>
-	 * Wide variant of {@link #toUnmodifiableSet()} that declares the base {@link ConcurrentSet}
-	 * as the result type for callers that hit generic-invariance issues with the strict-typed
-	 * sibling.
-	 *
-	 * @param <E> the element type
-	 * @return a collector producing an unmodifiable concurrent set
-	 */
-	public static <E> @NotNull Collector<E, ?, ConcurrentSet<E>> toWideUnmodifiableSet() {
-		return Collectors.collectingAndThen(
-			Collectors.<E, HashSet<E>>toCollection(HashSet::new),
-			ConcurrentUnmodifiable.UnmodifiableConcurrentHashSet::new
 		);
 	}
 
@@ -2346,6 +2347,8 @@ public final class Concurrent {
 			}
 		);
 	}
+
+	// ---- Internals ----
 
 	/**
 	 * Builds a {@link Collector} that accumulates stream elements into a raw {@link LinkedHashMap}
