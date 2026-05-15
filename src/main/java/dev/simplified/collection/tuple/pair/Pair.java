@@ -67,10 +67,14 @@ public interface Pair<L, R> extends Map.Entry<L, R>, Comparable<Pair<L, R>> {
         return new ImmutablePair<>(null, null);
     }
 
-    /** The left element of this pair. When treated as a key-value pair, this is the key. */
+    /**
+     * The left element of this pair. When treated as a key-value pair, this is the key.
+     */
     L left();
 
-    /** The right element of this pair. When treated as a key-value pair, this is the value. */
+    /**
+     * The right element of this pair. When treated as a key-value pair, this is the value.
+     */
     R right();
 
     /**

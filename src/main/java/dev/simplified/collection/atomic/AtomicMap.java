@@ -5,7 +5,8 @@ import dev.simplified.collection.tuple.pair.PairStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.LinkedHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
@@ -31,18 +32,30 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected final @NotNull ReadWriteLock lock;
 	private final @NotNull Object viewLock = new Object();
 
-	/** Lazily initialized live view of the entry set. */
+	/**
+	 * Lazily initialized live view of the entry set.
+	 */
 	private transient volatile @Nullable Set<Entry<K, V>> entrySetView;
-	/** Lazily initialized live view of the key set. */
+	/**
+	 * Lazily initialized live view of the key set.
+	 */
 	private transient volatile @Nullable Set<K> keySetView;
-	/** Lazily initialized live view of the values collection. */
+	/**
+	 * Lazily initialized live view of the values collection.
+	 */
 	private transient volatile @Nullable Collection<V> valuesView;
 
-	/** Cached iterator snapshot for the entry set view. */
+	/**
+	 * Cached iterator snapshot for the entry set view.
+	 */
 	private transient volatile @Nullable Object @Nullable [] entrySetSnapshot;
-	/** Cached iterator snapshot for the key set view. */
+	/**
+	 * Cached iterator snapshot for the key set view.
+	 */
 	private transient volatile @Nullable Object @Nullable [] keySetSnapshot;
-	/** Cached iterator snapshot for the values collection view. */
+	/**
+	 * Cached iterator snapshot for the values collection view.
+	 */
 	private transient volatile @Nullable Object @Nullable [] valuesSnapshot;
 
 	/**
@@ -119,7 +132,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 	/**
 	 * Returns the characteristic bits the {@link #entrySet()} spliterator advertises. Subclasses
-	 * with insertion-ordered backings (e.g. {@link java.util.LinkedHashMap}) override to OR in
+	 * with insertion-ordered backings (e.g. {@link LinkedHashMap}) override to OR in
 	 * {@link Spliterator#ORDERED}; navigable backings OR in {@link Spliterator#SORTED}.
 	 *
 	 * @return the entry-set spliterator characteristic bitmask
@@ -273,7 +286,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * Structural writes ({@code remove}, {@code clear}, {@link Iterator#remove()},
 	 * {@link Entry#setValue(Object)}) propagate to the map under the write lock.
 	 * Iteration uses a read-locked snapshot cached until the next write, so consumers
-	 * never observe a partially modified map and never throw {@link java.util.ConcurrentModificationException}.
+	 * never observe a partially modified map and never throw {@link ConcurrentModificationException}.
 	 */
 	@Override
 	public @NotNull Set<Entry<K, V>> entrySet() {
@@ -952,7 +965,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		 * {@inheritDoc}
 		 * <p>
 		 * If the entry was concurrently removed before this call, the operation is a
-		 * silent no-op - no {@link java.util.ConcurrentModificationException} is thrown.
+		 * silent no-op - no {@link ConcurrentModificationException} is thrown.
 		 */
 		@Override
 		@SuppressWarnings("unchecked")
@@ -980,7 +993,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		 * {@inheritDoc}
 		 * <p>
 		 * If the key was concurrently removed before this call, the operation is a
-		 * silent no-op - no {@link java.util.ConcurrentModificationException} is thrown.
+		 * silent no-op - no {@link ConcurrentModificationException} is thrown.
 		 */
 		@Override
 		public void remove() {
@@ -1009,7 +1022,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		 * {@inheritDoc}
 		 * <p>
 		 * If no entry still maps to this value by the time the call runs, the operation
-		 * is a silent no-op - no {@link java.util.ConcurrentModificationException} is thrown.
+		 * is a silent no-op - no {@link ConcurrentModificationException} is thrown.
 		 */
 		@Override
 		public void remove() {

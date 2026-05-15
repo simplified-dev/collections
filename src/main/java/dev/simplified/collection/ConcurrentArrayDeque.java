@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Spliterator;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -16,7 +17,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * semantics.
  *
  * <p><b>Null-element behavior:</b> {@link ArrayDeque} rejects {@code null} elements with a
- * {@link NullPointerException}, unlike {@link java.util.LinkedList} which accepts them. Callers
+ * {@link NullPointerException}, unlike {@link LinkedList} which accepts them. Callers
  * migrating from a {@code LinkedList}-backed deque must ensure no {@code null} values flow
  * through this deque.</p>
  *

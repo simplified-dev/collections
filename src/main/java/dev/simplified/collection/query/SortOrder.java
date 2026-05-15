@@ -11,9 +11,13 @@ import org.jetbrains.annotations.NotNull;
 @RequiredArgsConstructor
 public enum SortOrder {
 
-	/** Ascending sort order (smallest to largest). */
+	/**
+	 * Ascending sort order (smallest to largest).
+	 */
 	ASCENDING("ASC"),
-	/** Descending sort order (largest to smallest). */
+	/**
+	 * Descending sort order (largest to smallest).
+	 */
 	DESCENDING("DESC");
 
 	@Getter private final @NotNull String shortName;

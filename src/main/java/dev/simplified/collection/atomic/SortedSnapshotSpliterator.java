@@ -4,12 +4,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 
 /**
  * Spliterator wrapper that delegates traversal to a snapshot-backed array spliterator while
  * exposing the source set or map's {@link Comparator} via {@link #getComparator()}, satisfying
- * the {@link Spliterator#SORTED} contract that {@link java.util.Spliterators#spliterator}
+ * the {@link Spliterator#SORTED} contract that {@link Spliterators#spliterator}
  * implementations do not honor for custom comparators.
  *
  * @param <E> the type of elements traversed by this spliterator

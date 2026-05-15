@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SortableTest {
 
-    /** Test fixture record used as the sortable element type. */
+    /**
+     * Test fixture record used as the sortable element type.
+     */
     record Person(int id, String name, List<String> tags, Department department) {
 
         Person(int id, String name, List<String> tags) {
@@ -33,7 +35,9 @@ class SortableTest {
 
     }
 
-    /** Nested fixture record. */
+    /**
+     * Nested fixture record.
+     */
     record Department(String name) {}
 
     private ConcurrentList<Person> people;

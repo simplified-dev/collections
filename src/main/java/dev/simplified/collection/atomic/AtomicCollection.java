@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.AbstractCollection;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -482,7 +483,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 		 * {@inheritDoc}
 		 * <p>
 		 * If the element was concurrently removed before this call, the operation is a
-		 * silent no-op - no {@link java.util.ConcurrentModificationException} is thrown.
+		 * silent no-op - no {@link ConcurrentModificationException} is thrown.
 		 * The post-condition ("the element returned by the last {@code next()} is absent
 		 * from the collection") is already satisfied either way.
 		 */

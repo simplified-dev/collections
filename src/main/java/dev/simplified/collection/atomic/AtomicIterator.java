@@ -21,13 +21,19 @@ import java.util.function.Consumer;
 @SuppressWarnings("unchecked")
 class AtomicIterator<E> implements Iterator<E> {
 
-	/** Immutable snapshot of the array captured at iterator creation time. */
+	/**
+	 * Immutable snapshot of the array captured at iterator creation time.
+	 */
 	protected final Object[] snapshot;
 
-	/** Index of element to be returned by subsequent call to next. */
+	/**
+	 * Index of element to be returned by subsequent call to next.
+	 */
 	protected int cursor;
 
-	/** Index of last element to be returned. */
+	/**
+	 * Index of last element to be returned.
+	 */
 	protected int last = -1;
 
 	/**

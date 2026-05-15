@@ -37,13 +37,19 @@ public interface Triple<L, M, R> extends Comparable<Triple<L, M, R>> {
         return new ImmutableTriple<>(left, middle, right);
     }
 
-    /** The left element of this triple. */
+    /**
+     * The left element of this triple.
+     */
     L left();
 
-    /** The middle element of this triple. */
+    /**
+     * The middle element of this triple.
+     */
     M middle();
 
-    /** The right element of this triple. */
+    /**
+     * The right element of this triple.
+     */
     R right();
 
     /**

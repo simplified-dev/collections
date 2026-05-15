@@ -37,7 +37,9 @@ class SearchableTest {
 
     }
 
-    /** Nested fixture record used to exercise {@link SearchFunction#combine}. */
+    /**
+     * Nested fixture record used to exercise {@link SearchFunction#combine}.
+     */
     record Department(String name) {}
 
     private ConcurrentList<Person> people;

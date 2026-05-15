@@ -1,8 +1,8 @@
 package dev.simplified.collection.tuple.single;
 
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
 import dev.simplified.collection.ConcurrentLinkedList;
+import dev.simplified.collection.ConcurrentList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.BaseStream;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
@@ -37,17 +38,21 @@ import java.util.stream.Stream;
  * any user-registered handlers run on the first {@link #close()} call only.</p>
  *
  * <p>Streams are not safe for concurrent use across threads; this constraint is inherited
- * unchanged from {@link java.util.stream.BaseStream}.</p>
+ * unchanged from {@link BaseStream}.</p>
  *
  * @param <E> the type of elements in the stream
  * @see SingleStream
  */
 public final class LifecycleSingleStream<E> implements SingleStream<E> {
 
-    /** The underlying JDK stream produced by Hibernate's {@code getResultStream()}. */
+    /**
+     * The underlying JDK stream produced by Hibernate's {@code getResultStream()}.
+     */
     private final @NotNull Stream<E> underlying;
 
-    /** Guard flag preventing the lifecycle resource from being closed twice. */
+    /**
+     * Guard flag preventing the lifecycle resource from being closed twice.
+     */
     private boolean closed = false;
 
     /**

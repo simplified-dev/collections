@@ -4,6 +4,7 @@ import dev.simplified.collection.atomic.AtomicList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -13,7 +14,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 /**
  * A thread-safe {@link ConcurrentList} backed by a {@link LinkedList} that preserves the source's
  * insertion-order traversal characteristics. Mirrors the JDK relationship between
- * {@link java.util.LinkedList} and {@link java.util.ArrayList} - both are siblings of
+ * {@link LinkedList} and {@link ArrayList} - both are siblings of
  * {@link AtomicList}, neither extends the other.
  *
  * @param <E> the type of elements in this list

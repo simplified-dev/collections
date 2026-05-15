@@ -22,7 +22,9 @@ import java.util.stream.Stream;
 @FunctionalInterface
 public interface Searchable<E> {
 
-    /** A {@link SingleStream} over the elements of this searchable collection. */
+    /**
+     * A {@link SingleStream} over the elements of this searchable collection.
+     */
     @NotNull SingleStream<E> stream();
 
     /**

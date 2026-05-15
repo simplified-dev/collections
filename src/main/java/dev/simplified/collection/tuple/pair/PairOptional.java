@@ -36,10 +36,14 @@ import java.util.stream.Stream;
  */
 public final class PairOptional<L, R> {
 
-    /** Common instance for {@link #empty()}. */
+    /**
+     * Common instance for {@link #empty()}.
+     */
     private static final PairOptional<?, ?> EMPTY = new PairOptional<>((Pair<?, ?>) null);
 
-    /** The wrapped pair; {@code null} indicates no value is present. */
+    /**
+     * The wrapped pair; {@code null} indicates no value is present.
+     */
     private final @Nullable Pair<L, R> pair;
 
     private PairOptional(@Nullable Pair<L, R> pair) {

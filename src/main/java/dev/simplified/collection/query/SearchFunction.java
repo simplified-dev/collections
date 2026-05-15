@@ -48,9 +48,13 @@ public interface SearchFunction<T, R> extends Function<T, R> {
      */
     enum Match {
 
-        /** All predicates must match for an element to be included. */
+        /**
+         * All predicates must match for an element to be included.
+         */
         ALL,
-        /** At least one predicate must match for an element to be included. */
+        /**
+         * At least one predicate must match for an element to be included.
+         */
         ANY
 
     }

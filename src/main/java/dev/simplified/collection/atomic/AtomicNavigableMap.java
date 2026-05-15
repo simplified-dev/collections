@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.Set;
@@ -80,7 +81,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map entry traversal preserves key order
 	 * through stream operations. {@link Spliterator#SORTED} is intentionally not advertised on the
 	 * entry-set view because the JDK array spliterator cannot expose a key-based
-	 * {@link java.util.Comparator} for {@link java.util.Map.Entry} elements.
+	 * {@link Comparator} for {@link Entry} elements.
 	 */
 	@Override
 	protected int entrySetSpliteratorCharacteristics() {
@@ -92,7 +93,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 *
 	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map key traversal preserves key order.
 	 * {@link Spliterator#SORTED} is not advertised here because the snapshot-array spliterator
-	 * cannot expose the backing map's {@link java.util.Comparator}; callers needing the SORTED
+	 * cannot expose the backing map's {@link Comparator}; callers needing the SORTED
 	 * contract must go through {@link #navigableKeySet()}, which returns a view that wraps the
 	 * spliterator with the configured comparator.
 	 */
