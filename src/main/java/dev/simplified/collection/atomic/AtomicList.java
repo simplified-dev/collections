@@ -245,6 +245,17 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	}
 
 	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Reuses {@link #snapshot()}, which already copies under the read lock and already preserves
+	 * this list's iteration order.
+	 */
+	@Override
+	protected @NotNull Object comparisonSnapshot() {
+		return this.snapshot();
+	}
+
+	/**
 	 * Returns a new empty instance of this list's runtime type. Used by {@link #sorted},
 	 * {@link #reversed}, and {@link #subList} to materialize their result.
 	 *

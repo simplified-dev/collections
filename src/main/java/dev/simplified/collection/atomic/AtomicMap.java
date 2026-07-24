@@ -9,6 +9,7 @@ import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -17,8 +18,10 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
@@ -319,13 +322,46 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
+	 * Returns a plain JDK copy of this map's contents, captured under this map's own read lock so
+	 * the caller can walk the result without holding any lock at all.
+	 * <p>
+	 * A sorted backing is copied into a {@link TreeMap} carrying the same {@link Comparator}:
+	 * map equality probes the copy with {@link Map#get(Object)}, so flattening a
+	 * comparator-ordered map into a hash-ordered one would answer those probes under the wrong
+	 * key semantics. Subclasses whose backing type defines equality over a different shape must
+	 * override this so the copy is of that shape.
+	 *
+	 * @return an unshared copy of this map's current contents
+	 */
+	protected @NotNull Object comparisonSnapshot() {
+		return this.withReadLock(() -> {
+			if (this.ref instanceof SortedMap<K, V> sorted) {
+				TreeMap<K, V> copy = new TreeMap<>(sorted.comparator());
+				copy.putAll(this.ref);
+				return copy;
+			}
+
+			return new LinkedHashMap<K, V>(this.ref);
+		});
+	}
+
+	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * A foreign {@code AtomicMap} is replaced by its own {@link #comparisonSnapshot()} before this
+	 * map's read lock is taken, so exactly one lock is ever held. Probing the foreign backing map
+	 * directly would read it while holding only this side's lock, which excludes nothing on that
+	 * side and lets a concurrent mutation there yield a wrong answer.
 	 */
 	@Override
 	public final boolean equals(Object obj) {
 		if (this == obj) return true;
 		if (obj == null) return false;
-		if (obj instanceof AtomicMap<?, ?, ?>) obj = ((AtomicMap<?, ?, ?>) obj).ref;
+
+		if (obj instanceof AtomicMap<?, ?, ?> other) {
+			if (this.ref == other.ref) return true;
+			obj = other.comparisonSnapshot();
+		}
 
 		final Object target = obj;
 		return this.withReadLock(() -> this.ref.equals(target));

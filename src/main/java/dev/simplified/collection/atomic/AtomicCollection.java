@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractCollection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
@@ -249,13 +250,37 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	protected abstract @NotNull AtomicCollection<E, T> newEmpty();
 
 	/**
+	 * Returns a plain JDK copy of this collection's contents, captured under this collection's own
+	 * read lock so the caller can walk the result without holding any lock at all.
+	 * <p>
+	 * Subclasses whose backing type defines equality over a different shape must override this so
+	 * the copy is of that shape - a set compares equal only to another set, so an ordinary list
+	 * copy would make every comparison against such a collection answer {@code false}.
+	 *
+	 * @return an unshared copy of this collection's current contents
+	 */
+	protected @NotNull Object comparisonSnapshot() {
+		return this.withReadLock(() -> new ArrayList<>(this.ref));
+	}
+
+	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * A foreign {@code AtomicCollection} is replaced by its own {@link #comparisonSnapshot()}
+	 * before this collection's read lock is taken, so exactly one lock is ever held. Comparing
+	 * against the foreign backing collection directly would walk it while holding only this
+	 * side's lock, which excludes nothing on that side and lets a concurrent mutation there
+	 * throw {@link ConcurrentModificationException} out of this method.
 	 */
 	@Override
 	public final boolean equals(Object obj) {
 		if (this == obj) return true;
 		if (obj == null) return false;
-		if (obj instanceof AtomicCollection) obj = ((AtomicCollection<?, ?>) obj).ref;
+
+		if (obj instanceof AtomicCollection<?, ?> other) {
+			if (this.ref == other.ref) return true;
+			obj = other.comparisonSnapshot();
+		}
 
 		final Object target = obj;
 		return this.withReadLock(() -> this.ref.equals(target));
