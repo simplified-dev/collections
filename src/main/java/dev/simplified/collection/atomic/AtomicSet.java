@@ -4,6 +4,8 @@ import dev.simplified.collection.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -41,6 +43,18 @@ public abstract class AtomicSet<E, T extends AbstractSet<E>> extends AtomicColle
 	@Override
 	protected int spliteratorCharacteristics() {
 		return Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.IMMUTABLE | Spliterator.DISTINCT;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Copies into a {@link Set}, preserving iteration order. {@link AbstractSet#equals(Object)}
+	 * answers {@code false} for anything that is not a {@code Set}, so inheriting the list-shaped
+	 * copy would make every comparison against this set answer {@code false}.
+	 */
+	@Override
+	protected @NotNull Object comparisonSnapshot() {
+		return this.withReadLock(() -> new LinkedHashSet<>(this.ref));
 	}
 
 }
