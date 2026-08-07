@@ -5,6 +5,9 @@ import dev.simplified.collection.tuple.pair.PairStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -45,7 +48,11 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 	protected final @NotNull M ref;
 	protected final @NotNull ReadWriteLock lock;
-	private final @NotNull Object viewLock = new Object();
+
+	/**
+	 * Monitor guarding creation of the three lazy views.
+	 */
+	private transient @NotNull Object viewLock = new Object();
 
 	/**
 	 * Lazily initialized live view of the entry set.
@@ -108,6 +115,19 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected AtomicMap(@NotNull M ref, @NotNull ReadWriteLock lock) {
 		this.ref = ref;
 		this.lock = lock;
+	}
+
+	/**
+	 * Restores the view monitor, which deserialization does not run field initializers to create.
+	 *
+	 * @param in the stream being read
+	 * @throws IOException if the stream cannot be read
+	 * @throws ClassNotFoundException if a serialized class cannot be resolved
+	 */
+	@Serial
+	private void readObject(@NotNull ObjectInputStream in) throws IOException, ClassNotFoundException {
+		in.defaultReadObject();
+		this.viewLock = new Object();
 	}
 
 	/**
