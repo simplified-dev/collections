@@ -1,6 +1,6 @@
 package dev.simplified.collection;
 
-import lombok.experimental.UtilityClass;
+import dev.simplified.annotations.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,7 +1,6 @@
 package dev.simplified.collection.sort;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import dev.simplified.annotations.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.ListIterator;
  * Package-private utilities shared by {@link Comparison}, {@link RadixSort}, and
  * {@link CountingSort} algorithm kernels.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 final class SortInternals {
 
 	/**

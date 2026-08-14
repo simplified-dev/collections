@@ -1,7 +1,6 @@
 package dev.simplified.collection;
+import dev.simplified.annotations.Cleanup;
 import dev.simplified.collection.ConcurrentMap;
-
-import lombok.Cleanup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

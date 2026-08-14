@@ -1,7 +1,6 @@
 package dev.simplified.collection.sort;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import dev.simplified.annotations.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
@@ -11,7 +10,7 @@ import java.util.ListIterator;
 /**
  * Static factories for general-purpose comparison-based {@link SortAlgorithm} strategies.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 public final class Comparison {
 
 	private static final int QUICKSORT_INSERTION_THRESHOLD = 16;
