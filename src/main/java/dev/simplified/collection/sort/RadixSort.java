@@ -1,7 +1,6 @@
 package dev.simplified.collection.sort;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import dev.simplified.annotations.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.function.ToLongFunction;
  * Static factories for non-comparison radix-style {@link SortAlgorithm} strategies that order
  * elements by an extracted primitive key.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 public final class RadixSort {
 
 	private static final int BYTE_BUCKETS = 256;

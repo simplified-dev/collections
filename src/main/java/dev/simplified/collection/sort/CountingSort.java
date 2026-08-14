@@ -1,7 +1,6 @@
 package dev.simplified.collection.sort;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import dev.simplified.annotations.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.function.ToIntFunction;
  * Static factories for non-comparison counting-sort {@link SortAlgorithm} strategies that order
  * elements by an extracted bounded-range integer key.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 public final class CountingSort {
 
 	/**

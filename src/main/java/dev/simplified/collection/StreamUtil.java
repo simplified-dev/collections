@@ -1,11 +1,11 @@
 package dev.simplified.collection;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.AllArgsConstructor;
+import dev.simplified.annotations.UtilityClass;
 import dev.simplified.collection.function.IndexedFunction;
 import dev.simplified.collection.tuple.triple.Triple;
 import dev.simplified.collection.tuple.triple.TripleStream;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

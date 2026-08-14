@@ -1,11 +1,11 @@
 package dev.simplified.collection.tuple.pair;
 
+import dev.simplified.annotations.EqualsAndHashCode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -34,6 +34,7 @@ import java.util.stream.Stream;
  * @param <L> the type of the left value
  * @param <R> the type of the right value
  */
+@EqualsAndHashCode
 public final class PairOptional<L, R> {
 
     /**
@@ -570,31 +571,6 @@ public final class PairOptional<L, R> {
     }
 
     // Object
-
-    /**
-     * Returns {@code true} if the other object is a {@code PairOptional} with an equal value.
-     *
-     * @param obj an object to be tested for equality
-     * @return {@code true} if the other object is equal to this {@code PairOptional}
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-
-        return obj instanceof PairOptional<?, ?> other
-            && Objects.equals(pair, other.pair);
-    }
-
-    /**
-     * Returns the hash code of the pair if present, otherwise {@code 0}.
-     *
-     * @return the hash code of the present pair, or {@code 0} if empty
-     */
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(pair);
-    }
 
     /**
      * Returns a string representation of this {@code PairOptional} suitable for debugging.

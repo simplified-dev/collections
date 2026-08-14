@@ -28,11 +28,11 @@ dependencies {
     compileOnly(libs.gson)
     testImplementation(libs.gson)
 
-    // Lombok Annotations
-    compileOnly(libs.lombok)
-    annotationProcessor(libs.lombok)
-    testCompileOnly(libs.lombok)
-    testAnnotationProcessor(libs.lombok)
+    // Simplified Annotations
+    compileOnly(libs.simplified.annotations)
+    annotationProcessor(libs.simplified.annotations)
+    testCompileOnly(libs.simplified.annotations)
+    testAnnotationProcessor(libs.simplified.annotations)
 
     // Tests
     testImplementation(libs.hamcrest)

@@ -1,7 +1,7 @@
 package dev.simplified.collection;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
