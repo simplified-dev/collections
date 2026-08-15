@@ -32,7 +32,7 @@ Thread-safe concurrent collection library using ReadWriteLock-based atomic opera
 - `Pair`/`Triple` - Immutable + mutable variants with stream support; `Pair` caches its natural-order comparator.
 
 ## Dependencies
-- JetBrains annotations, Log4j2, Lombok
+- JetBrains annotations, Log4j2, Simplified Annotations
 - Gson (`compileOnly`, opt-in) - powers `ConcurrentTypeAdapterFactory`; absent from runtime unless the consumer pulls in Gson themselves
 - JUnit 5, Hamcrest (test), JMH (benchmarks)
 - No Simplified-Dev dependencies (foundational library)

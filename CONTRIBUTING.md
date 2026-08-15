@@ -47,8 +47,8 @@ everything you need to get started.
 
    This compiles all sources, runs tests, and produces the output JAR.
 
-4. **Open** the project in your preferred IDE. IntelliJ IDEA with the Lombok
-   plugin is recommended.
+4. **Open** the project in your preferred IDE. IntelliJ IDEA with the
+   Simplified Annotations plugin is recommended.
 
 > [!TIP]
 > You do not need to install Gradle separately. The repository includes a
@@ -71,9 +71,10 @@ everything you need to get started.
 ### Code Style
 
 - Follow standard **Java coding conventions**.
-- Use **Lombok** annotations where the project already uses them (e.g.,
-  `@Getter`, `@RequiredArgsConstructor`). Do not add Lombok to classes that
-  do not already use it without discussion.
+- Use **Simplified Annotations** (`io.github.simplified-dev:annotations`)
+  where the project already uses them (e.g., `@Getter`,
+  `@RequiredArgsConstructor`). Do not add them to classes that do not
+  already use them without discussion.
 - Use **JetBrains `@NotNull` / `@Nullable`** annotations for parameter and
   return type nullability.
 - Write Javadoc for all public classes and methods.
