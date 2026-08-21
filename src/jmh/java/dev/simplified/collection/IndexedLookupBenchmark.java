@@ -127,6 +127,23 @@ public class IndexedLookupBenchmark {
         return this.plain.findFirst(PLAIN_KEY, this.miss);
     }
 
+    // --- Hit and miss without an Optional to carry the answer ---
+
+    @Benchmark
+    public Declared indexedHitOrNull() {
+        return this.declared.findFirstOrNull(DECLARED_KEY, this.hit);
+    }
+
+    @Benchmark
+    public Declared indexedMissOrNull() {
+        return this.declared.findFirstOrNull(DECLARED_KEY, this.miss);
+    }
+
+    @Benchmark
+    public Plain scannedHitOrNull() {
+        return this.plain.findFirstOrNull(PLAIN_KEY, this.hit);
+    }
+
     // --- Rebuild after every write ---
 
     @Benchmark

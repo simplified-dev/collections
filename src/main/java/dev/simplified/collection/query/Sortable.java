@@ -114,11 +114,14 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull SearchFunction<E, List<S>> function, S value) {
-        return this.containsFirst(function, value).orElse(null);
+        return this.containsFirstOrNull(SearchFunction.Match.ALL, function, value);
     }
 
     /**
      * Returns the first element whose list-valued field contains the given value using the specified match mode, or {@code null} if none match.
+     *
+     * <p>Read off the containment index directly when one covers the property, and nothing is
+     * minted to carry an absent answer.
      *
      * @param match the match mode (ALL or ANY)
      * @param function the list-field extractor
@@ -127,7 +130,12 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, List<S>> function, S value) {
-        return this.containsFirst(match, function, value).orElse(null);
+        List<E> indexed = this.indexes().lookupContaining(PropertyReference.of(function), function, value);
+
+        if (indexed == null)
+            return this.containsFirst(match, Pair.of(function, value)).orElse(null);
+
+        return indexed.isEmpty() ? null : indexed.getFirst();
     }
 
     /**
@@ -272,11 +280,15 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull SearchFunction<E, S> function, S value) {
-        return this.findFirst(function, value).orElse(null);
+        return this.findFirstOrNull(SearchFunction.Match.ALL, function, value);
     }
 
     /**
      * Returns the first element whose extracted field value equals the given value using the specified match mode, or {@code null} if none match.
+     *
+     * <p>Read off the index directly when one covers the property. An absent answer is already a
+     * {@code null} here, so nothing is minted to carry one and an indexed query allocates nothing
+     * whatsoever.
      *
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
@@ -285,7 +297,12 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, S> function, S value) {
-        return this.findFirst(match, function, value).orElse(null);
+        List<E> indexed = this.indexes().lookup(PropertyReference.of(function), function, value);
+
+        if (indexed == null)
+            return this.findFirst(match, Pair.of(function, value)).orElse(null);
+
+        return indexed.isEmpty() ? null : indexed.getFirst();
     }
 
     /**
@@ -427,11 +444,14 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull SearchFunction<E, S> function, S value) {
-        return this.findLast(function, value).orElse(null);
+        return this.findLastOrNull(SearchFunction.Match.ALL, function, value);
     }
 
     /**
      * Returns the last element whose extracted field value equals the given value using the specified match mode, or {@code null} if none match.
+     *
+     * <p>Read off the index directly when one covers the property, and nothing is minted to carry
+     * an absent answer.
      *
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
@@ -440,7 +460,12 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, S> function, S value) {
-        return this.findLast(match, function, value).orElse(null);
+        List<E> indexed = this.indexes().lookup(PropertyReference.of(function), function, value);
+
+        if (indexed == null)
+            return this.findLast(match, Pair.of(function, value)).orElse(null);
+
+        return indexed.isEmpty() ? null : indexed.getLast();
     }
 
     /**
