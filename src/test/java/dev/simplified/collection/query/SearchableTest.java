@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -67,7 +68,7 @@ class SearchableTest {
 
         @Test
         void compare_all_returnsElementsMatchingEveryPredicate() {
-            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
+            TriPredicate<Function<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ALL,
@@ -80,7 +81,7 @@ class SearchableTest {
 
         @Test
         void compare_any_returnsElementsMatchingAtLeastOnePredicate() {
-            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
+            TriPredicate<Function<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ANY,
@@ -94,7 +95,7 @@ class SearchableTest {
         @Test
         void compare_all_intersectsPredicates() {
             // ALL with two predicates against the same single-valued field cannot match anything
-            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
+            TriPredicate<Function<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ALL,
@@ -106,7 +107,7 @@ class SearchableTest {
 
         @Test
         void compare_emptyPredicateIterable_all_returnsAll() {
-            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
+            TriPredicate<Function<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ALL,
@@ -119,7 +120,7 @@ class SearchableTest {
         @Test
         void compare_emptyPredicateIterable_any_returnsEmpty() {
             // ANY with no predicates means no element passes the OR-fold of zero terms
-            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
+            TriPredicate<Function<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ANY,
@@ -131,7 +132,7 @@ class SearchableTest {
 
         @Test
         void compare_returnsSingleStream() {
-            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
+            TriPredicate<Function<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             SingleStream<Person> stream = people.compare(
                 SearchFunction.Match.ALL,
@@ -140,6 +141,25 @@ class SearchableTest {
             );
             assertNotNull(stream);
             assertEquals(3L, stream.count());
+        }
+
+        @Test
+        void compare_acceptsAComparisonOverEitherFunctionType() {
+            // The comparison only reads an extractor, never decodes one, so it is accepted over a
+            // Function as readily as over a SearchFunction - a caller writing one needs to know
+            // nothing about the latter. That this compiles is the assertion; the equality below
+            // just shows both spellings answer the same.
+            TriPredicate<Function<Person, String>, Person, String> overFunction =
+                (f, p, v) -> Objects.equals(f.apply(p), v);
+            TriPredicate<SearchFunction<Person, String>, Person, String> overSearchFunction =
+                (f, p, v) -> Objects.equals(f.apply(p), v);
+
+            List<Pair<SearchFunction<Person, String>, String>> predicates = List.of(Pair.of(NAME, "alice"));
+
+            assertEquals(
+                people.compare(SearchFunction.Match.ALL, overFunction, predicates).toList(),
+                people.compare(SearchFunction.Match.ALL, overSearchFunction, predicates).toList()
+            );
         }
 
         // Note: cannot construct a third Match enum value, so the IllegalArgumentException
@@ -151,7 +171,7 @@ class SearchableTest {
 
         @Test
         void contains_all_returnsElementsWhereListContainsValueOfEveryPredicate() {
-            TriPredicate<SearchFunction<Person, List<String>>, Person, String> listContains =
+            TriPredicate<Function<Person, List<String>>, Person, String> listContains =
                 (f, p, v) -> {
                     List<String> list = f.apply(p);
                     return list != null && list.contains(v);
@@ -168,7 +188,7 @@ class SearchableTest {
 
         @Test
         void contains_any_returnsElementsWhereListContainsAtLeastOnePredicateValue() {
-            TriPredicate<SearchFunction<Person, List<String>>, Person, String> listContains =
+            TriPredicate<Function<Person, List<String>>, Person, String> listContains =
                 (f, p, v) -> {
                     List<String> list = f.apply(p);
                     return list != null && list.contains(v);
@@ -184,7 +204,7 @@ class SearchableTest {
 
         @Test
         void contains_skipsNullListsViaPredicate() {
-            TriPredicate<SearchFunction<Person, List<String>>, Person, String> listContains =
+            TriPredicate<Function<Person, List<String>>, Person, String> listContains =
                 (f, p, v) -> {
                     List<String> list = f.apply(p);
                     return list != null && list.contains(v);
@@ -551,7 +571,7 @@ class SearchableTest {
                 new Person(12, "y", List.of("a"))
             );
             Searchable<Person> custom = () -> SingleStream.of(source);
-            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
+            TriPredicate<Function<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = custom.compare(
                 SearchFunction.Match.ALL,

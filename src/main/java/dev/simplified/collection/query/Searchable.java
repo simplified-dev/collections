@@ -36,6 +36,10 @@ public interface Searchable<E> {
      * When {@code match} is {@link SearchFunction.Match#ALL ALL}, every predicate must match;
      * when {@link SearchFunction.Match#ANY ANY}, at least one predicate must match.
      *
+     * <p>The comparison only ever reads an extractor, so it is accepted over any supertype of one -
+     * a caller writing a comparison that just applies what it is handed declares it over
+     * {@link Function} and needs to know nothing about {@link SearchFunction}.
+     *
      * @param match the match mode (ALL or ANY)
      * @param compare the comparison function applied per predicate
      * @param predicates the field-extractor/value pairs to compare against
@@ -43,7 +47,7 @@ public interface Searchable<E> {
      * @return a filtered stream of matching elements
      * @throws IllegalArgumentException if an invalid match type is provided
      */
-    default <S> @NotNull SingleStream<E> compare(@NotNull SearchFunction.Match match, @NotNull TriPredicate<SearchFunction<E, S>, E, S> compare, @NotNull Iterable<Pair<SearchFunction<E, S>, S>> predicates) {
+    default <S> @NotNull SingleStream<E> compare(@NotNull SearchFunction.Match match, @NotNull TriPredicate<? super SearchFunction<E, S>, E, S> compare, @NotNull Iterable<Pair<SearchFunction<E, S>, S>> predicates) {
         SingleStream<E> itemsCopy = this.stream();
 
         if (match == SearchFunction.Match.ANY) {
@@ -76,7 +80,7 @@ public interface Searchable<E> {
      * @return a filtered stream of matching elements
      * @throws IllegalArgumentException if an invalid match type is provided
      */
-    default <S> @NotNull SingleStream<E> contains(@NotNull SearchFunction.Match match, @NotNull TriPredicate<SearchFunction<E, List<S>>, E, S> compare, @NotNull Iterable<Pair<SearchFunction<E, List<S>>, S>> predicates) {
+    default <S> @NotNull SingleStream<E> contains(@NotNull SearchFunction.Match match, @NotNull TriPredicate<? super SearchFunction<E, List<S>>, E, S> compare, @NotNull Iterable<Pair<SearchFunction<E, List<S>>, S>> predicates) {
         SingleStream<E> itemsCopy = this.stream();
 
         if (match == SearchFunction.Match.ANY) {
