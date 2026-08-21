@@ -121,14 +121,17 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the write lock held and returns its result. Invalidates the
-	 * iterator snapshot in the {@code finally} block before releasing the lock.
+	 * Executes the given action with the write lock held and returns its result. Asks
+	 * {@link #checkModificationAllowed()} first and invalidates the iterator snapshot in the
+	 * {@code finally} block before releasing the lock.
 	 *
 	 * @param action the action to execute under the write lock
 	 * @param <R> the result type
 	 * @return the value returned by {@code action}
+	 * @throws UnsupportedOperationException if this collection rejects modification
 	 */
 	protected final <R> R withWriteLock(@NotNull java.util.function.Supplier<R> action) {
+		this.checkModificationAllowed();
 		this.lock.writeLock().lock();
 
 		try {
@@ -140,12 +143,15 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the write lock held. Invalidates the iterator snapshot in
-	 * the {@code finally} block before releasing the lock.
+	 * Executes the given action with the write lock held. Asks
+	 * {@link #checkModificationAllowed()} first and invalidates the iterator snapshot in the
+	 * {@code finally} block before releasing the lock.
 	 *
 	 * @param action the action to execute under the write lock
+	 * @throws UnsupportedOperationException if this collection rejects modification
 	 */
 	protected final void withWriteLock(@NotNull Runnable action) {
+		this.checkModificationAllowed();
 		this.lock.writeLock().lock();
 
 		try {
@@ -161,6 +167,19 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * Subclasses may override to invalidate additional cached views.
 	 */
 	protected void onSnapshotInvalidated() {}
+
+	/**
+	 * Hook invoked before every write, from the two {@code withWriteLock} helpers that every
+	 * mutator on this collection and its subclasses funnels through. Default is a no-op;
+	 * {@code ConcurrentUnmodifiable*} subclasses override it to throw
+	 * {@link UnsupportedOperationException}, which is the whole of how they refuse to be modified.
+	 * <p>
+	 * One hook rather than an override per mutator: a mutator that is missed cannot be refused, and
+	 * this is the one place every write already passes through - so nothing can be missed, and a
+	 * mutator added later is refused without anyone remembering to say so. It rejects before the
+	 * lock is acquired, so a refused call costs no lock at all.
+	 */
+	protected void checkModificationAllowed() {}
 
 	/**
 	 * {@inheritDoc}
@@ -473,6 +492,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @param existingElement the element to be replaced
 	 * @param replaceWith the element to replace with
 	 * @return {@code true} if the element was replaced
+	 * @throws UnsupportedOperationException if this collection rejects mutation
 	 */
 	public final boolean replace(@NotNull E existingElement, @NotNull E replaceWith) {
 		return this.withWriteLock(() -> this.ref.remove(existingElement) && this.ref.add(replaceWith));
@@ -484,6 +504,21 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	@Override
 	public boolean removeAll(@NotNull Collection<?> collection) {
 		return this.withWriteLock(() -> this.ref.removeAll(collection));
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Applied to the backing collection in one write rather than through the snapshot iterator the
+	 * inherited default walks, so the removals are one atomic step and a list drops the element at
+	 * each matching position rather than the first one equal to it.
+	 */
+	@Override
+	public boolean removeIf(@NotNull Predicate<? super E> filter) {
+		return this.withWriteLock(() -> this.ref.removeIf(filter));
 	}
 
 	/**

@@ -148,22 +148,17 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected void onSnapshotInvalidated() {}
 
 	/**
-	 * Hook invoked at the entry of every view-side mutating operation that does not delegate to a
-	 * public {@code AtomicMap} mutator. Default is a no-op; {@code ConcurrentUnmodifiable*}
-	 * subclasses override to throw {@link UnsupportedOperationException} before the write lock is
-	 * acquired, avoiding the lock-acquire cost on rejected calls and protecting against future
-	 * mutation paths added to {@code AtomicMap} that bypass the explicit public mutator overrides.
+	 * Hook invoked before every write, from the two {@code withWriteLock} helpers that every
+	 * mutator on this map, its subclasses and its views funnels through. Default is a no-op;
+	 * {@code ConcurrentUnmodifiable*} subclasses override it to throw
+	 * {@link UnsupportedOperationException}, which is the whole of how they refuse to be modified.
 	 *
-	 * <p>Call sites: {@link KeySetView#remove(Object)}, {@link ValuesView#remove(Object)}, and
-	 * {@link ValuesIterator#remove()} - any view-side mutator that acquires the write lock without
-	 * first delegating to a public {@code AtomicMap} mutator (which has its own UOE override on
-	 * {@code Unmodifiable*} subclasses). View paths that delegate to public mutators
-	 * ({@link EntrySetView#remove(Object)}, {@link EntrySetView#clear()},
-	 * {@link KeySetView#clear()}, {@link ValuesView#clear()}, and the corresponding
-	 * {@code *Iterator.remove()} that route through {@code AtomicMap.remove}) intentionally skip
-	 * the hook because the public mutator's UOE override fires before the lock is acquired.
+	 * <p>One hook rather than an override per mutator: a mutator that is missed cannot be refused,
+	 * and this is the one place every write already passes through - so nothing can be missed, and
+	 * a mutator added later is refused without anyone remembering to say so. It rejects before the
+	 * lock is acquired, so a refused call costs no lock at all.
 	 */
-	protected void checkMutationAllowed() {}
+	protected void checkModificationAllowed() {}
 
 	/**
 	 * Returns the characteristic bits the {@link #entrySet()} spliterator advertises. Subclasses
@@ -230,14 +225,17 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the write lock held and returns its result. Invalidates the
-	 * view-iteration snapshots in the {@code finally} block before releasing the lock.
+	 * Executes the given action with the write lock held and returns its result. Asks
+	 * {@link #checkModificationAllowed()} first and invalidates the view-iteration snapshots in the
+	 * {@code finally} block before releasing the lock.
 	 *
 	 * @param action the action to execute under the write lock
 	 * @param <R> the result type
 	 * @return the value returned by {@code action}
+	 * @throws UnsupportedOperationException if this map rejects modification
 	 */
 	protected final <R> R withWriteLock(@NotNull Supplier<R> action) {
+		this.checkModificationAllowed();
 		this.lock.writeLock().lock();
 
 		try {
@@ -249,12 +247,15 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the write lock held. Invalidates the view-iteration
-	 * snapshots in the {@code finally} block before releasing the lock.
+	 * Executes the given action with the write lock held. Asks
+	 * {@link #checkModificationAllowed()} first and invalidates the view-iteration snapshots in the
+	 * {@code finally} block before releasing the lock.
 	 *
 	 * @param action the action to execute under the write lock
+	 * @throws UnsupportedOperationException if this map rejects modification
 	 */
 	protected final void withWriteLock(@NotNull Runnable action) {
+		this.checkModificationAllowed();
 		this.lock.writeLock().lock();
 
 		try {
@@ -924,7 +925,6 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
-			AtomicMap.this.checkMutationAllowed();
 			return AtomicMap.this.withWriteLock(() -> {
 				if (!AtomicMap.this.ref.containsKey(o))
 					return false;
@@ -977,7 +977,6 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
-			AtomicMap.this.checkMutationAllowed();
 			return AtomicMap.this.withWriteLock(() -> {
 				Iterator<Entry<K, V>> it = AtomicMap.this.ref.entrySet().iterator();
 				while (it.hasNext()) {
@@ -1098,7 +1097,6 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 				throw new IllegalStateException();
 
 			Object value = this.snapshot[this.last];
-			AtomicMap.this.checkMutationAllowed();
 
 			AtomicMap.this.withWriteLock(() -> {
 				Iterator<Entry<K, V>> it = AtomicMap.this.ref.entrySet().iterator();

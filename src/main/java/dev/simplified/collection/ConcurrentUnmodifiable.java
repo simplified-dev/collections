@@ -107,25 +107,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void add(int index, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(int index, @NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public void addFirst(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void addLast(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Predicate<List<E>> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object element) { throw new UnsupportedOperationException(); }
-		@Override public E remove(int index) { throw new UnsupportedOperationException(); }
-		@Override public E removeFirst() { throw new UnsupportedOperationException(); }
-		@Override public E removeLast() { throw new UnsupportedOperationException(); }
-		@Override public boolean removeAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull Predicate<? super E> filter) { throw new UnsupportedOperationException(); }
-		@Override public boolean retainAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public void replaceAll(@NotNull UnaryOperator<E> operator) { throw new UnsupportedOperationException(); }
-		@Override public E set(int index, E element) { throw new UnsupportedOperationException(); }
-		@Override public void sort(Comparator<? super E> comparator) { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentList<E> toUnmodifiable() {
@@ -146,15 +128,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Predicate<java.util.AbstractSet<E>> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object item) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull Predicate<? super E> filter) { throw new UnsupportedOperationException(); }
-		@Override public boolean retainAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentSet<E> toUnmodifiable() {
@@ -176,15 +150,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Predicate<java.util.AbstractSet<E>> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object item) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull Predicate<? super E> filter) { throw new UnsupportedOperationException(); }
-		@Override public boolean retainAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentSet<E> toUnmodifiable() {
@@ -206,21 +172,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V compute(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public V computeIfAbsent(K key, @NotNull Function<? super K, ? extends V> mappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V computeIfPresent(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V put(K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public void putAll(@NotNull Map<? extends K, ? extends V> map) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull Supplier<Boolean> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull BiPredicate<? super K, ? super V> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull Predicate<java.util.AbstractMap<K, V>> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V putIfAbsent(K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V remove(Object key) { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object key, Object value) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull BiPredicate<? super K, ? super V> predicate) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
-		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
@@ -243,21 +195,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V compute(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public V computeIfAbsent(K key, @NotNull Function<? super K, ? extends V> mappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V computeIfPresent(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V put(K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public void putAll(@NotNull Map<? extends K, ? extends V> map) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull Supplier<Boolean> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull BiPredicate<? super K, ? super V> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull Predicate<java.util.AbstractMap<K, V>> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V putIfAbsent(K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V remove(Object key) { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object key, Object value) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull BiPredicate<? super K, ? super V> predicate) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
-		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentMap<K, V> toUnmodifiable() {
@@ -278,16 +216,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public boolean offer(E element) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable E poll() { throw new UnsupportedOperationException(); }
-		@Override public @NotNull E remove() { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object obj) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean retainAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentQueue<E> toUnmodifiable() {
@@ -308,27 +237,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public void addFirst(E element) { throw new UnsupportedOperationException(); }
-		@Override public void addLast(E element) { throw new UnsupportedOperationException(); }
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public boolean offer(E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean offerFirst(E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean offerLast(E element) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable E poll() { throw new UnsupportedOperationException(); }
-		@Override public E pollFirst() { throw new UnsupportedOperationException(); }
-		@Override public @Nullable E pollLast() { throw new UnsupportedOperationException(); }
-		@Override public @NotNull E pop() { throw new UnsupportedOperationException(); }
-		@Override public void push(E element) { throw new UnsupportedOperationException(); }
-		@Override public @NotNull E remove() { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object obj) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public E removeFirst() { throw new UnsupportedOperationException(); }
-		@Override public boolean removeFirstOccurrence(Object obj) { throw new UnsupportedOperationException(); }
-		@Override public E removeLast() { throw new UnsupportedOperationException(); }
-		@Override public boolean removeLastOccurrence(Object obj) { throw new UnsupportedOperationException(); }
-		@Override public boolean retainAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentDeque<E> toUnmodifiable() {
@@ -350,25 +259,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void add(int index, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(int index, @NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public void addFirst(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void addLast(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Predicate<List<E>> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object element) { throw new UnsupportedOperationException(); }
-		@Override public E remove(int index) { throw new UnsupportedOperationException(); }
-		@Override public E removeFirst() { throw new UnsupportedOperationException(); }
-		@Override public E removeLast() { throw new UnsupportedOperationException(); }
-		@Override public boolean removeAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull Predicate<? super E> filter) { throw new UnsupportedOperationException(); }
-		@Override public boolean retainAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public void replaceAll(@NotNull UnaryOperator<E> operator) { throw new UnsupportedOperationException(); }
-		@Override public E set(int index, E element) { throw new UnsupportedOperationException(); }
-		@Override public void sort(Comparator<? super E> comparator) { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull ConcurrentList<E> toUnmodifiable() {
@@ -390,17 +281,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public boolean add(@NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addAll(@NotNull Collection<? extends E> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public boolean addIf(@NotNull Predicate<TreeSet<E>> predicate, @NotNull E element) { throw new UnsupportedOperationException(); }
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object item) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull Predicate<? super E> filter) { throw new UnsupportedOperationException(); }
-		@Override public boolean retainAll(@NotNull Collection<?> collection) { throw new UnsupportedOperationException(); }
-		@Override public E pollFirst() { throw new UnsupportedOperationException(); }
-		@Override public E pollLast() { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
 		public @NotNull NavigableSet<E> descendingSet() {
@@ -445,23 +326,7 @@ final class ConcurrentUnmodifiable {
 			super(snapshot, NoOpReadWriteLock.INSTANCE);
 		}
 
-		@Override public void clear() { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V compute(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public V computeIfAbsent(K key, @NotNull Function<? super K, ? extends V> mappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V computeIfPresent(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V put(K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public void putAll(@NotNull Map<? extends K, ? extends V> map) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull Supplier<Boolean> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull BiPredicate<? super K, ? super V> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public boolean putIf(@NotNull Predicate<TreeMap<K, V>> predicate, K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V putIfAbsent(K key, V value) { throw new UnsupportedOperationException(); }
-		@Override public @Nullable V remove(Object key) { throw new UnsupportedOperationException(); }
-		@Override public boolean remove(Object key, Object value) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull BiPredicate<? super K, ? super V> predicate) { throw new UnsupportedOperationException(); }
-		@Override public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) { throw new UnsupportedOperationException(); }
-		@Override public Map.Entry<K, V> pollFirstEntry() { throw new UnsupportedOperationException(); }
-		@Override public Map.Entry<K, V> pollLastEntry() { throw new UnsupportedOperationException(); }
-		@Override protected void checkMutationAllowed() { throw new UnsupportedOperationException(); }
+		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override public @NotNull NavigableMap<K, V> descendingMap() { return Collections.unmodifiableNavigableMap(super.descendingMap()); }
 		@Override public @NotNull NavigableSet<K> navigableKeySet() { return Collections.unmodifiableNavigableSet(super.navigableKeySet()); }

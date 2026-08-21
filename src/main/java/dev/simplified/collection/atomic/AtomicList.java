@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * A thread-safe abstract list backed by a {@link ReadWriteLock} for concurrent access.
@@ -219,6 +220,17 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	@Override
 	public E set(int index, E element) {
 		return this.withWriteLock(() -> super.ref.set(index, element));
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Applied to the underlying list in place under a single write lock, so every element is
+	 * replaced in one atomic step rather than one write lock per position.
+	 */
+	@Override
+	public void replaceAll(@NotNull UnaryOperator<E> operator) {
+		this.withWriteLock(() -> super.ref.replaceAll(operator));
 	}
 
 	/**
