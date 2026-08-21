@@ -125,7 +125,12 @@ public final class IndexCache<E> {
         if (declaration == null)
             return null;
 
-        Index<E> index = usable(this.equality.computeIfAbsent(declaration, held -> this.build(held, ordered(held.components(), named, extractors))));
+        Index<E> built = this.equality.get(declaration);
+
+        if (built == null)
+            built = this.equality.computeIfAbsent(declaration, absent -> this.build(absent, ordered(absent.components(), named, extractors)));
+
+        Index<E> index = usable(built);
 
         if (index == null)
             return null;
@@ -154,7 +159,15 @@ public final class IndexCache<E> {
         if (declaration == null)
             return null;
 
-        Index<E> index = usable(this.equality.computeIfAbsent(declaration, held -> this.build(held, List.of(extractor))));
+        // Read before the build is offered, because a mapping function that closes over anything
+        // is minted at the call site whether or not it runs, and this runs on every query where
+        // the build runs once.
+        Index<E> built = this.equality.get(declaration);
+
+        if (built == null)
+            built = this.equality.computeIfAbsent(declaration, absent -> this.build(absent, List.of(extractor)));
+
+        Index<E> index = usable(built);
         return index == null ? null : index.matching(value);
     }
 
@@ -177,7 +190,12 @@ public final class IndexCache<E> {
         if (declaration == null)
             return null;
 
-        Index<E> index = usable(this.containment.computeIfAbsent(declaration, held -> this.buildContaining(extractor)));
+        Index<E> built = this.containment.get(declaration);
+
+        if (built == null)
+            built = this.containment.computeIfAbsent(declaration, absent -> this.buildContaining(extractor));
+
+        Index<E> index = usable(built);
         return index == null ? null : index.matching(value);
     }
 
