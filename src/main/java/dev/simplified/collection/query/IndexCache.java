@@ -493,7 +493,7 @@ public final class IndexCache<E> {
 
                 this.table[at] = filed instanceof Bucket<?> bucket
                     ? Collections.unmodifiableList(bucket)
-                    : List.of(filed);
+                    : new SoleBucket<>(filed);
             }
         }
 
