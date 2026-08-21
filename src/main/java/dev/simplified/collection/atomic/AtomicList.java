@@ -43,7 +43,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * {@inheritDoc}
 	 */
 	public void add(int index, @NotNull E element) {
-		this.withWriteLock(() -> super.ref.add(index, element));
+		this.execWriteLock(backing -> backing.add(index, element));
 	}
 
 	/**
@@ -51,7 +51,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public void addFirst(@NotNull E element) {
-		this.withWriteLock(() -> super.ref.addFirst(element));
+		this.execWriteLock(backing -> backing.addFirst(element));
 	}
 
 	/**
@@ -59,7 +59,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public void addLast(@NotNull E element) {
-		this.withWriteLock(() -> super.ref.addLast(element));
+		this.execWriteLock(backing -> backing.addLast(element));
 	}
 
 	/**
@@ -67,7 +67,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public boolean addAll(int index, @NotNull Collection<? extends E> collection) {
-		return this.withWriteLock(() -> super.ref.addAll(index, collection));
+		return this.withWriteLock(backing -> backing.addAll(index, collection));
 	}
 
 	/**
@@ -75,7 +75,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public final E get(int index) {
-		return this.withReadLock(() -> super.ref.get(index));
+		return this.withReadLock(backing -> backing.get(index));
 	}
 
 	/**
@@ -83,11 +83,11 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E getFirst() {
-		return this.withReadLock(() -> {
-			if (this.ref.isEmpty())
+		return this.withReadLock(backing -> {
+			if (backing.isEmpty())
 				throw new NoSuchElementException();
 
-			return this.ref.getFirst();
+			return backing.getFirst();
 		});
 	}
 
@@ -96,11 +96,11 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E getLast() {
-		return this.withReadLock(() -> {
-			if (this.ref.isEmpty())
+		return this.withReadLock(backing -> {
+			if (backing.isEmpty())
 				throw new NoSuchElementException();
 
-			return this.ref.getLast();
+			return backing.getLast();
 		});
 	}
 
@@ -111,7 +111,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return an {@code Optional} describing the first element, or an empty {@code Optional}
 	 */
 	public final @NotNull Optional<E> findFirst() {
-		return this.withReadLock(() -> Optional.ofNullable(!this.ref.isEmpty() ? this.ref.getFirst() : null));
+		return this.withReadLock(backing -> Optional.ofNullable(!backing.isEmpty() ? backing.getFirst() : null));
 	}
 
 	/**
@@ -121,7 +121,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return an {@code Optional} describing the last element, or an empty {@code Optional}
 	 */
 	public final @NotNull Optional<E> findLast() {
-		return this.withReadLock(() -> Optional.ofNullable(!this.ref.isEmpty() ? this.ref.getLast() : null));
+		return this.withReadLock(backing -> Optional.ofNullable(!backing.isEmpty() ? backing.getLast() : null));
 	}
 
 	/**
@@ -132,7 +132,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return the element at the specified index, or {@code defaultValue} if the index is out of range
 	 */
 	public final E getOrDefault(int index, E defaultValue) {
-		return this.withReadLock(() -> index < this.ref.size() ? this.ref.get(index) : defaultValue);
+		return this.withReadLock(backing -> index < backing.size() ? backing.get(index) : defaultValue);
 	}
 
 	/**
@@ -140,7 +140,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public final int indexOf(Object item) {
-		return this.withReadLock(() -> this.ref.indexOf(item));
+		return this.withReadLock(backing -> backing.indexOf(item));
 	}
 
 	/**
@@ -156,7 +156,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public final int lastIndexOf(Object item) {
-		return this.withReadLock(() -> this.ref.lastIndexOf(item));
+		return this.withReadLock(backing -> backing.lastIndexOf(item));
 	}
 
 	/**
@@ -175,11 +175,11 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 		Object[] snapshot = super.snapshotCache;
 
 		if (snapshot == null) {
-			snapshot = this.withReadLock(() -> {
+			snapshot = this.withReadLock(backing -> {
 				Object[] cached = super.snapshotCache;
 
 				if (cached == null) {
-					cached = this.ref.toArray();
+					cached = backing.toArray();
 					super.snapshotCache = cached;
 				}
 
@@ -195,7 +195,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E remove(int index) {
-		return this.withWriteLock(() -> super.ref.remove(index));
+		return this.withWriteLock(backing -> backing.remove(index));
 	}
 
 	/**
@@ -203,7 +203,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E removeFirst() {
-		return this.withWriteLock((java.util.function.Supplier<E>) super.ref::removeFirst);
+		return this.withWriteLock(List::removeFirst);
 	}
 
 	/**
@@ -211,7 +211,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E removeLast() {
-		return this.withWriteLock((java.util.function.Supplier<E>) super.ref::removeLast);
+		return this.withWriteLock(List::removeLast);
 	}
 
 	/**
@@ -219,7 +219,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public E set(int index, E element) {
-		return this.withWriteLock(() -> super.ref.set(index, element));
+		return this.withWriteLock(backing -> backing.set(index, element));
 	}
 
 	/**
@@ -230,7 +230,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public void replaceAll(@NotNull UnaryOperator<E> operator) {
-		this.withWriteLock(() -> super.ref.replaceAll(operator));
+		this.execWriteLock(backing -> backing.replaceAll(operator));
 	}
 
 	/**
@@ -241,7 +241,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	public void sort(Comparator<? super E> comparator) {
-		this.withWriteLock(() -> super.ref.sort(comparator));
+		this.execWriteLock(backing -> backing.sort(comparator));
 	}
 
 	/**
@@ -253,7 +253,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return a fresh {@link List} containing the current elements
 	 */
 	protected @NotNull List<E> snapshot() {
-		return this.withReadLock(() -> new ArrayList<>(this.ref));
+		return this.withReadLock(backing -> new ArrayList<>(backing));
 	}
 
 	/**
@@ -293,7 +293,6 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return a new sorted list
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	public @NotNull AtomicList<E, T> sorted(@NotNull Function<E, ? extends Comparable<?>>... functions) {
 		return this.sorted(SortOrder.DESCENDING, Arrays.asList(functions));
 	}
@@ -321,7 +320,6 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return a new sorted list
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	public @NotNull AtomicList<E, T> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable<?>>... functions) {
 		return this.sorted(sortOrder, Arrays.asList(functions));
 	}
@@ -408,7 +406,6 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @throws IndexOutOfBoundsException if either index is out of range
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	public @NotNull AtomicList<E, T> subList(int fromIndex, int toIndex) {
 		List<E> full = this.snapshot();
 		T sliced = (T) (full instanceof LinkedList<?>

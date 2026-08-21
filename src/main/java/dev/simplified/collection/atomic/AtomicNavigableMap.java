@@ -10,7 +10,6 @@ import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -81,7 +80,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 * <p>Adds {@link Spliterator#ORDERED} so navigable-map entry traversal preserves key order
 	 * through stream operations. {@link Spliterator#SORTED} is intentionally not advertised on the
 	 * entry-set view because the JDK array spliterator cannot expose a key-based
-	 * {@link Comparator} for {@link Entry} elements.
+	 * {@link Comparator} for {@link Map.Entry} elements.
 	 */
 	@Override
 	protected int entrySetSpliteratorCharacteristics() {
@@ -118,7 +117,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Comparator<? super K> comparator() {
-		return this.ref.comparator();
+		return this.withReadLock(NavigableMap::comparator);
 	}
 
 	/**
@@ -126,7 +125,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public K firstKey() {
-		return this.withReadLock(this.ref::firstKey);
+		return this.withReadLock(NavigableMap::firstKey);
 	}
 
 	/**
@@ -134,7 +133,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public K lastKey() {
-		return this.withReadLock(this.ref::lastKey);
+		return this.withReadLock(NavigableMap::lastKey);
 	}
 
 	/**
@@ -142,7 +141,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public K floorKey(K key) {
-		return this.withReadLock(() -> this.ref.floorKey(key));
+		return this.withReadLock(backing -> backing.floorKey(key));
 	}
 
 	/**
@@ -150,7 +149,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public K ceilingKey(K key) {
-		return this.withReadLock(() -> this.ref.ceilingKey(key));
+		return this.withReadLock(backing -> backing.ceilingKey(key));
 	}
 
 	/**
@@ -158,7 +157,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public K lowerKey(K key) {
-		return this.withReadLock(() -> this.ref.lowerKey(key));
+		return this.withReadLock(backing -> backing.lowerKey(key));
 	}
 
 	/**
@@ -166,7 +165,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public K higherKey(K key) {
-		return this.withReadLock(() -> this.ref.higherKey(key));
+		return this.withReadLock(backing -> backing.higherKey(key));
 	}
 
 	/**
@@ -174,7 +173,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Map.Entry<K, V> firstEntry() {
-		return this.withReadLock(this.ref::firstEntry);
+		return this.withReadLock(NavigableMap::firstEntry);
 	}
 
 	/**
@@ -182,7 +181,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Map.Entry<K, V> lastEntry() {
-		return this.withReadLock(this.ref::lastEntry);
+		return this.withReadLock(NavigableMap::lastEntry);
 	}
 
 	/**
@@ -190,7 +189,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Map.Entry<K, V> floorEntry(K key) {
-		return this.withReadLock(() -> this.ref.floorEntry(key));
+		return this.withReadLock(backing -> backing.floorEntry(key));
 	}
 
 	/**
@@ -198,7 +197,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Map.Entry<K, V> ceilingEntry(K key) {
-		return this.withReadLock(() -> this.ref.ceilingEntry(key));
+		return this.withReadLock(backing -> backing.ceilingEntry(key));
 	}
 
 	/**
@@ -206,7 +205,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Map.Entry<K, V> lowerEntry(K key) {
-		return this.withReadLock(() -> this.ref.lowerEntry(key));
+		return this.withReadLock(backing -> backing.lowerEntry(key));
 	}
 
 	/**
@@ -214,7 +213,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Map.Entry<K, V> higherEntry(K key) {
-		return this.withReadLock(() -> this.ref.higherEntry(key));
+		return this.withReadLock(backing -> backing.higherEntry(key));
 	}
 
 	/**
@@ -222,7 +221,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Map.Entry<K, V> pollFirstEntry() {
-		return this.withWriteLock(this.ref::pollFirstEntry);
+		return this.withWriteLock(NavigableMap::pollFirstEntry);
 	}
 
 	/**
@@ -230,7 +229,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public Map.Entry<K, V> pollLastEntry() {
-		return this.withWriteLock(this.ref::pollLastEntry);
+		return this.withWriteLock(NavigableMap::pollLastEntry);
 	}
 
 	/**
@@ -243,11 +242,11 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		if (view != null)
 			return view;
 
-		return this.withReadLock(() -> {
+		return this.withReadLock(backing -> {
 			NavigableMap<K, V> cached = this.descendingMapView;
 
 			if (cached == null) {
-				cached = new LockedNavigableMapView(this.ref.descendingMap());
+				cached = new LockedNavigableMapView(backing.descendingMap());
 				this.descendingMapView = cached;
 			}
 
@@ -265,11 +264,11 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		if (view != null)
 			return view;
 
-		return this.withReadLock(() -> {
+		return this.withReadLock(backing -> {
 			NavigableSet<K> cached = this.navigableKeySetView;
 
 			if (cached == null) {
-				cached = new LockedNavigableSetView(this.ref.navigableKeySet());
+				cached = new LockedNavigableSetView(backing.navigableKeySet());
 				this.navigableKeySetView = cached;
 			}
 
@@ -287,11 +286,11 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		if (view != null)
 			return view;
 
-		return this.withReadLock(() -> {
+		return this.withReadLock(backing -> {
 			NavigableSet<K> cached = this.descendingKeySetView;
 
 			if (cached == null) {
-				cached = new LockedNavigableSetView(this.ref.descendingKeySet());
+				cached = new LockedNavigableSetView(backing.descendingKeySet());
 				this.descendingKeySetView = cached;
 			}
 
@@ -304,7 +303,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public @NotNull NavigableMap<K, V> subMap(K from, boolean fromInclusive, K to, boolean toInclusive) {
-		return this.withReadLock(() -> new LockedNavigableMapView(this.ref.subMap(from, fromInclusive, to, toInclusive)));
+		return this.withReadLock(backing -> new LockedNavigableMapView(backing.subMap(from, fromInclusive, to, toInclusive)));
 	}
 
 	/**
@@ -320,7 +319,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public @NotNull NavigableMap<K, V> headMap(K to, boolean inclusive) {
-		return this.withReadLock(() -> new LockedNavigableMapView(this.ref.headMap(to, inclusive)));
+		return this.withReadLock(backing -> new LockedNavigableMapView(backing.headMap(to, inclusive)));
 	}
 
 	/**
@@ -336,7 +335,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 	 */
 	@Override
 	public @NotNull NavigableMap<K, V> tailMap(K from, boolean inclusive) {
-		return this.withReadLock(() -> new LockedNavigableMapView(this.ref.tailMap(from, inclusive)));
+		return this.withReadLock(backing -> new LockedNavigableMapView(backing.tailMap(from, inclusive)));
 	}
 
 	/**
@@ -367,8 +366,8 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		@Override public V get(Object key) { return AtomicNavigableMap.this.withReadLock(() -> this.delegate.get(key)); }
 		@Override public V put(K key, V value) { return AtomicNavigableMap.this.withWriteLock(() -> this.delegate.put(key, value)); }
 		@Override public V remove(Object key) { return AtomicNavigableMap.this.withWriteLock(() -> this.delegate.remove(key)); }
-		@Override public void putAll(@NotNull Map<? extends K, ? extends V> m) { AtomicNavigableMap.this.withWriteLock(() -> this.delegate.putAll(m)); }
-		@Override public void clear() { AtomicNavigableMap.this.withWriteLock(this.delegate::clear); }
+		@Override public void putAll(@NotNull Map<? extends K, ? extends V> m) { AtomicNavigableMap.this.execWriteLock(() -> this.delegate.putAll(m)); }
+		@Override public void clear() { AtomicNavigableMap.this.execWriteLock(this.delegate::clear); }
 		@Override public Comparator<? super K> comparator() { return this.delegate.comparator(); }
 		@Override public K firstKey() { return AtomicNavigableMap.this.withReadLock(this.delegate::firstKey); }
 		@Override public K lastKey() { return AtomicNavigableMap.this.withReadLock(this.delegate::lastKey); }
@@ -463,7 +462,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		@Override public boolean contains(Object o) { return AtomicNavigableMap.this.withReadLock(() -> this.delegate.contains(o)); }
 		@Override public boolean add(K e) { return AtomicNavigableMap.this.withWriteLock(() -> this.delegate.add(e)); }
 		@Override public boolean remove(Object o) { return AtomicNavigableMap.this.withWriteLock(() -> this.delegate.remove(o)); }
-		@Override public void clear() { AtomicNavigableMap.this.withWriteLock(this.delegate::clear); }
+		@Override public void clear() { AtomicNavigableMap.this.execWriteLock(this.delegate::clear); }
 		@Override public Comparator<? super K> comparator() { return this.delegate.comparator(); }
 		@Override public K first() { return AtomicNavigableMap.this.withReadLock(this.delegate::first); }
 		@Override public K last() { return AtomicNavigableMap.this.withReadLock(this.delegate::last); }
@@ -547,7 +546,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 		@Override public boolean isEmpty() { return AtomicNavigableMap.this.withReadLock(this.delegate::isEmpty); }
 		@Override public boolean contains(Object o) { return AtomicNavigableMap.this.withReadLock(() -> this.delegate.entrySet().contains(o)); }
 		@Override public boolean remove(Object o) { return AtomicNavigableMap.this.withWriteLock(() -> this.delegate.entrySet().remove(o)); }
-		@Override public void clear() { AtomicNavigableMap.this.withWriteLock(this.delegate::clear); }
+		@Override public void clear() { AtomicNavigableMap.this.execWriteLock(this.delegate::clear); }
 
 		@Override
 		public @NotNull Iterator<Map.Entry<K, V>> iterator() {
@@ -587,7 +586,7 @@ public abstract class AtomicNavigableMap<K, V, M extends AbstractMap<K, V> & Nav
 
 		@Override
 		public void clear() {
-			AtomicNavigableMap.this.withWriteLock(this.delegate::clear);
+			AtomicNavigableMap.this.execWriteLock(this.delegate::clear);
 		}
 
 		@Override

@@ -3,7 +3,6 @@ package dev.simplified.collection;
 import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,12 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 /**
  * Internal mega-factory housing every immutable snapshot wrapper. Mirrors the JDK pattern from
@@ -284,28 +277,6 @@ final class ConcurrentUnmodifiable {
 		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
 
 		@Override
-		public @NotNull NavigableSet<E> descendingSet() {
-			return Collections.unmodifiableNavigableSet(super.descendingSet());
-		}
-
-		@Override
-		public @NotNull Iterator<E> descendingIterator() {
-			Iterator<E> iterator = super.descendingIterator();
-			return new Iterator<>() {
-				@Override public boolean hasNext() { return iterator.hasNext(); }
-				@Override public E next() { return iterator.next(); }
-				@Override public void remove() { throw new UnsupportedOperationException(); }
-			};
-		}
-
-		@Override public @NotNull NavigableSet<E> subSet(E from, boolean fromInclusive, E to, boolean toInclusive) { return Collections.unmodifiableNavigableSet(super.subSet(from, fromInclusive, to, toInclusive)); }
-		@Override public @NotNull NavigableSet<E> headSet(E to, boolean inclusive) { return Collections.unmodifiableNavigableSet(super.headSet(to, inclusive)); }
-		@Override public @NotNull NavigableSet<E> tailSet(E from, boolean inclusive) { return Collections.unmodifiableNavigableSet(super.tailSet(from, inclusive)); }
-		@Override public @NotNull SortedSet<E> subSet(E from, E to) { return Collections.unmodifiableSortedSet(super.subSet(from, to)); }
-		@Override public @NotNull SortedSet<E> headSet(E to) { return Collections.unmodifiableSortedSet(super.headSet(to)); }
-		@Override public @NotNull SortedSet<E> tailSet(E from) { return Collections.unmodifiableSortedSet(super.tailSet(from)); }
-
-		@Override
 		public @NotNull ConcurrentSet<E> toUnmodifiable() {
 			return this;
 		}
@@ -327,16 +298,6 @@ final class ConcurrentUnmodifiable {
 		}
 
 		@Override protected void checkModificationAllowed() { throw new UnsupportedOperationException(); }
-
-		@Override public @NotNull NavigableMap<K, V> descendingMap() { return Collections.unmodifiableNavigableMap(super.descendingMap()); }
-		@Override public @NotNull NavigableSet<K> navigableKeySet() { return Collections.unmodifiableNavigableSet(super.navigableKeySet()); }
-		@Override public @NotNull NavigableSet<K> descendingKeySet() { return Collections.unmodifiableNavigableSet(super.descendingKeySet()); }
-		@Override public @NotNull NavigableMap<K, V> subMap(K from, boolean fromInclusive, K to, boolean toInclusive) { return Collections.unmodifiableNavigableMap(super.subMap(from, fromInclusive, to, toInclusive)); }
-		@Override public @NotNull SortedMap<K, V> subMap(K from, K to) { return Collections.unmodifiableSortedMap(super.subMap(from, to)); }
-		@Override public @NotNull NavigableMap<K, V> headMap(K to, boolean inclusive) { return Collections.unmodifiableNavigableMap(super.headMap(to, inclusive)); }
-		@Override public @NotNull SortedMap<K, V> headMap(K to) { return Collections.unmodifiableSortedMap(super.headMap(to)); }
-		@Override public @NotNull NavigableMap<K, V> tailMap(K from, boolean inclusive) { return Collections.unmodifiableNavigableMap(super.tailMap(from, inclusive)); }
-		@Override public @NotNull SortedMap<K, V> tailMap(K from) { return Collections.unmodifiableSortedMap(super.tailMap(from)); }
 
 		@Override
 		public @NotNull ConcurrentMap<K, V> toUnmodifiable() {

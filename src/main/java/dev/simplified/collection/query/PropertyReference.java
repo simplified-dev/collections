@@ -140,10 +140,14 @@ public record PropertyReference(@Nullable Class<?> owner, @NotNull List<String> 
      *         the type this reference reads
      */
     public @NotNull PropertyReference against(@NotNull Class<?> elementType) {
-        if (!this.isResolved() || !this.owner().isAssignableFrom(elementType))
+        // An owner is present exactly when the reference is resolved, which the compact constructor
+        // enforces - so naming it is also the resolved test.
+        Class<?> owner = this.owner();
+
+        if (owner == null || !owner.isAssignableFrom(elementType))
             return UNRESOLVED;
 
-        return this.owner() == elementType && this.kind() == Kind.DECLARED
+        return owner == elementType && this.kind() == Kind.DECLARED
             ? this
             : new PropertyReference(elementType, this.properties(), Kind.DECLARED);
     }
@@ -151,10 +155,12 @@ public record PropertyReference(@Nullable Class<?> owner, @NotNull List<String> 
     /** {@inheritDoc} */
     @Override
     public @NotNull String toString() {
-        if (!this.isResolved())
+        Class<?> owner = this.owner();
+
+        if (owner == null)
             return "PropertyReference[unresolved]";
 
-        return String.format("PropertyReference[%s.%s, %s]", this.owner().getSimpleName(), String.join(".", this.properties()), this.kind());
+        return String.format("PropertyReference[%s.%s, %s]", owner.getSimpleName(), String.join(".", this.properties()), this.kind());
     }
 
     /**

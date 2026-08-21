@@ -71,7 +71,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	@Override
 	public @NotNull Spliterator<E> spliterator() {
 		Spliterator<E> base = Spliterators.spliterator(this.cachedOrFreshSnapshotArray(), this.spliteratorCharacteristics());
-		return new SortedSnapshotSpliterator<>(base, this.ref.comparator());
+		return new SortedSnapshotSpliterator<>(base, this.comparator());
 	}
 
 	/**
@@ -79,7 +79,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public Comparator<? super E> comparator() {
-		return this.ref.comparator();
+		return this.withReadLock(NavigableSet::comparator);
 	}
 
 	/**
@@ -87,7 +87,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public E first() {
-		return this.withReadLock(this.ref::first);
+		return this.withReadLock(NavigableSet::first);
 	}
 
 	/**
@@ -95,7 +95,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public E last() {
-		return this.withReadLock(this.ref::last);
+		return this.withReadLock(NavigableSet::last);
 	}
 
 	/**
@@ -103,7 +103,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public E lower(E element) {
-		return this.withReadLock(() -> this.ref.lower(element));
+		return this.withReadLock(backing -> backing.lower(element));
 	}
 
 	/**
@@ -111,7 +111,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public E floor(E element) {
-		return this.withReadLock(() -> this.ref.floor(element));
+		return this.withReadLock(backing -> backing.floor(element));
 	}
 
 	/**
@@ -119,7 +119,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public E ceiling(E element) {
-		return this.withReadLock(() -> this.ref.ceiling(element));
+		return this.withReadLock(backing -> backing.ceiling(element));
 	}
 
 	/**
@@ -127,7 +127,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public E higher(E element) {
-		return this.withReadLock(() -> this.ref.higher(element));
+		return this.withReadLock(backing -> backing.higher(element));
 	}
 
 	/**
@@ -135,7 +135,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public E pollFirst() {
-		return this.withWriteLock(this.ref::pollFirst);
+		return this.withWriteLock(NavigableSet::pollFirst);
 	}
 
 	/**
@@ -143,7 +143,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public E pollLast() {
-		return this.withWriteLock(this.ref::pollLast);
+		return this.withWriteLock(NavigableSet::pollLast);
 	}
 
 	/**
@@ -156,11 +156,11 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 		if (view != null)
 			return view;
 
-		return this.withReadLock(() -> {
+		return this.withReadLock(backing -> {
 			NavigableSet<E> cached = this.descendingSetView;
 
 			if (cached == null) {
-				cached = new LockedNavigableSetView(this.ref.descendingSet());
+				cached = new LockedNavigableSetView(backing.descendingSet());
 				this.descendingSetView = cached;
 			}
 
@@ -173,7 +173,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public @NotNull Iterator<E> descendingIterator() {
-		Object[] snapshot = this.withReadLock(() -> this.ref.descendingSet().toArray());
+		Object[] snapshot = this.withReadLock(backing -> backing.descendingSet().toArray());
 		return new AtomicIterator<>(snapshot, 0) {
 			@Override
 			public void remove() {
@@ -191,7 +191,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public @NotNull NavigableSet<E> subSet(E from, boolean fromInclusive, E to, boolean toInclusive) {
-		return this.withReadLock(() -> new LockedNavigableSetView(this.ref.subSet(from, fromInclusive, to, toInclusive)));
+		return this.withReadLock(backing -> new LockedNavigableSetView(backing.subSet(from, fromInclusive, to, toInclusive)));
 	}
 
 	/**
@@ -199,7 +199,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public @NotNull NavigableSet<E> headSet(E to, boolean inclusive) {
-		return this.withReadLock(() -> new LockedNavigableSetView(this.ref.headSet(to, inclusive)));
+		return this.withReadLock(backing -> new LockedNavigableSetView(backing.headSet(to, inclusive)));
 	}
 
 	/**
@@ -207,7 +207,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 	 */
 	@Override
 	public @NotNull NavigableSet<E> tailSet(E from, boolean inclusive) {
-		return this.withReadLock(() -> new LockedNavigableSetView(this.ref.tailSet(from, inclusive)));
+		return this.withReadLock(backing -> new LockedNavigableSetView(backing.tailSet(from, inclusive)));
 	}
 
 	/**
@@ -252,7 +252,7 @@ public abstract class AtomicNavigableSet<E, T extends AbstractSet<E> & Navigable
 		@Override public boolean contains(Object o) { return AtomicNavigableSet.this.withReadLock(() -> this.delegate.contains(o)); }
 		@Override public boolean add(E e) { return AtomicNavigableSet.this.withWriteLock(() -> this.delegate.add(e)); }
 		@Override public boolean remove(Object o) { return AtomicNavigableSet.this.withWriteLock(() -> this.delegate.remove(o)); }
-		@Override public void clear() { AtomicNavigableSet.this.withWriteLock(this.delegate::clear); }
+		@Override public void clear() { AtomicNavigableSet.this.execWriteLock(this.delegate::clear); }
 		@Override public Comparator<? super E> comparator() { return this.delegate.comparator(); }
 		@Override public E first() { return AtomicNavigableSet.this.withReadLock(this.delegate::first); }
 		@Override public E last() { return AtomicNavigableSet.this.withReadLock(this.delegate::last); }

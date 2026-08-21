@@ -43,7 +43,7 @@ public abstract class AtomicQueue<E, T extends AbstractCollection<E> & Queue<E>>
 	 */
 	@Override
 	public boolean offer(E element) {
-		return this.withWriteLock(() -> this.ref.offer(element));
+		return this.withWriteLock(backing -> backing.offer(element));
 	}
 
 	/**
@@ -51,7 +51,7 @@ public abstract class AtomicQueue<E, T extends AbstractCollection<E> & Queue<E>>
 	 */
 	@Override
 	public E peek() {
-		return this.withReadLock((java.util.function.Supplier<E>) this.ref::peek);
+		return this.withReadLock(Queue::peek);
 	}
 
 	/**
@@ -59,7 +59,7 @@ public abstract class AtomicQueue<E, T extends AbstractCollection<E> & Queue<E>>
 	 */
 	@Override
 	public E poll() {
-		return this.withWriteLock((java.util.function.Supplier<E>) this.ref::poll);
+		return this.withWriteLock(Queue::poll);
 	}
 
 	/**

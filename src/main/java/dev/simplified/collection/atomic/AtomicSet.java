@@ -54,7 +54,7 @@ public abstract class AtomicSet<E, T extends AbstractSet<E>> extends AtomicColle
 	 */
 	@Override
 	protected @NotNull Object comparisonSnapshot() {
-		return this.withReadLock(() -> new LinkedHashSet<>(this.ref));
+		return this.withReadLock(backing -> new LinkedHashSet<>(backing));
 	}
 
 }

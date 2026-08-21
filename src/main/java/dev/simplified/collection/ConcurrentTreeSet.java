@@ -128,9 +128,9 @@ public class ConcurrentTreeSet<E> extends AtomicNavigableSet<E, TreeSet<E>> impl
 	 * {@inheritDoc}
 	 */
 	@Override
-	@SuppressWarnings("DataFlowIssue")
 	protected @NotNull AtomicCollection<E, TreeSet<E>> newEmpty() {
-		return new ConcurrentTreeSet<>(this.ref.comparator());
+		Comparator<? super E> comparator = this.withReadLock(TreeSet::comparator);
+		return new ConcurrentTreeSet<>(comparator);
 	}
 
 	/**
@@ -141,7 +141,7 @@ public class ConcurrentTreeSet<E> extends AtomicNavigableSet<E, TreeSet<E>> impl
 	 * @return a fresh {@link TreeSet} containing the current elements
 	 */
 	protected @NotNull TreeSet<E> cloneRef() {
-		return this.withReadLock(() -> new TreeSet<>(this.ref));
+		return this.withReadLock(backing -> new TreeSet<>(backing));
 	}
 
 	/**

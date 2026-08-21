@@ -44,7 +44,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public void addFirst(E element) {
-		this.withWriteLock(() -> this.ref.addFirst(element));
+		this.execWriteLock(backing -> backing.addFirst(element));
 	}
 
 	/**
@@ -52,7 +52,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public void addLast(E element) {
-		this.withWriteLock(() -> this.ref.addLast(element));
+		this.execWriteLock(backing -> backing.addLast(element));
 	}
 
 	/**
@@ -60,7 +60,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public boolean offerFirst(E element) {
-		return this.withWriteLock(() -> this.ref.offerFirst(element));
+		return this.withWriteLock(backing -> backing.offerFirst(element));
 	}
 
 	/**
@@ -68,7 +68,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public boolean offerLast(E element) {
-		return this.withWriteLock(() -> this.ref.offerLast(element));
+		return this.withWriteLock(backing -> backing.offerLast(element));
 	}
 
 	/**
@@ -102,7 +102,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public E pollFirst() {
-		return this.withWriteLock((java.util.function.Supplier<E>) this.ref::pollFirst);
+		return this.withWriteLock(Deque::pollFirst);
 	}
 
 	/**
@@ -110,7 +110,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public E pollLast() {
-		return this.withWriteLock((java.util.function.Supplier<E>) this.ref::pollLast);
+		return this.withWriteLock(Deque::pollLast);
 	}
 
 	/**
@@ -144,7 +144,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public final E peekFirst() {
-		return this.withReadLock((java.util.function.Supplier<E>) this.ref::peekFirst);
+		return this.withReadLock(Deque::peekFirst);
 	}
 
 	/**
@@ -152,7 +152,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public final E peekLast() {
-		return this.withReadLock((java.util.function.Supplier<E>) this.ref::peekLast);
+		return this.withReadLock(Deque::peekLast);
 	}
 
 	/**
@@ -163,7 +163,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public boolean removeFirstOccurrence(Object obj) {
-		return this.withWriteLock(() -> this.ref.removeFirstOccurrence(obj));
+		return this.withWriteLock(backing -> backing.removeFirstOccurrence(obj));
 	}
 
 	/**
@@ -174,7 +174,7 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public boolean removeLastOccurrence(Object obj) {
-		return this.withWriteLock(() -> this.ref.removeLastOccurrence(obj));
+		return this.withWriteLock(backing -> backing.removeLastOccurrence(obj));
 	}
 
 	/**
@@ -203,10 +203,10 @@ public abstract class AtomicDeque<E, T extends AbstractCollection<E> & Deque<E>>
 	 */
 	@Override
 	public @NotNull Iterator<E> descendingIterator() {
-		Object[] snapshot = this.withReadLock(() -> {
-			Object[] arr = new Object[this.ref.size()];
+		Object[] snapshot = this.withReadLock(backing -> {
+			Object[] arr = new Object[backing.size()];
 			int i = 0;
-			for (Iterator<E> it = this.ref.descendingIterator(); it.hasNext(); )
+			for (Iterator<E> it = backing.descendingIterator(); it.hasNext(); )
 				arr[i++] = it.next();
 			return arr;
 		});

@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class IndexCache<E> {
 
-    private static final IndexCache<?> NONE = new IndexCache<>(new Object[0], null, IndexSchema.EMPTY);
+    private static final IndexCache<?> NONE = new IndexCache<>(new Object[0], Object.class, IndexSchema.EMPTY);
 
     /**
      * Marks a property that was asked for and cannot be indexed, so the refusal is decided once
@@ -37,7 +37,13 @@ public final class IndexCache<E> {
     private static final Index<?> UNUSABLE = new Index<>(0);
 
     private final @Nullable Object @NotNull [] elements;
-    private final @Nullable Class<?> elementType;
+
+    /**
+     * The class the schema was read from, which is the class of the first element present. The
+     * shared empty cache stands one in that declares nothing, so a cache that can answer anything
+     * always names a real type.
+     */
+    private final @NotNull Class<?> elementType;
     private final @NotNull IndexSchema schema;
     /**
      * The built indexes, keyed by the declaration they answer. Two maps rather than one keyed by a
@@ -46,7 +52,7 @@ public final class IndexCache<E> {
     private final @NotNull ConcurrentHashMap<IndexSchema.Declaration, Index<E>> equality = new ConcurrentHashMap<>();
     private final @NotNull ConcurrentHashMap<IndexSchema.Declaration, Index<E>> containment = new ConcurrentHashMap<>();
 
-    private IndexCache(@Nullable Object @NotNull [] elements, @Nullable Class<?> elementType, @NotNull IndexSchema schema) {
+    private IndexCache(@Nullable Object @NotNull [] elements, @NotNull Class<?> elementType, @NotNull IndexSchema schema) {
         this.elements = elements;
         this.elementType = elementType;
         this.schema = schema;
@@ -95,7 +101,7 @@ public final class IndexCache<E> {
      * @return {@code true} when no query can be answered from an index
      */
     public boolean isEmpty() {
-        return this.elementType == null;
+        return this.schema.isEmpty();
     }
 
     /**
@@ -219,7 +225,10 @@ public final class IndexCache<E> {
      * @return the declaration, or {@code null} when nothing covers it
      */
     private @Nullable IndexSchema.Declaration declaring(@NotNull PropertyReference reference) {
-        if (this.isEmpty() || !reference.isResolved() || !reference.owner().isAssignableFrom(this.elementType))
+        // An owner is present exactly when the reference is resolved, so naming it is also that test.
+        Class<?> owner = reference.owner();
+
+        if (this.isEmpty() || owner == null || !owner.isAssignableFrom(this.elementType))
             return null;
 
         return this.schema.coveringPath(reference.properties());

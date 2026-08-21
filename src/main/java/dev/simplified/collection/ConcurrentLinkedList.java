@@ -92,7 +92,7 @@ public class ConcurrentLinkedList<E> extends AtomicList<E, List<E>> implements C
 	 */
 	@Override
 	protected @NotNull List<E> snapshot() {
-		return this.withReadLock(() -> new LinkedList<>(this.ref));
+		return this.withReadLock(backing -> new LinkedList<>(backing));
 	}
 
 	/**

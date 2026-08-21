@@ -99,7 +99,7 @@ public class ConcurrentHashSet<E> extends AtomicSet<E, AbstractSet<E>> implement
 	 * @return a fresh {@link AbstractSet} containing the current elements
 	 */
 	protected @NotNull AbstractSet<E> cloneRef() {
-		return this.withReadLock(() -> new HashSet<>(this.ref));
+		return this.withReadLock(backing -> new HashSet<>(backing));
 	}
 
 	/**
