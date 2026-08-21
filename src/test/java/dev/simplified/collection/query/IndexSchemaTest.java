@@ -387,6 +387,127 @@ class IndexSchemaTest {
 
     }
 
+    /**
+     * Fixture declaring through its accessors rather than its fields, the way a persistence mapping
+     * written against properties does.
+     */
+    static class Accessed {
+
+        private final String code;
+        private final Held held;
+        private final String label;
+
+        Accessed(String code, Held held, String label) {
+            this.code = code;
+            this.held = held;
+            this.label = label;
+        }
+
+        @Indexed(unique = true)
+        public String getCode() {
+            return this.code;
+        }
+
+        @Indexed
+        public Held getHeld() {
+            return this.held;
+        }
+
+        public String getLabel() {
+            return this.label;
+        }
+
+    }
+
+    /**
+     * The object an accessed fixture holds, declaring through an accessor of its own.
+     */
+    static class Held {
+
+        private final String zone = "";
+
+        @Indexed
+        public String getZone() {
+            return this.zone;
+        }
+
+    }
+
+    /**
+     * Fixture carrying a declaration on a boolean accessor, whose prefix is {@code is}.
+     */
+    static class Asked {
+
+        @Indexed
+        public boolean isActive() {
+            return true;
+        }
+
+    }
+
+    /**
+     * Fixture declaring one component, which a record propagates to the field and the accessor
+     * both.
+     */
+    record Component(@Indexed(group = "pair", order = 0) String mode, @Indexed(group = "pair", order = 1) int tier) {}
+
+    @Nested
+    class Accessors {
+
+        @Test
+        void of_accessorDeclaration_namesTheProperty() {
+            IndexSchema schema = IndexSchema.of(Accessed.class);
+
+            // getCode declares what a field named code would, because the name a query decodes to
+            // is the one the declaration is filed under
+            assertNotNull(schema.coveringPath(List.of("code")));
+            assertTrue(schema.coveringPath(List.of("code")).unique());
+            assertNull(schema.coveringPath(List.of("label")));
+        }
+
+        @Test
+        void of_accessorHoldingAnIndexedObject_isReachedThrough() {
+            IndexSchema schema = IndexSchema.of(Accessed.class);
+
+            assertNotNull(schema.coveringPath(List.of("held")));
+            assertNotNull(schema.coveringPath(List.of("held", "zone")));
+            assertFalse(schema.coveringPath(List.of("held", "zone")).unique());
+        }
+
+        @Test
+        void of_askedAccessor_dropsTheIsPrefixToo() {
+            assertNotNull(IndexSchema.of(Asked.class).coveringPath(List.of("active")));
+        }
+
+        @Test
+        void of_recordComponent_isOneDeclarationNotTwo() {
+            // The annotation lands on the field and on the accessor; declaring the group twice
+            // would collide on position rather than describe one key.
+            IndexSchema schema = IndexSchema.of(Component.class);
+
+            assertEquals(1, schema.declarations().size());
+            assertNotNull(schema.declaring(tuple(Component.class, "mode", "tier")));
+        }
+
+        @Test
+        void of_staticAccessor_declaresNothing() {
+            assertTrue(IndexSchema.of(Constant.class).isEmpty());
+        }
+
+    }
+
+    /**
+     * Fixture whose declaration sits on a static accessor, which answers the same for every element.
+     */
+    static class Constant {
+
+        @Indexed
+        public static String shared() {
+            return "";
+        }
+
+    }
+
     @Nested
     class Refuses {
 

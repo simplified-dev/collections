@@ -311,7 +311,7 @@ public record PropertyReference(@Nullable Class<?> owner, @NotNull List<String> 
      * @param accessor the accessor's method name
      * @return the property name
      */
-    private static @NotNull String propertyOf(@NotNull String accessor) {
+    static @NotNull String propertyOf(@NotNull String accessor) {
         if (accessor.length() > 3 && accessor.startsWith("get") && Character.isUpperCase(accessor.charAt(3)))
             return decapitalise(accessor.substring(3));
 

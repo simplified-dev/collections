@@ -9,15 +9,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a field worth spending memory on, so a query naming it answers in constant time instead of
- * scanning.
+ * Marks a property worth spending memory on, so a query naming it answers in constant time instead
+ * of scanning.
  *
  * <h2>Declaring one</h2>
  *
- * <p>Indexing is opt-in per field because it costs memory proportional to the collection, so a
- * field carrying no {@code @Indexed} is scanned exactly as it is today. The field is named rather
- * than the accessor, and a query naming either resolves to it - {@code Stat::getId},
- * {@code stat -> stat.getId()} and a fluent {@code Stat::id} all read the property {@code id}.
+ * <p>Indexing is opt-in per property because it costs memory proportional to the collection, so a
+ * property carrying no {@code @Indexed} is scanned exactly as it is today. It goes on the field or
+ * on the accessor, whichever the class keeps its mapping on, and a query naming either resolves to
+ * it - {@code Stat::getId}, {@code stat -> stat.getId()} and a fluent {@code Stat::id} all read the
+ * property {@code id}. Declaring on both is one declaration, not two, which is also what a record
+ * does on its own by propagating a component's annotation to its field and its accessor alike.
  *
  * <pre>{@code
  * public class Stat {
@@ -82,7 +84,7 @@ import java.lang.annotation.Target;
  * @see Indexable
  * @see PropertyReference
  */
-@Target(ElementType.FIELD)
+@Target({ ElementType.FIELD, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(Indexed.Declarations.class)
 public @interface Indexed {
@@ -105,14 +107,14 @@ public @interface Indexed {
     boolean unique() default false;
 
     /**
-     * Holder for the repeated form, so one field can join more than one index.
+     * Holder for the repeated form, so one property can join more than one index.
      */
-    @Target(ElementType.FIELD)
+    @Target({ ElementType.FIELD, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
     @interface Declarations {
 
         /**
-         * The declarations made on one field.
+         * The declarations made on one property.
          */
         @NotNull Indexed[] value();
 

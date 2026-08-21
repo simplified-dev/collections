@@ -89,6 +89,25 @@ class IndexCacheTest {
     record Bare(String id) {}
 
     /**
+     * Fixture declaring through its accessor rather than its field, the way a persistence mapping
+     * written against properties does.
+     */
+    static class Accessed {
+
+        private final String code;
+
+        Accessed(String code) {
+            this.code = code;
+        }
+
+        @Indexed(unique = true)
+        String getCode() {
+            return this.code;
+        }
+
+    }
+
+    /**
      * Key every instance of which hashes alike, so two of them can only be told apart by probing on
      * past the slot they both land in.
      */
@@ -185,6 +204,26 @@ class IndexCacheTest {
 
             assertEquals(List.of(ALPHA_ONE, ALPHA_TWO), lookup(cache, BY_MODE, "alpha"));
             assertEquals(List.of(ALPHA_ONE, ALPHA_TWO), lookup(cache, body, "alpha"));
+        }
+
+        @Test
+        void lookup_accessorDeclaration_answersFromTheIndex() {
+            // The declaration sits on getCode and the query is written as Accessed::getCode, and
+            // both name the property "code" - which is the whole of why they meet.
+            Accessed first = new Accessed("A1");
+            Accessed second = new Accessed("A2");
+            SearchFunction<Accessed, String> byCode = Accessed::getCode;
+
+            IndexCache<Accessed> cache = IndexCache.over(new Accessed[] { first, second });
+
+            assertEquals(
+                List.of(second),
+                cache.lookup(
+                    List.of(PropertyReference.of(byCode)),
+                    List.<SearchFunction<Accessed, ?>>of(byCode),
+                    Collections.singletonList("A2")
+                )
+            );
         }
 
         @Test

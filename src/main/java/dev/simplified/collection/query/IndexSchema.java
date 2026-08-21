@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -181,18 +182,57 @@ final class IndexSchema {
 
         // Most derived first, so a shadowing field wins the way a field read would.
         for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
+            Set<String> declared = new LinkedHashSet<>();
+
             for (Field field : current.getDeclaredFields()) {
                 // A static field holds one value for every element, so an index over it sorts
                 // nothing and would answer every query with the whole collection.
                 if (Modifier.isStatic(field.getModifiers()))
                     continue;
 
-                for (Indexed declared : field.getAnnotationsByType(Indexed.class))
-                    locals.add(new Local(field.getName(), field.getType(), declared));
+                for (Indexed found : field.getAnnotationsByType(Indexed.class)) {
+                    declared.add(field.getName());
+                    locals.add(new Local(field.getName(), field.getType(), found));
+                }
+            }
+
+            for (Method accessor : current.getDeclaredMethods()) {
+                if (!reads(accessor))
+                    continue;
+
+                // The property an accessor names is the one its extractor decodes to, so a query
+                // written against the accessor and a declaration written on it agree by name.
+                String property = PropertyReference.propertyOf(accessor.getName());
+
+                // A record propagates a component's annotation to both its field and its accessor,
+                // and a class may carry it on both by hand. Either way it is one declaration.
+                if (!declared.add(property))
+                    continue;
+
+                for (Indexed found : accessor.getAnnotationsByType(Indexed.class))
+                    locals.add(new Local(property, accessor.getReturnType(), found));
             }
         }
 
         return List.copyOf(locals);
+    }
+
+    /**
+     * Whether a method is an accessor a declaration can sit on.
+     *
+     * <p>Anything taking an argument or answering nothing reads no one property, and a bridge the
+     * compiler wrote carries a copy of the annotation that would declare the same thing twice.
+     *
+     * @param accessor the method to judge
+     * @return {@code true} when it reads one property of its instance
+     */
+    private static boolean reads(@NotNull Method accessor) {
+        return !Modifier.isStatic(accessor.getModifiers())
+            && !accessor.isSynthetic()
+            && !accessor.isBridge()
+            && accessor.getParameterCount() == 0
+            && accessor.getReturnType() != void.class
+            && (accessor.isAnnotationPresent(Indexed.class) || accessor.isAnnotationPresent(Indexed.Declarations.class));
     }
 
     /**
@@ -399,10 +439,11 @@ final class IndexSchema {
     }
 
     /**
-     * One {@link Indexed} annotation together with the field carrying it.
+     * One {@link Indexed} annotation together with the property carrying it.
      *
-     * @param property the field's name
-     * @param type the field's declared type
+     * @param property the property's name, which is the field's or the one the accessor's name
+     *        strips down to
+     * @param type the type the property holds, declared by the field or answered by the accessor
      * @param declared the annotation read off it
      */
     private record Local(@NotNull String property, @NotNull Class<?> type, @NotNull Indexed declared) {}
