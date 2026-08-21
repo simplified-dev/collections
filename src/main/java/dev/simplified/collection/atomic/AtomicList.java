@@ -1,6 +1,7 @@
 package dev.simplified.collection.atomic;
 
 import dev.simplified.collection.ConcurrentList;
+import dev.simplified.collection.query.SearchFunction;
 import dev.simplified.collection.query.SortOrder;
 import dev.simplified.collection.sort.Comparison;
 import dev.simplified.collection.sort.SortAlgorithm;
@@ -8,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.function.Function;
 
 /**
  * A thread-safe abstract list backed by a {@link ReadWriteLock} for concurrent access.
@@ -282,7 +282,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public @NotNull AtomicList<E, T> sorted(@NotNull Function<E, ? extends Comparable<?>>... functions) {
+	public @NotNull AtomicList<E, T> sorted(@NotNull SearchFunction<E, ? extends Comparable<?>>... functions) {
 		return this.sorted(SortOrder.DESCENDING, Arrays.asList(functions));
 	}
 
@@ -296,7 +296,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 * @return a new sorted list
 	 */
 	@Override
-	public @NotNull AtomicList<E, T> sorted(@NotNull Iterable<Function<E, ? extends Comparable<?>>> functions) {
+	public @NotNull AtomicList<E, T> sorted(@NotNull Iterable<SearchFunction<E, ? extends Comparable<?>>> functions) {
 		return this.sorted(SortOrder.DESCENDING, functions);
 	}
 
@@ -310,7 +310,7 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public @NotNull AtomicList<E, T> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable<?>>... functions) {
+	public @NotNull AtomicList<E, T> sorted(@NotNull SortOrder sortOrder, SearchFunction<E, ? extends Comparable<?>>... functions) {
 		return this.sorted(sortOrder, Arrays.asList(functions));
 	}
 
@@ -325,16 +325,16 @@ public abstract class AtomicList<E, T extends List<E>> extends AtomicCollection<
 	 */
 	@Override
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	public @NotNull AtomicList<E, T> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable<?>>> functions) {
-		Iterator<Function<E, ? extends Comparable<?>>> iterator = functions.iterator();
+	public @NotNull AtomicList<E, T> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<SearchFunction<E, ? extends Comparable<?>>> functions) {
+		Iterator<SearchFunction<E, ? extends Comparable<?>>> iterator = functions.iterator();
 
 		if (!iterator.hasNext())
 			return this;
 
-		Comparator<E> comparator = Comparator.comparing((Function) iterator.next());
+		Comparator<E> comparator = Comparator.comparing((SearchFunction) iterator.next());
 
 		while (iterator.hasNext()) {
-			Function<E, ? extends Comparable> next = iterator.next();
+			SearchFunction<E, ? extends Comparable> next = iterator.next();
 			comparator = comparator.thenComparing(next);
 		}
 

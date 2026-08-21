@@ -2,6 +2,10 @@ package dev.simplified.collection.atomic;
 
 import dev.simplified.collection.ConcurrentCollection;
 import dev.simplified.collection.StreamUtil;
+import dev.simplified.collection.query.IndexCache;
+import dev.simplified.collection.query.Indexed;
+import dev.simplified.collection.query.PropertyReference;
+import dev.simplified.collection.query.SearchFunction;
 import dev.simplified.collection.tuple.single.SingleStream;
 import dev.simplified.collection.tuple.triple.TripleStream;
 import org.jetbrains.annotations.NotNull;
@@ -11,15 +15,16 @@ import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
@@ -47,6 +52,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	protected transient volatile @Nullable Object @Nullable [] snapshotCache;
 
+	/**
+	 * Cached hash indexes over the {@link Indexed} properties of this collection's elements, built
+	 * on the first query that names one and dropped alongside {@link #snapshotCache} by every
+	 * mutator.
+	 */
+	protected transient volatile @Nullable IndexCache<E> indexCache;
+
 	protected AtomicCollection(@NotNull T ref) {
 		this(ref, new ReentrantReadWriteLock());
 	}
@@ -64,11 +76,16 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * Invalidates the cached iterator snapshot. Called from the {@code finally} block of every
-	 * mutator on this collection, before the write lock is released.
+	 * Invalidates the cached iterator snapshot and the indexes built over it. Called from the
+	 * {@code finally} block of every mutator on this collection, before the write lock is released.
+	 * <p>
+	 * The index is dropped here rather than in {@link #onSnapshotInvalidated()} because subclasses
+	 * override that hook without calling {@code super}, and an index that outlives a write would
+	 * answer with elements the collection no longer holds.
 	 */
 	protected void invalidateSnapshot() {
 		if (this.snapshotCache != null) this.snapshotCache = null;
+		if (this.indexCache != null) this.indexCache = null;
 		this.onSnapshotInvalidated();
 	}
 
@@ -220,7 +237,16 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @param value the value to search for
 	 * @return {@code true} if a matching element is found
 	 */
-	public final <S> boolean contains(@NotNull Function<E, S> function, S value) {
+	public final <S> boolean contains(@NotNull SearchFunction<E, S> function, S value) {
+		List<E> indexed = this.indexes().lookup(
+			List.of(PropertyReference.of(function)),
+			List.of(function),
+			Collections.singletonList(value)
+		);
+
+		if (indexed != null)
+			return !indexed.isEmpty();
+
 		return this.withReadLock(() -> {
 			for (E element : this.ref) {
 				if (Objects.equals(function.apply(element), value))
@@ -229,6 +255,33 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 			return false;
 		});
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Built lazily under the read lock with the same double-checked shape as
+	 * {@link #cachedOrFreshSnapshotArray()}, so a build can never interleave with a write and
+	 * publish an index describing elements the collection has already dropped.
+	 */
+	@Override
+	public @NotNull IndexCache<E> indexes() {
+		IndexCache<E> cache = this.indexCache;
+
+		if (cache == null) {
+			cache = this.withReadLock(() -> {
+				IndexCache<E> held = this.indexCache;
+
+				if (held == null) {
+					held = IndexCache.over(this.cachedOrFreshSnapshotArray());
+					this.indexCache = held;
+				}
+
+				return held;
+			});
+		}
+
+		return cache;
 	}
 
 	/**

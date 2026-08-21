@@ -1,13 +1,13 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.query.Searchable;
+import dev.simplified.collection.query.Indexable;
+import dev.simplified.collection.query.SearchFunction;
 import dev.simplified.collection.tuple.single.SingleStream;
 import dev.simplified.collection.tuple.triple.TripleStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -19,7 +19,7 @@ import java.util.function.Supplier;
  *
  * @param <E> the type of elements in this collection
  */
-public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, Serializable {
+public interface ConcurrentCollection<E> extends Collection<E>, Indexable<E>, Serializable {
 
 	/**
 	 * Adds all of the specified elements to this collection.
@@ -47,7 +47,7 @@ public interface ConcurrentCollection<E> extends Collection<E>, Searchable<E>, S
 	 * @param value the value to search for
 	 * @return {@code true} if a matching element is found
 	 */
-	<S> boolean contains(@NotNull Function<E, S> function, S value);
+	<S> boolean contains(@NotNull SearchFunction<E, S> function, S value);
 
 	/**
 	 * Returns a sequential {@link TripleStream} where each element is paired with its index and

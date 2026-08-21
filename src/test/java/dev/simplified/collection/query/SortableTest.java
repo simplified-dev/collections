@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -178,14 +177,14 @@ class SortableTest {
 
         @Test
         void containsFirstOrNull_match_function_value_present() {
-            Person p = people.containsFirstOrNull(SearchFunction.Match.ANY, (Function<Person, List<String>>) TAGS, "ops");
+            Person p = people.containsFirstOrNull(SearchFunction.Match.ANY, TAGS, "ops");
             assertNotNull(p);
             assertEquals(1, p.id());
         }
 
         @Test
         void containsFirstOrNull_match_function_value_absent() {
-            Person p = people.containsFirstOrNull(SearchFunction.Match.ALL, (Function<Person, List<String>>) TAGS, "missing");
+            Person p = people.containsFirstOrNull(SearchFunction.Match.ALL, TAGS, "missing");
             assertNull(p);
         }
 
@@ -268,7 +267,7 @@ class SortableTest {
         @Test
         void findFirst_iterablePairs_defaultsToAll() {
             Optional<Person> result = people.findFirst(
-                List.<Pair<Function<Person, String>, String>>of(Pair.of(NAME, "bob"))
+                List.<Pair<SearchFunction<Person, String>, String>>of(Pair.of(NAME, "bob"))
             );
             assertTrue(result.isPresent());
             assertEquals(2, result.get().id());
@@ -327,7 +326,7 @@ class SortableTest {
         void findFirst_swallowsNpeFromExtractor() {
             // findFirst's compare lambda catches NPE from the extractor; null-name elements
             // simply do not match instead of propagating NPE.
-            Function<Person, Integer> npeExtractor = p -> p.name().length();
+            SearchFunction<Person, Integer> npeExtractor = p -> p.name().length();
             Optional<Person> result = people.findFirst(npeExtractor, 5);
             // alice has length 5; first alice is id=1
             assertTrue(result.isPresent());
@@ -360,14 +359,14 @@ class SortableTest {
 
         @Test
         void findFirstOrNull_match_function_value_present() {
-            Person p = people.findFirstOrNull(SearchFunction.Match.ANY, (Function<Person, String>) NAME, "alice");
+            Person p = people.findFirstOrNull(SearchFunction.Match.ANY, NAME, "alice");
             assertNotNull(p);
             assertEquals(1, p.id());
         }
 
         @Test
         void findFirstOrNull_match_function_value_absent() {
-            assertNull(people.findFirstOrNull(SearchFunction.Match.ALL, (Function<Person, String>) NAME, "zzz"));
+            assertNull(people.findFirstOrNull(SearchFunction.Match.ALL, NAME, "zzz"));
         }
 
         @SuppressWarnings("unchecked")
@@ -403,7 +402,7 @@ class SortableTest {
         @Test
         void findFirstOrNull_iterablePairs_absent() {
             assertNull(people.findFirstOrNull(
-                List.<Pair<Function<Person, String>, String>>of(Pair.of(NAME, "zzz"))
+                List.<Pair<SearchFunction<Person, String>, String>>of(Pair.of(NAME, "zzz"))
             ));
         }
     }
@@ -444,7 +443,7 @@ class SortableTest {
         @Test
         void findLast_iterablePairs_defaultsToAll() {
             Optional<Person> result = people.findLast(
-                List.<Pair<Function<Person, String>, String>>of(Pair.of(NAME, "bob"))
+                List.<Pair<SearchFunction<Person, String>, String>>of(Pair.of(NAME, "bob"))
             );
             assertTrue(result.isPresent());
             assertEquals(9, result.get().id());
@@ -510,7 +509,7 @@ class SortableTest {
 
         @Test
         void findLast_swallowsNpeFromExtractor() {
-            Function<Person, Integer> npeExtractor = p -> p.name().length();
+            SearchFunction<Person, Integer> npeExtractor = p -> p.name().length();
             // alice = 5 letters; last alice id=6
             Optional<Person> result = people.findLast(npeExtractor, 5);
             assertTrue(result.isPresent());
@@ -535,14 +534,14 @@ class SortableTest {
 
         @Test
         void findLastOrNull_match_function_value_present() {
-            Person p = people.findLastOrNull(SearchFunction.Match.ALL, (Function<Person, String>) NAME, "bob");
+            Person p = people.findLastOrNull(SearchFunction.Match.ALL, NAME, "bob");
             assertNotNull(p);
             assertEquals(9, p.id());
         }
 
         @Test
         void findLastOrNull_match_function_value_absent() {
-            assertNull(people.findLastOrNull(SearchFunction.Match.ANY, (Function<Person, String>) NAME, "zzz"));
+            assertNull(people.findLastOrNull(SearchFunction.Match.ANY, NAME, "zzz"));
         }
 
         @SuppressWarnings("unchecked")
@@ -577,7 +576,7 @@ class SortableTest {
         @Test
         void findLastOrNull_iterablePairs_absent() {
             assertNull(people.findLastOrNull(
-                List.<Pair<Function<Person, String>, String>>of(Pair.of(NAME, "zzz"))
+                List.<Pair<SearchFunction<Person, String>, String>>of(Pair.of(NAME, "zzz"))
             ));
         }
     }
@@ -922,7 +921,7 @@ class SortableTest {
             // ALL with empty predicates means every element passes - first is id 1
             Optional<Person> result = people.containsFirst(
                 SearchFunction.Match.ALL,
-                List.<Pair<Function<Person, List<String>>, String>>of()
+                List.<Pair<SearchFunction<Person, List<String>>, String>>of()
             );
             assertTrue(result.isPresent());
             assertEquals(1, result.get().id());

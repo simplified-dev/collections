@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -68,7 +67,7 @@ class SearchableTest {
 
         @Test
         void compare_all_returnsElementsMatchingEveryPredicate() {
-            TriPredicate<Function<Person, String>, Person, String> eq =
+            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ALL,
@@ -81,7 +80,7 @@ class SearchableTest {
 
         @Test
         void compare_any_returnsElementsMatchingAtLeastOnePredicate() {
-            TriPredicate<Function<Person, String>, Person, String> eq =
+            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ANY,
@@ -95,7 +94,7 @@ class SearchableTest {
         @Test
         void compare_all_intersectsPredicates() {
             // ALL with two predicates against the same single-valued field cannot match anything
-            TriPredicate<Function<Person, String>, Person, String> eq =
+            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ALL,
@@ -107,12 +106,12 @@ class SearchableTest {
 
         @Test
         void compare_emptyPredicateIterable_all_returnsAll() {
-            TriPredicate<Function<Person, String>, Person, String> eq =
+            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ALL,
                 eq,
-                List.<Pair<Function<Person, String>, String>>of()
+                List.<Pair<SearchFunction<Person, String>, String>>of()
             ).toList();
             assertEquals(people.size(), result.size());
         }
@@ -120,19 +119,19 @@ class SearchableTest {
         @Test
         void compare_emptyPredicateIterable_any_returnsEmpty() {
             // ANY with no predicates means no element passes the OR-fold of zero terms
-            TriPredicate<Function<Person, String>, Person, String> eq =
+            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = people.compare(
                 SearchFunction.Match.ANY,
                 eq,
-                List.<Pair<Function<Person, String>, String>>of()
+                List.<Pair<SearchFunction<Person, String>, String>>of()
             ).toList();
             assertTrue(result.isEmpty());
         }
 
         @Test
         void compare_returnsSingleStream() {
-            TriPredicate<Function<Person, String>, Person, String> eq =
+            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             SingleStream<Person> stream = people.compare(
                 SearchFunction.Match.ALL,
@@ -152,7 +151,7 @@ class SearchableTest {
 
         @Test
         void contains_all_returnsElementsWhereListContainsValueOfEveryPredicate() {
-            TriPredicate<Function<Person, List<String>>, Person, String> listContains =
+            TriPredicate<SearchFunction<Person, List<String>>, Person, String> listContains =
                 (f, p, v) -> {
                     List<String> list = f.apply(p);
                     return list != null && list.contains(v);
@@ -169,7 +168,7 @@ class SearchableTest {
 
         @Test
         void contains_any_returnsElementsWhereListContainsAtLeastOnePredicateValue() {
-            TriPredicate<Function<Person, List<String>>, Person, String> listContains =
+            TriPredicate<SearchFunction<Person, List<String>>, Person, String> listContains =
                 (f, p, v) -> {
                     List<String> list = f.apply(p);
                     return list != null && list.contains(v);
@@ -185,7 +184,7 @@ class SearchableTest {
 
         @Test
         void contains_skipsNullListsViaPredicate() {
-            TriPredicate<Function<Person, List<String>>, Person, String> listContains =
+            TriPredicate<SearchFunction<Person, List<String>>, Person, String> listContains =
                 (f, p, v) -> {
                     List<String> list = f.apply(p);
                     return list != null && list.contains(v);
@@ -333,7 +332,7 @@ class SearchableTest {
         @Test
         void findAll_iterablePairs_defaultsToAll() {
             List<Person> list = people.findAll(
-                List.<Pair<Function<Person, String>, String>>of(Pair.of(NAME, "alice"))
+                List.<Pair<SearchFunction<Person, String>, String>>of(Pair.of(NAME, "alice"))
             ).toList();
             assertEquals(3, list.size());
         }
@@ -552,7 +551,7 @@ class SearchableTest {
                 new Person(12, "y", List.of("a"))
             );
             Searchable<Person> custom = () -> SingleStream.of(source);
-            TriPredicate<Function<Person, String>, Person, String> eq =
+            TriPredicate<SearchFunction<Person, String>, Person, String> eq =
                 (f, p, v) -> Objects.equals(f.apply(p), v);
             List<Person> result = custom.compare(
                 SearchFunction.Match.ALL,
@@ -567,7 +566,7 @@ class SearchableTest {
             // ALL with no predicates means the for-loop never runs - all elements pass
             List<Person> list = people.containsAll(
                 SearchFunction.Match.ALL,
-                List.<Pair<Function<Person, List<String>>, String>>of()
+                List.<Pair<SearchFunction<Person, List<String>>, String>>of()
             ).toList();
             assertEquals(people.size(), list.size());
         }
@@ -576,7 +575,7 @@ class SearchableTest {
         void findAll_emptyPredicates_all_returnsAllElements() {
             List<Person> list = people.findAll(
                 SearchFunction.Match.ALL,
-                List.<Pair<Function<Person, String>, String>>of()
+                List.<Pair<SearchFunction<Person, String>, String>>of()
             ).toList();
             assertEquals(people.size(), list.size());
         }
