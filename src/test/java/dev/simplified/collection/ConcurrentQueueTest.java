@@ -1,6 +1,6 @@
 package dev.simplified.collection;
-import dev.simplified.collection.ConcurrentQueue;
 
+import dev.simplified.collection.ConcurrentQueue;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
