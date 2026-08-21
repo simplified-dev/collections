@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -82,6 +81,13 @@ public interface Indexable<E> extends Searchable<E> {
         if (!indexable(indexes, match, predicates))
             return null;
 
+        // The one-predicate query is nearly every query, and it reaches the index without
+        // marshalling anything - which matters, because it is also the hot path.
+        if (predicates.size() == 1) {
+            Pair<SearchFunction<E, S>, S> only = predicates.getFirst();
+            return indexes.lookup(PropertyReference.of(only.left()), only.left(), only.right());
+        }
+
         List<PropertyReference> references = new ArrayList<>(predicates.size());
         List<SearchFunction<E, ?>> extractors = new ArrayList<>(predicates.size());
         List<Object> values = new ArrayList<>(predicates.size());
@@ -102,11 +108,7 @@ public interface Indexable<E> extends Searchable<E> {
         List<E> bucket = null;
 
         for (int at = 0; at < predicates.size(); at++) {
-            List<E> candidate = indexes.lookup(
-                List.of(references.get(at)),
-                List.of(extractors.get(at)),
-                Collections.singletonList(values.get(at))
-            );
+            List<E> candidate = indexes.lookup(references.get(at), extractors.get(at), values.get(at));
 
             if (candidate != null && (bucket == null || candidate.size() < bucket.size())) {
                 bucket = candidate;

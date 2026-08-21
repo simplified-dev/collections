@@ -77,11 +77,26 @@ final class IndexSchema {
      */
     private final @NotNull Map<Set<PropertyReference>, Declaration> byComponents;
 
+    /**
+     * The single-component declarations keyed by their property path, so the one-predicate query
+     * that is nearly every query is answered by a map read of a list the caller already holds.
+     */
+    private final @NotNull Map<List<String>, Declaration> bySinglePath;
+
     private IndexSchema(@NotNull Map<List<PropertyReference>, Declaration> declarations) {
         this.declarations = declarations;
         Map<Set<PropertyReference>, Declaration> byComponents = new LinkedHashMap<>();
-        declarations.forEach((key, declaration) -> byComponents.putIfAbsent(Set.copyOf(key), declaration));
+        Map<List<String>, Declaration> bySinglePath = new LinkedHashMap<>();
+
+        declarations.forEach((key, declaration) -> {
+            byComponents.putIfAbsent(Set.copyOf(key), declaration);
+
+            if (key.size() == 1)
+                bySinglePath.putIfAbsent(key.getFirst().properties(), declaration);
+        });
+
         this.byComponents = Map.copyOf(byComponents);
+        this.bySinglePath = Map.copyOf(bySinglePath);
     }
 
     /**
@@ -112,6 +127,19 @@ final class IndexSchema {
      */
     @Nullable Declaration declaring(@NotNull List<PropertyReference> components) {
         return this.declarations.get(components);
+    }
+
+    /**
+     * Finds the declaration over one property path.
+     *
+     * <p>Probed by the path rather than by a {@link PropertyReference} restated against the element
+     * type, because restating one allocates and this runs on every query.
+     *
+     * @param path the property path a query names
+     * @return the declaration, or {@code null} when the path carries no single-property index
+     */
+    @Nullable Declaration coveringPath(@NotNull List<String> path) {
+        return this.bySinglePath.get(path);
     }
 
     /**

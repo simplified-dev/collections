@@ -15,7 +15,6 @@ import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
@@ -238,11 +237,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @return {@code true} if a matching element is found
 	 */
 	public final <S> boolean contains(@NotNull SearchFunction<E, S> function, S value) {
-		List<E> indexed = this.indexes().lookup(
-			List.of(PropertyReference.of(function)),
-			List.of(function),
-			Collections.singletonList(value)
-		);
+		List<E> indexed = this.indexes().lookup(PropertyReference.of(function), function, value);
 
 		if (indexed != null)
 			return !indexed.isEmpty();

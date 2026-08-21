@@ -41,7 +41,12 @@ public final class IndexCache<E> {
     private final @Nullable Object @NotNull [] elements;
     private final @Nullable Class<?> elementType;
     private final @NotNull IndexSchema schema;
-    private final @NotNull ConcurrentHashMap<Slot, Index<E>> built = new ConcurrentHashMap<>();
+    /**
+     * The built indexes, keyed by the declaration they answer. Two maps rather than one keyed by a
+     * declaration and a flag, so a lookup mints no key.
+     */
+    private final @NotNull ConcurrentHashMap<IndexSchema.Declaration, Index<E>> equality = new ConcurrentHashMap<>();
+    private final @NotNull ConcurrentHashMap<IndexSchema.Declaration, Index<E>> containment = new ConcurrentHashMap<>();
 
     private IndexCache(@Nullable Object @NotNull [] elements) {
         this.elements = elements;
@@ -103,6 +108,9 @@ public final class IndexCache<E> {
         if (this.isEmpty() || references.isEmpty() || references.size() != extractors.size() || references.size() != values.size())
             return null;
 
+        if (references.size() == 1)
+            return this.lookup(references.getFirst(), extractors.getFirst(), values.getFirst());
+
         List<PropertyReference> named = new ArrayList<>(references.size());
 
         for (PropertyReference reference : references) {
@@ -119,12 +127,37 @@ public final class IndexCache<E> {
         if (declaration == null)
             return null;
 
-        Index<E> index = this.indexFor(declaration, named, extractors, false);
+        Index<E> index = usable(this.equality.computeIfAbsent(declaration, held -> this.build(held, ordered(held.components(), named, extractors))));
 
         if (index == null)
             return null;
 
         return index.matching(keyOf(declaration.components(), named, values));
+    }
+
+    /**
+     * Answers the elements whose named property carries the given value.
+     *
+     * <p>This is the shape nearly every query takes, and it allocates nothing: the declaration is
+     * found by the path the caller already holds, the built index is keyed by that declaration, and
+     * the bucket was sealed when it was built.
+     *
+     * @param reference the decoded property the predicate reads
+     * @param extractor the extractor the predicate applies, used to build the index the first time
+     *        the property is asked for
+     * @param value the value the property must carry
+     * @return the matching elements in source order, or {@code null} when the property carries no
+     *         index
+     * @throws IllegalStateException if an index declared unique finds two elements sharing a value
+     */
+    public @Nullable List<E> lookup(@NotNull PropertyReference reference, @NotNull SearchFunction<E, ?> extractor, @Nullable Object value) {
+        IndexSchema.Declaration declaration = this.declaring(reference);
+
+        if (declaration == null)
+            return null;
+
+        Index<E> index = usable(this.equality.computeIfAbsent(declaration, held -> this.build(held, List.of(extractor))));
+        return index == null ? null : index.matching(value);
     }
 
     /**
@@ -141,37 +174,38 @@ public final class IndexCache<E> {
      *         index
      */
     public @Nullable List<E> lookupContaining(@NotNull PropertyReference reference, @NotNull SearchFunction<E, ?> extractor, @Nullable Object value) {
-        if (this.isEmpty())
-            return null;
-
-        PropertyReference against = reference.against(this.elementType);
-
-        if (!against.isResolved())
-            return null;
-
-        List<PropertyReference> named = List.of(against);
-        IndexSchema.Declaration declaration = this.schema.covering(named);
+        IndexSchema.Declaration declaration = this.declaring(reference);
 
         if (declaration == null)
             return null;
 
-        Index<E> index = this.indexFor(declaration, named, List.of(extractor), true);
+        Index<E> index = usable(this.containment.computeIfAbsent(declaration, held -> this.buildContaining(extractor)));
         return index == null ? null : index.matching(value);
     }
 
     /**
-     * Fetches the index over one declaration, building it on first use.
+     * Finds what this collection declares about one property a query names.
      *
+     * <p>Matched on the property path rather than on a {@link PropertyReference} restated against
+     * the element type, because restating one allocates and this runs on every query.
+     *
+     * @param reference the decoded property
+     * @return the declaration, or {@code null} when nothing covers it
+     */
+    private @Nullable IndexSchema.Declaration declaring(@NotNull PropertyReference reference) {
+        if (this.isEmpty() || !reference.isResolved() || !reference.owner().isAssignableFrom(this.elementType))
+            return null;
+
+        return this.schema.coveringPath(reference.properties());
+    }
+
+    /**
+     * Unwraps the refusal marker.
+     *
+     * @param index the held index
      * @return the index, or {@code null} when these elements cannot carry it
      */
-    private @Nullable Index<E> indexFor(@NotNull IndexSchema.Declaration declaration, @NotNull List<PropertyReference> named, @NotNull List<SearchFunction<E, ?>> extractors, boolean containment) {
-        Index<E> index = this.built.computeIfAbsent(
-            new Slot(declaration.components(), containment),
-            slot -> containment
-                ? this.buildContaining(ordered(slot.components(), named, extractors).getFirst())
-                : this.build(declaration, ordered(slot.components(), named, extractors))
-        );
-
+    private static <E> @Nullable Index<E> usable(@NotNull Index<E> index) {
         return index == UNUSABLE ? null : index;
     }
 
@@ -352,15 +386,6 @@ public final class IndexCache<E> {
 
         return null;
     }
-
-    /**
-     * One property tuple, asked about in one of the two ways a query can ask about it.
-     *
-     * @param components the property tuple the index is built over
-     * @param containment whether the index files an element under the members of the value it
-     *        carries rather than under the value itself
-     */
-    private record Slot(@NotNull List<PropertyReference> components, boolean containment) {}
 
     /**
      * One built index, sealed at construction and never mutated after it.
