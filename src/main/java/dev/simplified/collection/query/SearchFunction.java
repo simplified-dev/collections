@@ -69,18 +69,79 @@ public interface SearchFunction<T, R> extends Function<T, R>, Serializable {
      * {@code from} yields {@code null}, which is the behaviour the query terminals catch and treat
      * as a non-match.
      *
-     * @param from the extractor applied first
-     * @param to the function applied to the first extractor's result
+     * <p>Every other extractor is one class per call site, so what it reads is worked out once and
+     * remembered against that class. A composition is one class holding every chain anyone writes,
+     * so it is the only shape that has to remember its own - which is why it carries a field and is
+     * not a record.
+     *
      * @param <T> the input type of {@code from}
      * @param <M> the intermediate type between the two halves
      * @param <R> the result type of {@code to}
      */
-    record Composed<T, M, R>(@NotNull SearchFunction<T, M> from, @NotNull Function<? super M, ? extends R> to) implements SearchFunction<T, R> {
+    final class Composed<T, M, R> implements SearchFunction<T, R> {
+
+        private final @NotNull SearchFunction<T, M> from;
+        private final @NotNull Function<? super M, ? extends R> to;
+
+        /**
+         * The joined property path, worked out on the first query that names this composition. Two
+         * threads racing here decode the same chain, so either answer stands.
+         */
+        private transient PropertyReference decoded;
+
+        /**
+         * Constructs a new {@code Composed} applying one extractor and then a function over what it
+         * yields.
+         *
+         * @param from the extractor applied first
+         * @param to the function applied to the first extractor's result
+         */
+        public Composed(@NotNull SearchFunction<T, M> from, @NotNull Function<? super M, ? extends R> to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        /**
+         * The extractor applied first.
+         *
+         * @return the first half
+         */
+        public @NotNull SearchFunction<T, M> from() {
+            return this.from;
+        }
+
+        /**
+         * The function applied to what the first extractor yields.
+         *
+         * @return the second half
+         */
+        public @NotNull Function<? super M, ? extends R> to() {
+            return this.to;
+        }
 
         /** {@inheritDoc} */
         @Override
         public R apply(T value) {
-            return this.to().apply(this.from().apply(value));
+            return this.to.apply(this.from.apply(value));
+        }
+
+        /**
+         * The joined property path, when one has been worked out.
+         *
+         * @return the path both halves read together, or {@code null} until it is decoded
+         */
+        PropertyReference decoded() {
+            return this.decoded;
+        }
+
+        /**
+         * Remembers the joined property path, so the next query reads it rather than joining it
+         * again.
+         *
+         * @param decoded the path both halves read together
+         */
+        void decoded(@NotNull PropertyReference decoded) {
+            this.decoded = decoded;
         }
 
     }

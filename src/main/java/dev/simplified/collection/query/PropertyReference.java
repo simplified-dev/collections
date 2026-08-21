@@ -193,10 +193,31 @@ public record PropertyReference(@Nullable Class<?> owner, @NotNull List<String> 
      * Joins the property paths of a composition's two halves, which needs no bytecode because both
      * halves are reachable as record components.
      *
+     * <p>Held on the composition once it is worked out, because a composition is one class holding
+     * every chain anyone writes and so cannot be remembered against its class the way every other
+     * extractor is.
+     *
      * @param composed the composition to decode
      * @return the joined path, or {@link #UNRESOLVED} when either half is refused
      */
     private static @NotNull PropertyReference compose(@NotNull SearchFunction.Composed<?, ?, ?> composed) {
+        PropertyReference held = composed.decoded();
+
+        if (held == null) {
+            held = join(composed);
+            composed.decoded(held);
+        }
+
+        return held;
+    }
+
+    /**
+     * Joins the property paths the two halves of a composition read.
+     *
+     * @param composed the composition to read
+     * @return the joined path, or {@link #UNRESOLVED} when either half is refused
+     */
+    private static @NotNull PropertyReference join(@NotNull SearchFunction.Composed<?, ?, ?> composed) {
         PropertyReference head = of(composed.from());
         Function<?, ?> second = composed.to();
 

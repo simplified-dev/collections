@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -230,6 +231,36 @@ class PropertyReferenceTest {
                 .andThen((Function<Department, String>) Department::name);
 
             assertEquals(PropertyReference.Kind.UNRESOLVED, PropertyReference.of(composed).kind());
+        }
+
+        @Test
+        void of_theSameComposition_isDecodedOnce() {
+            // One class holds every composition anyone writes, so a composition cannot be
+            // remembered against its class the way a method reference is - it remembers its own.
+            SearchFunction<Person, String> departmentName = SearchFunction.combine(Person::department, Department::name);
+
+            assertSame(PropertyReference.of(departmentName), PropertyReference.of(departmentName));
+        }
+
+        @Test
+        void of_twoCompositionsOverTheSameHalves_readTheSamePath() {
+            SearchFunction<Person, String> one = SearchFunction.combine(Person::department, Department::name);
+            SearchFunction<Person, String> other = SearchFunction.combine(Person::department, Department::name);
+
+            assertNotSame(one, other);
+            assertEquals(PropertyReference.of(one), PropertyReference.of(other));
+        }
+
+        @Test
+        void of_oneCompositionDecodedFromManyThreads_answersTheSamePath() {
+            // Two threads racing to decode arrive at the same chain, so whichever answer is
+            // remembered is the right one.
+            SearchFunction<Person, String> departmentName = SearchFunction.combine(Person::department, Department::name);
+
+            assertTrue(IntStream.range(0, 512)
+                .parallel()
+                .mapToObj(at -> PropertyReference.of(departmentName))
+                .allMatch(reference -> List.of("department", "name").equals(reference.properties())));
         }
 
         @Test
