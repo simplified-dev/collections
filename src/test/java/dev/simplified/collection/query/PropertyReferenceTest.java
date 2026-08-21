@@ -190,7 +190,7 @@ class PropertyReferenceTest {
         @Test
         void of_identity_isRefused() {
             // Reading the argument itself names no property of it.
-            PropertyReference reference = PropertyReference.of(SearchFunction.<Person>identity());
+            PropertyReference reference = PropertyReference.of((SearchFunction<Person, Person>) person -> person);
             assertEquals(PropertyReference.Kind.UNRESOLVED, reference.kind());
         }
 

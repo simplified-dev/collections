@@ -146,7 +146,7 @@ class LambdaBodyReaderTest {
         @Test
         void read_identity_refuses() {
             // The parameter is returned untouched, so the body names no accessor at all.
-            assertNull(LambdaBodyReader.read(crack(SearchFunction.<Row>identity())));
+            assertNull(LambdaBodyReader.read(crack((SearchFunction<Row, Row>) row -> row)));
         }
 
         @Test

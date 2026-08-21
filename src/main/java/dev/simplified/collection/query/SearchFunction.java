@@ -36,17 +36,6 @@ public interface SearchFunction<T, R> extends Function<T, R>, Serializable {
     }
 
     /**
-     * Returns a {@link SearchFunction} that yields its own argument, for the query and sort
-     * overloads that take an extractor over an element that is already the value being compared.
-     *
-     * @param <T> the input and result type of the function
-     * @return a function returning its argument
-     */
-    static <T> @NotNull SearchFunction<T, T> identity() {
-        return value -> value;
-    }
-
-    /**
      * Returns a composed {@link SearchFunction} that first applies this function to its input,
      * and then applies the {@code after} function to the result.
      *

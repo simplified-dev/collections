@@ -1,6 +1,5 @@
 package dev.simplified.collection;
 
-import dev.simplified.collection.query.SearchFunction;
 import dev.simplified.collection.query.SortOrder;
 import dev.simplified.collection.query.Sortable;
 import dev.simplified.collection.sort.SortAlgorithm;
@@ -9,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * A thread-safe {@link List} extension combining the {@link ConcurrentCollection} surface with
@@ -52,7 +52,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @param functions one or more functions used to extract comparable keys for sorting
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(@NotNull SearchFunction<E, ? extends Comparable<?>>... functions);
+	@NotNull ConcurrentList<E> sorted(@NotNull Function<E, ? extends Comparable<?>>... functions);
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted in descending order
@@ -63,7 +63,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *                  sorting
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(@NotNull Iterable<SearchFunction<E, ? extends Comparable<?>>> functions);
+	@NotNull ConcurrentList<E> sorted(@NotNull Iterable<Function<E, ? extends Comparable<?>>> functions);
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the
@@ -73,7 +73,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 * @param functions one or more functions that extract comparable keys for sorting
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, SearchFunction<E, ? extends Comparable<?>>... functions);
+	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, Function<E, ? extends Comparable<?>>... functions);
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the
@@ -84,7 +84,7 @@ public interface ConcurrentList<E> extends ConcurrentCollection<E>, Sortable<E>,
 	 *                  sorting
 	 * @return a new sorted list
 	 */
-	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<SearchFunction<E, ? extends Comparable<?>>> functions);
+	@NotNull ConcurrentList<E> sorted(@NotNull SortOrder sortOrder, @NotNull Iterable<Function<E, ? extends Comparable<?>>> functions);
 
 	/**
 	 * Returns a new list containing all elements from this list, sorted according to the given
