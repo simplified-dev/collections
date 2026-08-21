@@ -22,6 +22,24 @@ class SoleBucketTest {
 
     private static final String ONLY = "alpha";
 
+    /**
+     * Value that answers equal to what it holds without being answered equal by it, so which side of
+     * a comparison the asking value lands on is observable.
+     */
+    record Loose(String held) {
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Loose loose ? this.held.equals(loose.held()) : this.held.equals(other);
+        }
+
+        @Override
+        public int hashCode() {
+            return this.held.hashCode();
+        }
+
+    }
+
     private static SoleBucket<String> bucket() {
         return new SoleBucket<>(ONLY);
     }
@@ -139,6 +157,20 @@ class SoleBucketTest {
             assertNotEquals(bucket(), List.of());
             assertNotEquals(bucket(), ONLY);
             assertNotEquals(null, bucket());
+        }
+
+        @Test
+        void contains_asksFromTheSideEveryOtherListAsksFrom() {
+            // List reads "an element e such that Objects.equals(o, e)", so the value being looked
+            // for is the one asked. A bucket of two seals as an unmodifiable ArrayList and compares
+            // from that side, and one query must not answer differently for having found one
+            // element rather than two.
+            Loose asking = new Loose(ONLY);
+
+            assertTrue(new ArrayList<>(List.of(ONLY)).contains(asking));
+            assertTrue(bucket().contains(asking));
+            assertEquals(0, bucket().indexOf(asking));
+            assertTrue(bucket().containsAll(List.of(asking)));
         }
 
         @Test

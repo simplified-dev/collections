@@ -13,10 +13,13 @@ import java.util.stream.Stream;
 /**
  * A {@link Searchable} that can answer an equality query from a hash index instead of a scan.
  *
- * <p>Only the two terminals whose meaning is equality are overridden - {@link #findAll} and
- * {@link #containsAll} - so every finder above them is indexed without any of them being rewritten.
- * {@link #compare} and {@link #contains} keep scanning, because a caller-supplied comparison is not
- * a question an index over values can answer.
+ * <p>The two terminals whose meaning is equality carry it - {@link #findAll} and
+ * {@link #containsAll} in the shape taking many predicates - so every finder above them is indexed
+ * without any of them being rewritten, and nothing can be missed. The single-property shapes of
+ * those same two reach the index a second way, off the extractor itself, which spares the whole
+ * query the pair and the list built only to reach a scan. {@link #compare} and {@link #contains}
+ * keep scanning, because a caller-supplied comparison is not a question an index over values can
+ * answer.
  *
  * <p>Indexing is a pure optimisation: an implementation that holds no index answers
  * {@link IndexCache#none()} from {@link #indexes()} and every query falls through to the inherited

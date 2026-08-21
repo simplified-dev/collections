@@ -71,7 +71,9 @@ final class SoleBucket<E> implements List<E>, RandomAccess, Serializable {
      */
     @Override
     public boolean contains(Object item) {
-        return Objects.equals(this.element, item);
+        // The item asks, the element answers, which is the side List names and the side every list
+        // in the platform compares from.
+        return Objects.equals(item, this.element);
     }
 
     /**

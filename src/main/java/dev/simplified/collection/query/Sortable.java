@@ -16,7 +16,9 @@ import java.util.function.Predicate;
  *
  * <p>Every equality family here funnels through {@link Searchable#findAll} or
  * {@link Searchable#containsAll}, which is what lets an index serve all of them without any of them
- * knowing an index exists.
+ * knowing an index exists. The one shape that does know is a single property named against a single
+ * value: that asks the index for its one element and only builds the pair those terminals take when
+ * no index covers the property.
  *
  * @param <E> the element type of the sortable collection
  */
