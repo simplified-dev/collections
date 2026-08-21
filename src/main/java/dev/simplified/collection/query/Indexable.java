@@ -68,6 +68,36 @@ public interface Indexable<E> extends Searchable<E> {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * <p>Reaches the index off the extractor itself, so the one-predicate query that is nearly
+     * every query never pairs it with the value it is compared against.
+     */
+    @Override
+    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, S> function, S value) {
+        List<E> answered = this.indexes().lookup(PropertyReference.of(function), function, value);
+
+        return answered == null
+            ? Searchable.super.findAll(match, function, value)
+            : SingleStream.of(answered.stream());
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Reaches the containment index off the extractor itself, without pairing it with the value
+     * first.
+     */
+    @Override
+    default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, List<S>> function, S value) {
+        List<E> answered = this.indexes().lookupContaining(PropertyReference.of(function), function, value);
+
+        return answered == null
+            ? Searchable.super.containsAll(match, function, value)
+            : answered.stream();
+    }
+
+    /**
      * Answers an equality query from the indexes, when they cover it.
      *
      * @param match the match mode

@@ -40,6 +40,9 @@ public interface Sortable<E> extends Indexable<E> {
     /**
      * Returns the first element whose list-valued field contains the given value, using the specified match mode.
      *
+     * <p>Read off the containment index directly when one covers the property, and otherwise
+     * scanned through the pair the fall-through builds.
+     *
      * @param match the match mode (ALL or ANY)
      * @param function the list-field extractor
      * @param value the value to check for containment
@@ -47,7 +50,12 @@ public interface Sortable<E> extends Indexable<E> {
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> containsFirst(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, List<S>> function, S value) {
-        return this.containsFirst(match, Pair.of(function, value));
+        List<E> indexed = this.indexes().lookupContaining(PropertyReference.of(function), function, value);
+
+        if (indexed == null)
+            return this.containsFirst(match, Pair.of(function, value));
+
+        return indexed.isEmpty() ? Optional.empty() : Optional.of(indexed.getFirst());
     }
 
     /**
@@ -119,7 +127,7 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E containsFirstOrNull(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, List<S>> function, S value) {
-        return this.containsFirstOrNull(match, Pair.of(function, value));
+        return this.containsFirst(match, function, value).orElse(null);
     }
 
     /**
@@ -185,6 +193,12 @@ public interface Sortable<E> extends Indexable<E> {
     /**
      * Returns the first element whose extracted field value equals the given value, using the specified match mode.
      *
+     * <p>Read off the index directly when one covers the property. This is the shape nearly every
+     * query takes, and the answer is one element, so pairing the extractor with its value and
+     * running a stream over the bucket to reach it costs several times what the probe does. A
+     * property no index covers falls through to the scan, which the pair and the stream are still
+     * how to reach.
+     *
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
      * @param value the value to compare against
@@ -192,7 +206,14 @@ public interface Sortable<E> extends Indexable<E> {
      * @return an {@link Optional} containing the first matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findFirst(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, S> function, S value) {
-        return this.findFirst(match, Pair.of(function, value));
+        // One predicate asks the same question in either match mode, so the mode is only carried as
+        // far as the scan.
+        List<E> indexed = this.indexes().lookup(PropertyReference.of(function), function, value);
+
+        if (indexed == null)
+            return this.findFirst(match, Pair.of(function, value));
+
+        return indexed.isEmpty() ? Optional.empty() : Optional.of(indexed.getFirst());
     }
 
     /**
@@ -264,7 +285,7 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the first matching element, or {@code null}
      */
     default <S> E findFirstOrNull(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, S> function, S value) {
-        return this.findFirstOrNull(match, Pair.of(function, value));
+        return this.findFirst(match, function, value).orElse(null);
     }
 
     /**
@@ -330,6 +351,9 @@ public interface Sortable<E> extends Indexable<E> {
     /**
      * Returns the last element whose extracted field value equals the given value, using the specified match mode.
      *
+     * <p>Read off the index directly when one covers the property. A bucket holds its elements in
+     * source order, so the last of them is the answer a reduction over the whole stream arrives at.
+     *
      * @param match the match mode (ALL or ANY)
      * @param function the field extractor
      * @param value the value to compare against
@@ -337,7 +361,12 @@ public interface Sortable<E> extends Indexable<E> {
      * @return an {@link Optional} containing the last matching element, or empty if none match
      */
     default <S> @NotNull Optional<E> findLast(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, S> function, S value) {
-        return this.findLast(match, Pair.of(function, value));
+        List<E> indexed = this.indexes().lookup(PropertyReference.of(function), function, value);
+
+        if (indexed == null)
+            return this.findLast(match, Pair.of(function, value));
+
+        return indexed.isEmpty() ? Optional.empty() : Optional.of(indexed.getLast());
     }
 
     /**
@@ -411,7 +440,7 @@ public interface Sortable<E> extends Indexable<E> {
      * @return the last matching element, or {@code null}
      */
     default <S> E findLastOrNull(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, S> function, S value) {
-        return this.findLastOrNull(match, Pair.of(function, value));
+        return this.findLast(match, function, value).orElse(null);
     }
 
     /**

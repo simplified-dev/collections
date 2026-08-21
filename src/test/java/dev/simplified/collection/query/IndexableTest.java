@@ -279,10 +279,21 @@ class IndexableTest {
         );
     }
 
+    /**
+     * Runs one nullable-result query against both lists and asserts they agree.
+     */
+    private void differentialOrNull(Function<ConcurrentList<Row>, Row> query) {
+        assertEquals(labelOf(query.apply(this.scanned)), labelOf(query.apply(this.indexed)));
+    }
+
     private static List<String> labels(List<Row> rows) {
         List<String> labels = new ArrayList<>(rows.size());
         rows.forEach(row -> labels.add(row.label()));
         return labels;
+    }
+
+    private static String labelOf(Row row) {
+        return row == null ? null : row.label();
     }
 
     @Nested
@@ -365,6 +376,50 @@ class IndexableTest {
                 assertTrue(indexed.contains(BY_MODE, "alpha"));
 
             assertEquals(0, READS.get());
+        }
+
+        @Test
+        void findFirst_repeatedQueries_readTheAccessorOnlyWhileBuilding() {
+            indexed.findFirst(BY_MODE, "alpha");
+            READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                assertTrue(indexed.findFirst(BY_MODE, "alpha").isPresent());
+
+            assertEquals(0, READS.get());
+        }
+
+        @Test
+        void findLast_repeatedQueries_readTheAccessorOnlyWhileBuilding() {
+            indexed.findLast(BY_MODE, "alpha");
+            READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                assertTrue(indexed.findLast(BY_MODE, "alpha").isPresent());
+
+            assertEquals(0, READS.get());
+        }
+
+        @Test
+        void findFirstOrNull_repeatedQueries_readTheAccessorOnlyWhileBuilding() {
+            indexed.findFirstOrNull(BY_MODE, "alpha");
+            READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                assertNotNull(indexed.findFirstOrNull(BY_MODE, "alpha"));
+
+            assertEquals(0, READS.get());
+        }
+
+        @Test
+        void containsFirst_repeatedQueries_readTheAccessorOnlyWhileBuilding() {
+            indexed.containsFirst(BY_TAGS, "admin");
+            TAG_READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                assertTrue(indexed.containsFirst(BY_TAGS, "admin").isPresent());
+
+            assertEquals(0, TAG_READS.get());
         }
 
         @Test
@@ -514,6 +569,57 @@ class IndexableTest {
         }
 
         @Test
+        void findFirst_nullValue_matches() {
+            differentialFirst(rows -> rows.findFirst(BY_MODE, null));
+        }
+
+        @Test
+        void findFirst_anyMatchMode_matches() {
+            // One predicate asks the same question in either mode, and the answer has to say so.
+            differentialFirst(rows -> rows.findFirst(SearchFunction.Match.ANY, BY_MODE, "alpha"));
+        }
+
+        @Test
+        void findLast_anyMatchMode_matches() {
+            differentialFirst(rows -> rows.findLast(SearchFunction.Match.ANY, BY_MODE, "alpha"));
+        }
+
+        @Test
+        void findFirst_unindexedProperty_matches() {
+            differentialFirst(rows -> rows.findFirst(BY_LABEL, "third"));
+        }
+
+        @Test
+        void findFirst_unresolvableExtractor_matches() {
+            differentialFirst(rows -> rows.findFirst((SearchFunction<Row, String>) row -> row.mode() + "!", "alpha!"));
+        }
+
+        @Test
+        void findFirstOrNull_nonUniqueProperty_matches() {
+            differentialOrNull(rows -> rows.findFirstOrNull(BY_MODE, "alpha"));
+        }
+
+        @Test
+        void findFirstOrNull_absentValue_matches() {
+            differentialOrNull(rows -> rows.findFirstOrNull(BY_MODE, "delta"));
+        }
+
+        @Test
+        void findFirstOrNull_matchMode_matches() {
+            differentialOrNull(rows -> rows.findFirstOrNull(SearchFunction.Match.ALL, BY_MODE, "alpha"));
+        }
+
+        @Test
+        void findLastOrNull_nonUniqueProperty_matches() {
+            differentialOrNull(rows -> rows.findLastOrNull(BY_MODE, "alpha"));
+        }
+
+        @Test
+        void findLastOrNull_matchMode_matches() {
+            differentialOrNull(rows -> rows.findLastOrNull(SearchFunction.Match.ANY, BY_MODE, "alpha"));
+        }
+
+        @Test
         void containsAll_listProperty_matches() {
             differential(rows -> rows.containsAll(BY_TAGS, "admin").toList());
         }
@@ -531,6 +637,26 @@ class IndexableTest {
         @Test
         void containsFirst_listProperty_matches() {
             differentialFirst(rows -> rows.containsFirst(BY_TAGS, "admin"));
+        }
+
+        @Test
+        void containsFirst_absentMember_matches() {
+            differentialFirst(rows -> rows.containsFirst(BY_TAGS, "missing"));
+        }
+
+        @Test
+        void containsFirst_anyMatchMode_matches() {
+            differentialFirst(rows -> rows.containsFirst(SearchFunction.Match.ANY, BY_TAGS, "admin"));
+        }
+
+        @Test
+        void containsFirstOrNull_listProperty_matches() {
+            differentialOrNull(rows -> rows.containsFirstOrNull(BY_TAGS, "admin"));
+        }
+
+        @Test
+        void containsFirstOrNull_matchMode_matches() {
+            differentialOrNull(rows -> rows.containsFirstOrNull(SearchFunction.Match.ALL, BY_TAGS, "missing"));
         }
 
         @Test
