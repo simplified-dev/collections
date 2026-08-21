@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link IndexSchema}, covering what a class can declare, what it can reach through
- * a followed field, and every way two declarations can contradict each other.
+ * an indexed reference, and every way two declarations can contradict each other.
  */
 class IndexSchemaTest {
 
@@ -58,10 +58,10 @@ class IndexSchemaTest {
 
     }
 
-    // --- Followed references ---
+    // --- Reached references ---
 
     /**
-     * Target of a follow, declaring one unique key, one plain index and one composite.
+     * Target of a reference, declaring one unique key, one plain index and one composite.
      */
     static class Department {
 
@@ -85,7 +85,6 @@ class IndexSchemaTest {
     static class Person {
 
         @Indexed
-        @Indexed(follow = true)
         private Department department;
 
         @Indexed
@@ -98,13 +97,13 @@ class IndexSchemaTest {
      */
     static class Visitor {
 
-        @Indexed(follow = true)
+        @Indexed
         private Bare host;
 
     }
 
     /**
-     * Three links, so the depth bound can be seen to stop the walk.
+     * Three links, so the hop bound can be seen to stop the walk.
      */
     static class Third {
 
@@ -118,7 +117,7 @@ class IndexSchemaTest {
      */
     static class Second {
 
-        @Indexed(follow = true)
+        @Indexed
         private Third third;
 
     }
@@ -128,30 +127,30 @@ class IndexSchemaTest {
      */
     static class First {
 
-        @Indexed(follow = true)
+        @Indexed
         private Second second;
 
     }
 
     /**
-     * A reference reaching back to its own type, which the depth bound has to terminate.
+     * A reference reaching back to its own type, which the hop bound has to terminate.
      */
     static class Node {
 
         @Indexed
         private String id = "";
 
-        @Indexed(follow = true)
+        @Indexed
         private Node next;
 
     }
 
     /**
-     * Fixture following a field that holds many values rather than one.
+     * Fixture whose indexed field holds many values rather than one.
      */
     static class Joined {
 
-        @Indexed(follow = true)
+        @Indexed
         private List<Department> departments = List.of();
 
     }
@@ -289,10 +288,10 @@ class IndexSchemaTest {
     }
 
     @Nested
-    class Follows {
+    class ReachesThrough {
 
         @Test
-        void of_followedField_declaresThePathTheTargetExposes() {
+        void of_indexedReference_declaresThePathTheTargetExposes() {
             IndexSchema.Declaration declaration = IndexSchema.of(Person.class).declaring(tuple(Person.class, "department.name"));
 
             assertNotNull(declaration);
@@ -301,9 +300,9 @@ class IndexSchemaTest {
         }
 
         @Test
-        void of_followedField_doesNotInheritUniqueness() {
+        void of_reachedPath_doesNotInheritUniqueness() {
             // Department.name is unique across departments; two people can still share one
-            // department, so the derived index promises nothing.
+            // department, so the reached index promises nothing.
             IndexSchema.Declaration declaration = IndexSchema.of(Person.class).declaring(tuple(Person.class, "department.name"));
 
             assertNotNull(declaration);
@@ -311,7 +310,7 @@ class IndexSchemaTest {
         }
 
         @Test
-        void of_followedField_reachesEveryPlainIndexTheTargetDeclares() {
+        void of_indexedReference_reachesEveryPlainIndexTheTargetDeclares() {
             IndexSchema schema = IndexSchema.of(Person.class);
 
             assertNotNull(schema.declaring(tuple(Person.class, "department.name")));
@@ -319,14 +318,16 @@ class IndexSchemaTest {
         }
 
         @Test
-        void of_followedField_doesNotExportTheTargetsComposites() {
+        void of_reachedPath_doesNotExportTheTargetsComposites() {
             // A composite is a key over several values of one department; a person cannot probe it
             // by naming several values of a department it merely points at.
             assertNull(IndexSchema.of(Person.class).declaring(tuple(Person.class, "department.left", "department.right")));
         }
 
         @Test
-        void of_fieldFollowedAndIndexed_declaresBoth() {
+        void of_indexedReference_declaresBothTheObjectAndItsKeys() {
+            // One annotation, two questions: find the person by the department they hold, and find
+            // them by what the department is itself worth finding by.
             IndexSchema schema = IndexSchema.of(Person.class);
 
             assertNotNull(schema.declaring(tuple(Person.class, "department")));
@@ -340,43 +341,54 @@ class IndexSchemaTest {
         }
 
         @Test
-        void of_followingATargetDeclaringNothing_addsNothing() {
-            assertTrue(IndexSchema.of(Visitor.class).isEmpty());
+        void of_targetDeclaringNothing_addsOnlyTheFieldItself() {
+            IndexSchema schema = IndexSchema.of(Visitor.class);
+
+            assertNotNull(schema.declaring(tuple(Visitor.class, "host")));
+            assertEquals(1, schema.declarations().size());
         }
 
         @Test
-        void of_chainedFollows_reachThroughEveryStep() {
+        void of_collectionField_isIndexedButNotReachedThrough() {
+            // The field is still indexed - by containment - but one element holding many
+            // departments reaches many rows, which is a join rather than a property path.
+            IndexSchema schema = IndexSchema.of(Joined.class);
+
+            assertNotNull(schema.declaring(tuple(Joined.class, "departments")));
+            assertNull(schema.declaring(tuple(Joined.class, "departments.name")));
+            assertEquals(1, schema.declarations().size());
+        }
+
+        @Test
+        void of_chainedReferences_reachThroughEveryStep() {
             IndexSchema.Declaration declaration = IndexSchema.of(First.class).declaring(tuple(First.class, "second.third.deep"));
 
             assertNotNull(declaration);
             assertEquals(List.of("second", "third", "deep"), declaration.components().getFirst().properties());
+            assertEquals(3, IndexSchema.of(First.class).declarations().size());
         }
 
         @Test
-        void of_selfReference_terminatesAtTheDepthBound() {
+        void of_selfReference_stopsAtThreeHops() {
             IndexSchema schema = IndexSchema.of(Node.class);
 
             assertNotNull(schema.declaring(tuple(Node.class, "id")));
+            assertNotNull(schema.declaring(tuple(Node.class, "next")));
             assertNotNull(schema.declaring(tuple(Node.class, "next.id")));
+            assertNotNull(schema.declaring(tuple(Node.class, "next.next")));
             assertNotNull(schema.declaring(tuple(Node.class, "next.next.id")));
-            assertNotNull(schema.declaring(tuple(Node.class, "next.next.next.id")));
+            assertNotNull(schema.declaring(tuple(Node.class, "next.next.next")));
 
             // Bounded rather than refused: a field reaching back to its holder is an ordinary shape
-            // and the paths through it are real, but the walk has to stop somewhere.
-            assertNull(schema.declaring(tuple(Node.class, "next.next.next.next.id")));
-            assertEquals(4, schema.declarations().size());
+            // and the paths through it are real, but a path stops at three accessors.
+            assertNull(schema.declaring(tuple(Node.class, "next.next.next.id")));
+            assertEquals(6, schema.declarations().size());
         }
 
     }
 
     @Nested
     class Refuses {
-
-        @Test
-        void of_followingACollection_throws() {
-            IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> IndexSchema.of(Joined.class));
-            assertTrue(thrown.getMessage().contains("join"));
-        }
 
         @Test
         void of_groupDisagreeingOnUniqueness_throws() {

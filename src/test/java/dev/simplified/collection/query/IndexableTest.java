@@ -46,7 +46,7 @@ class IndexableTest {
     }
 
     /**
-     * The target of a followed reference, declaring what it is worth finding by.
+     * The target of an indexed reference, declaring what it is worth finding by.
      */
     static final class Detail {
 
@@ -82,7 +82,7 @@ class IndexableTest {
         @Indexed
         private final List<String> tags;
 
-        @Indexed(follow = true)
+        @Indexed
         private final Detail detail;
 
         private final String label;
@@ -208,7 +208,7 @@ class IndexableTest {
     private static final AtomicInteger TAG_READS = new AtomicInteger();
 
     /**
-     * The same counter for the property reached through a followed field.
+     * The same counter for the property reached through an indexed reference.
      */
     private static final AtomicInteger ZONE_READS = new AtomicInteger();
 
@@ -219,7 +219,7 @@ class IndexableTest {
 
     /**
      * A property of a property, which nothing declares by name - the path is derived from the
-     * followed field and the target's own declaration.
+     * indexed reference and the target's own declaration.
      */
     private static final SearchFunction<Row, String> BY_ZONE = row -> row.detail().zone();
 
@@ -369,7 +369,7 @@ class IndexableTest {
 
         @Test
         void findAll_repeatedMultiHopQueries_readTheAccessorOnlyWhileBuilding() {
-            // The path is derived from Fast.detail being followed and Detail.zone declaring itself,
+            // The path is derived from Fast.detail being indexed and Detail.zone declaring itself,
             // so nothing wrote "detail.zone" anywhere and the query still answers from an index.
             indexed.findAll(BY_ZONE, "north").toList();
             ZONE_READS.set(0);

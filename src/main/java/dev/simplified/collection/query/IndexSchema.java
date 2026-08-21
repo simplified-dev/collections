@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -28,13 +29,14 @@ import java.util.Set;
 final class IndexSchema {
 
     /**
-     * How many {@link Indexed#follow} steps a chain may take before the schema stops resolving it.
+     * How many accessors long a declared path may be.
      *
      * <p>A bound is needed because references form a graph rather than a tree - a department holding
-     * its head and a person holding their department is an ordinary shape and an unbounded walk
-     * would never finish. Three hops is past anything a query in this codebase writes.
+     * its head and a person holding their department is an ordinary shape, and an unbounded walk
+     * would never finish. Three is past anything a query in this codebase writes, and it is what
+     * stops a graph of references from declaring a set no reader can hold in their head.
      */
-    private static final int MAX_DEPTH = 3;
+    private static final int MAX_HOPS = 3;
 
     /**
      * The answer for a class declaring nothing, which every query falls through to a scan against.
@@ -42,7 +44,7 @@ final class IndexSchema {
     static final IndexSchema EMPTY = new IndexSchema(Map.of());
 
     /**
-     * What each class declares about itself, with nothing followed.
+     * What each class declares about itself, with nothing reached through.
      *
      * <p>Held separately from the resolved schema because resolving one class reads the local
      * declarations of the classes it reaches, and a cycle would otherwise re-enter
@@ -140,8 +142,8 @@ final class IndexSchema {
     }
 
     /**
-     * Collects every {@link Indexed} annotation on a class and its supertypes, without following
-     * any of them.
+     * Collects every {@link Indexed} annotation on a class and its supertypes, without reaching
+     * through any of them.
      *
      * @param type the class to read
      * @return one entry per annotation, most derived first
@@ -152,6 +154,11 @@ final class IndexSchema {
         // Most derived first, so a shadowing field wins the way a field read would.
         for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
             for (Field field : current.getDeclaredFields()) {
+                // A static field holds one value for every element, so an index over it sorts
+                // nothing and would answer every query with the whole collection.
+                if (Modifier.isStatic(field.getModifiers()))
+                    continue;
+
                 for (Indexed declared : field.getAnnotationsByType(Indexed.class))
                     locals.add(new Local(field.getName(), field.getType(), declared));
             }
@@ -161,12 +168,11 @@ final class IndexSchema {
     }
 
     /**
-     * Builds one class's full schema, following the fields that ask to be followed.
+     * Builds one class's full schema, reaching through the fields that hold another indexed object.
      *
      * @param type the class to resolve
      * @return its declarations, or {@link #EMPTY}
-     * @throws IllegalArgumentException if the declarations disagree with each other, or a
-     *         collection-typed field asks to be followed
+     * @throws IllegalArgumentException if the declarations disagree with each other
      */
     private static @NotNull IndexSchema resolve(@NotNull Class<?> type) {
         List<Local> locals = LOCAL.get(type);
@@ -178,12 +184,17 @@ final class IndexSchema {
         Map<String, List<Local>> groups = new LinkedHashMap<>();
 
         for (Local local : locals) {
-            if (local.declared().follow())
-                follow(declarations, type, local);
-            else if (local.declared().group().isEmpty())
-                declare(declarations, type, List.of(reference(type, local.property())), local.declared().unique());
-            else
+            if (!local.declared().group().isEmpty()) {
                 groups.computeIfAbsent(local.declared().group(), name -> new ArrayList<>()).add(local);
+                continue;
+            }
+
+            declare(declarations, type, List.of(reference(type, local.property())), local.declared().unique());
+
+            // Whatever the field's own type declares is reachable through it, and never unique:
+            // one department having one name says nothing about how many people hold it.
+            for (List<String> path : reachableThrough(local, MAX_HOPS - 1))
+                declare(declarations, type, List.of(reference(type, path)), false);
         }
 
         groups.forEach((name, grouped) -> declare(declarations, type, name, grouped));
@@ -191,59 +202,70 @@ final class IndexSchema {
     }
 
     /**
-     * Adds one declaration per index the followed field's own type declares, each reached through
-     * that field.
+     * Walks the paths reachable by reading one field and then reading on from what it holds.
      *
-     * @throws IllegalArgumentException if the field holds many values rather than one
+     * @param local the field being read through
+     * @param remaining how many accessors may still be appended
+     * @return one path per index reachable through this field, each already prefixed by it
      */
-    private static void follow(@NotNull Map<List<PropertyReference>, Declaration> declarations, @NotNull Class<?> type, @NotNull Local local) {
-        if (Iterable.class.isAssignableFrom(local.type()) || Map.class.isAssignableFrom(local.type()) || local.type().isArray())
-            throw new IllegalArgumentException(String.format(
-                "Field '%s' on '%s' holds many values, so following it reaches many rows for one element - that is a join rather than a property path, and an index over it is not built",
-                local.property(),
-                type.getSimpleName()
-            ));
+    private static @NotNull List<List<String>> reachableThrough(@NotNull Local local, int remaining) {
+        // A field holding many values reaches many rows for one element, which is a join rather
+        // than a property path. The field itself is still indexed, by containment.
+        if (remaining <= 0 || holdsMany(local.type()))
+            return List.of();
 
-        for (List<String> path : pathsUnder(local.type(), 1))
-            declare(declarations, type, List.of(reference(type, prefixed(local.property(), path))), false);
+        List<List<String>> reached = new ArrayList<>();
+
+        for (List<String> path : pathsUnder(local.type(), remaining))
+            reached.add(prefixed(local.property(), path));
+
+        return reached;
     }
 
     /**
-     * Walks the paths one class exposes, and the paths reachable through the fields it follows.
+     * Walks the paths one class exposes, and the paths reachable on through them.
      *
      * <p>Only single-component declarations are exported. A composite is a key over several values
      * of one element, and prefixing it would claim the holder can probe several values of a value
      * it does not own.
      *
      * @param type the class being reached into
-     * @param depth how many steps have already been taken
+     * @param remaining how many accessors may still be appended
      * @return one property path per index reachable from here
      */
-    private static @NotNull List<List<String>> pathsUnder(@NotNull Class<?> type, int depth) {
-        if (depth > MAX_DEPTH)
+    private static @NotNull List<List<String>> pathsUnder(@NotNull Class<?> type, int remaining) {
+        if (remaining <= 0)
             return List.of();
 
         List<List<String>> paths = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
 
         for (Local local : LOCAL.get(type)) {
-            if (local.declared().follow()) {
-                // A cycle is bounded by the depth rather than refused, because a field reaching back
-                // to its holder is an ordinary shape and the paths through it are still real.
-                if (Iterable.class.isAssignableFrom(local.type()) || Map.class.isAssignableFrom(local.type()) || local.type().isArray())
-                    continue;
+            if (!local.declared().group().isEmpty())
+                continue;
 
-                for (List<String> path : pathsUnder(local.type(), depth + 1)) {
-                    List<String> prefixed = prefixed(local.property(), path);
-
-                    if (seen.add(String.join(".", prefixed)))
-                        paths.add(prefixed);
-                }
-            } else if (local.declared().group().isEmpty() && seen.add(local.property()))
+            if (seen.add(local.property()))
                 paths.add(List.of(local.property()));
+
+            // A cycle is bounded by the hop count rather than refused, because a field reaching
+            // back to its holder is an ordinary shape and the paths through it are still real.
+            for (List<String> path : reachableThrough(local, remaining - 1)) {
+                if (seen.add(String.join(".", path)))
+                    paths.add(path);
+            }
         }
 
         return paths;
+    }
+
+    /**
+     * Whether a field holds many values rather than one.
+     *
+     * @param type the field's declared type
+     * @return {@code true} for a collection, a map or an array
+     */
+    private static boolean holdsMany(@NotNull Class<?> type) {
+        return Iterable.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type) || type.isArray();
     }
 
     /**

@@ -12,13 +12,12 @@ import java.lang.annotation.Target;
  * Marks a field worth spending memory on, so a query naming it answers in constant time instead of
  * scanning.
  *
- * <p>An index is opt-in per field because it costs memory proportional to the collection. Nothing is
- * indexed by accident: a field gains an index because someone asked for one, and a query over a
- * field that carries no {@code @Indexed} scans exactly as it does today.
+ * <h2>Declaring one</h2>
  *
- * <p>The field is named rather than the accessor, and a query naming either resolves to it -
- * {@code Stat::getId}, {@code stat -> stat.getId()} and a fluent {@code Stat::id} all read the
- * property {@code id}.
+ * <p>Indexing is opt-in per field because it costs memory proportional to the collection, so a
+ * field carrying no {@code @Indexed} is scanned exactly as it is today. The field is named rather
+ * than the accessor, and a query naming either resolves to it - {@code Stat::getId},
+ * {@code stat -> stat.getId()} and a fluent {@code Stat::id} all read the property {@code id}.
  *
  * <pre>{@code
  * public class Stat {
@@ -37,16 +36,19 @@ import java.lang.annotation.Target;
  * }</pre>
  *
  * <p>Repeating the annotation puts one field in more than one index, which is what lets {@code mode}
- * above answer both a query about it alone and a query about it together with {@code tier}.
- *
- * <p>{@link #unique} is a promise about the elements rather than a hint about the schema: an index
- * declared unique whose collection holds two elements sharing a value fails to build rather than
- * answering one of them.
+ * answer both a query about it alone and a query about it together with {@code tier}. {@link #unique}
+ * is a promise about the elements rather than a hint about the schema: an index declared unique whose
+ * collection holds two elements sharing a value fails to build rather than answering one of them.
  *
  * <h2>Reaching a property of a property</h2>
  *
- * <p>{@link #follow} indexes what the field's own type declares, so a query reading through one
- * object to a property of another answers from an index too:
+ * <p>Indexing a field that holds another object also indexes what that object declares about itself,
+ * so {@code findFirst(person -> person.getDepartment().getName(), "eng")} is a hash probe and so is a
+ * query by the department itself. No path is written down anywhere - the first step is the field this
+ * annotation sits on and the rest is whatever the target declares - so renaming a field on either
+ * side moves the index with it and a misspelling is not expressible. Both ends have already opted in,
+ * the target saying what it is worth finding by and the holder saying it cares about that field, so
+ * nothing further is asked for.
  *
  * <pre>{@code
  * public class Department {
@@ -58,17 +60,24 @@ import java.lang.annotation.Target;
  *
  * public class Person {
  *
- *     @Indexed                 // by the Department itself
- *     @Indexed(follow = true)  // and by everything Department declares
+ *     @Indexed
  *     private Department department;
  *
  * }
  * }</pre>
  *
- * <p>{@code findFirst(person -> person.getDepartment().getName(), "eng")} is then a hash probe
- * rather than a scan. No path is written down anywhere: the first step is the field this annotation
- * sits on and the rest is whatever the target class declares about itself, so renaming a field on
- * either side moves the index with it and a misspelling is not expressible.
+ * <p>Three limits keep that honest. A path may be at most three accessors long, past which a query
+ * scans, which is what stops a graph of references from declaring a set no reader can hold in their
+ * head. A reached index is never unique however the target declared it, because a promise that no two
+ * departments share a name says nothing about how many people share a department. A composite the
+ * target declares is not reached at all, being a key over several values of one department that a
+ * person cannot probe by naming several values of something it merely points at.
+ *
+ * <p>An index is rebuilt when the collection holding the elements is written, and a value reached
+ * through a field is not part of that collection - a department renaming itself leaves an index over
+ * {@code department.name} describing the name it used to have. Index a reference whose own indexed
+ * properties are effectively final, which is the requirement a hash key already carries, held over a
+ * wider surface.
  *
  * @see Indexable
  * @see PropertyReference
@@ -77,24 +86,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(Indexed.Declarations.class)
 public @interface Indexed {
-
-    /**
-     * Whether to index what this field's own type declares, reached through this field, rather than
-     * the field's value itself.
-     *
-     * <p>A derived index is never unique however the target declared it, because a promise that no
-     * two departments share a name says nothing about how many people share a department.
-     *
-     * <p>Ignored on a field whose type declares nothing. Refused on a collection-typed field, where
-     * one element reaches many values and the answer is a join rather than a path.
-     *
-     * <p>An index is rebuilt when the collection holding the elements is written, and a followed
-     * value is not part of that collection - a department renaming itself leaves an index over
-     * {@code department.name} describing the name it used to have. Follow a reference whose indexed
-     * properties are effectively final, which is the same requirement a hash key already carries,
-     * held over a wider surface.
-     */
-    boolean follow() default false;
 
     /**
      * Name joining this field to the other fields of one composite index, empty when the field is
