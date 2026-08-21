@@ -241,16 +241,13 @@ public record PropertyReference(@Nullable Class<?> owner, @NotNull List<String> 
     }
 
     /**
-     * Reads a lambda body back to the accessor chain it applies, when ASM is present to read it.
+     * Reads a lambda body back to the accessor chain it applies.
      *
      * @param lambda the cracked lambda naming the body to read
      * @param hint the classloader the extractor came from
      * @return the chain as a reference, or {@link #UNRESOLVED}
      */
     private static @NotNull PropertyReference readBody(@NotNull SerializedLambda lambda, @Nullable ClassLoader hint) {
-        if (!Asm.PRESENT)
-            return UNRESOLVED;
-
         LambdaBodyReader.Chain chain = LambdaBodyReader.read(lambda);
 
         if (chain == null)
@@ -362,32 +359,6 @@ public record PropertyReference(@Nullable Class<?> owner, @NotNull List<String> 
          * An extractor that reads no single property, or one this runtime cannot read.
          */
         UNRESOLVED
-
-    }
-
-    /**
-     * Holds the one-time answer to whether ASM is on the runtime classpath.
-     *
-     * <p>ASM is an optional dependency, so {@link LambdaBodyReader} is reached only through this
-     * flag. A consumer without it decodes method references and refuses lambda bodies, rather than
-     * failing to link.
-     */
-    private static final class Asm {
-
-        private static final boolean PRESENT = probe();
-
-        private Asm() {
-            throw new UnsupportedOperationException("Asm is a static holder");
-        }
-
-        private static boolean probe() {
-            try {
-                Class.forName("org.objectweb.asm.ClassReader", false, PropertyReference.class.getClassLoader());
-                return true;
-            } catch (ClassNotFoundException | LinkageError absent) {
-                return false;
-            }
-        }
 
     }
 

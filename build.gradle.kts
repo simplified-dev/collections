@@ -28,9 +28,8 @@ dependencies {
     compileOnly(libs.gson)
     testImplementation(libs.gson)
 
-    // ASM (optional - only required to read a lambda body back to the property it
-    // reads; absent, dev.simplified.collection.query.LambdaBodyReader is never reached)
-    compileOnly(libs.asm)
+    // ASM (tests only - LambdaBodyReaderDifferentialTest reads every compiled class with both
+    // ASM and dev.simplified.collection.query.LambdaBodyReader and asserts they agree)
     testImplementation(libs.asm)
 
     // Simplified Annotations
