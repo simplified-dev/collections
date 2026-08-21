@@ -43,6 +43,33 @@ import java.lang.annotation.Target;
  * declared unique whose collection holds two elements sharing a value fails to build rather than
  * answering one of them.
  *
+ * <h2>Reaching a property of a property</h2>
+ *
+ * <p>{@link #follow} indexes what the field's own type declares, so a query reading through one
+ * object to a property of another answers from an index too:
+ *
+ * <pre>{@code
+ * public class Department {
+ *
+ *     @Indexed(unique = true)
+ *     private String name = "";
+ *
+ * }
+ *
+ * public class Person {
+ *
+ *     @Indexed                 // by the Department itself
+ *     @Indexed(follow = true)  // and by everything Department declares
+ *     private Department department;
+ *
+ * }
+ * }</pre>
+ *
+ * <p>{@code findFirst(person -> person.getDepartment().getName(), "eng")} is then a hash probe
+ * rather than a scan. No path is written down anywhere: the first step is the field this annotation
+ * sits on and the rest is whatever the target class declares about itself, so renaming a field on
+ * either side moves the index with it and a misspelling is not expressible.
+ *
  * @see Indexable
  * @see PropertyReference
  */
@@ -50,6 +77,24 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(Indexed.Declarations.class)
 public @interface Indexed {
+
+    /**
+     * Whether to index what this field's own type declares, reached through this field, rather than
+     * the field's value itself.
+     *
+     * <p>A derived index is never unique however the target declared it, because a promise that no
+     * two departments share a name says nothing about how many people share a department.
+     *
+     * <p>Ignored on a field whose type declares nothing. Refused on a collection-typed field, where
+     * one element reaches many values and the answer is a join rather than a path.
+     *
+     * <p>An index is rebuilt when the collection holding the elements is written, and a followed
+     * value is not part of that collection - a department renaming itself leaves an index over
+     * {@code department.name} describing the name it used to have. Follow a reference whose indexed
+     * properties are effectively final, which is the same requirement a hash key already carries,
+     * held over a wider surface.
+     */
+    boolean follow() default false;
 
     /**
      * Name joining this field to the other fields of one composite index, empty when the field is

@@ -41,6 +41,27 @@ class IndexableTest {
 
         String label();
 
+        Detail detail();
+
+    }
+
+    /**
+     * The target of a followed reference, declaring what it is worth finding by.
+     */
+    static final class Detail {
+
+        @Indexed
+        private final String zone;
+
+        Detail(String zone) {
+            this.zone = zone;
+        }
+
+        String zone() {
+            ZONE_READS.incrementAndGet();
+            return this.zone;
+        }
+
     }
 
     /**
@@ -61,14 +82,24 @@ class IndexableTest {
         @Indexed
         private final List<String> tags;
 
+        @Indexed(follow = true)
+        private final Detail detail;
+
         private final String label;
 
-        Fast(String mode, String code, int tier, List<String> tags, String label) {
+        Fast(String mode, String code, int tier, List<String> tags, String label, Detail detail) {
             this.mode = mode;
             this.code = code;
             this.tier = tier;
             this.tags = tags;
+            this.detail = detail;
             this.label = label;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public Detail detail() {
+            return this.detail;
         }
 
         /** {@inheritDoc} */
@@ -114,14 +145,22 @@ class IndexableTest {
         private final String code;
         private final int tier;
         private final List<String> tags;
+        private final Detail detail;
         private final String label;
 
-        Slow(String mode, String code, int tier, List<String> tags, String label) {
+        Slow(String mode, String code, int tier, List<String> tags, String label, Detail detail) {
             this.mode = mode;
             this.code = code;
             this.tier = tier;
             this.tags = tags;
+            this.detail = detail;
             this.label = label;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public Detail detail() {
+            return this.detail;
         }
 
         /** {@inheritDoc} */
@@ -168,10 +207,21 @@ class IndexableTest {
      */
     private static final AtomicInteger TAG_READS = new AtomicInteger();
 
+    /**
+     * The same counter for the property reached through a followed field.
+     */
+    private static final AtomicInteger ZONE_READS = new AtomicInteger();
+
     private static final SearchFunction<Row, String> BY_MODE = Row::mode;
     private static final SearchFunction<Row, String> BY_CODE = Row::code;
     private static final SearchFunction<Row, List<String>> BY_TAGS = Row::tags;
     private static final SearchFunction<Row, String> BY_LABEL = Row::label;
+
+    /**
+     * A property of a property, which nothing declares by name - the path is derived from the
+     * followed field and the target's own declaration.
+     */
+    private static final SearchFunction<Row, String> BY_ZONE = row -> row.detail().zone();
 
     /**
      * The two halves of the composite index, widened to a common result type.
@@ -186,12 +236,12 @@ class IndexableTest {
     private static final SearchFunction<Row, Object> BY_LABEL_VALUE = row -> row.label();
 
     private static final Object[][] DATA = {
-        { "alpha", "A1", 1, List.of("admin", "ops"), "first" },
-        { "beta", "B1", 1, List.of("ops"), "second" },
-        { "alpha", "A2", 2, List.of("admin"), "third" },
-        { null, "N1", 2, List.of(), "fourth" },
-        { "alpha", "A3", 1, null, "fifth" },
-        { "gamma", "G1", 3, List.of("ops", "admin", "ops"), "sixth" }
+        { "alpha", "A1", 1, List.of("admin", "ops"), "first", new Detail("north") },
+        { "beta", "B1", 1, List.of("ops"), "second", new Detail("south") },
+        { "alpha", "A2", 2, List.of("admin"), "third", new Detail("north") },
+        { null, "N1", 2, List.of(), "fourth", new Detail(null) },
+        { "alpha", "A3", 1, null, "fifth", null },
+        { "gamma", "G1", 3, List.of("ops", "admin", "ops"), "sixth", new Detail("north") }
     };
 
     private ConcurrentList<Row> indexed;
@@ -204,8 +254,8 @@ class IndexableTest {
         this.scanned = Concurrent.newList();
 
         for (Object[] row : DATA) {
-            this.indexed.add(new Fast((String) row[0], (String) row[1], (int) row[2], (List<String>) row[3], (String) row[4]));
-            this.scanned.add(new Slow((String) row[0], (String) row[1], (int) row[2], (List<String>) row[3], (String) row[4]));
+            this.indexed.add(new Fast((String) row[0], (String) row[1], (int) row[2], (List<String>) row[3], (String) row[4], (Detail) row[5]));
+            this.scanned.add(new Slow((String) row[0], (String) row[1], (int) row[2], (List<String>) row[3], (String) row[4], (Detail) row[5]));
         }
     }
 
@@ -264,7 +314,7 @@ class IndexableTest {
         @Test
         void findAll_afterAWrite_rebuildsOnceAndThenStaysFlat() {
             indexed.findAll(BY_MODE, "alpha").toList();
-            indexed.add(new Fast("alpha", "A4", 4, List.of(), "seventh"));
+            indexed.add(new Fast("alpha", "A4", 4, List.of(), "seventh", new Detail("north")));
             READS.set(0);
 
             indexed.findAll(BY_MODE, "alpha").toList();
@@ -315,6 +365,33 @@ class IndexableTest {
                 assertTrue(indexed.contains(BY_MODE, "alpha"));
 
             assertEquals(0, READS.get());
+        }
+
+        @Test
+        void findAll_repeatedMultiHopQueries_readTheAccessorOnlyWhileBuilding() {
+            // The path is derived from Fast.detail being followed and Detail.zone declaring itself,
+            // so nothing wrote "detail.zone" anywhere and the query still answers from an index.
+            indexed.findAll(BY_ZONE, "north").toList();
+            ZONE_READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                indexed.findAll(BY_ZONE, "north").toList();
+
+            assertEquals(0, ZONE_READS.get());
+        }
+
+        @Test
+        void findAll_multiHopByBodyAndByCombine_shareOneIndex() {
+            SearchFunction<Row, String> combined = SearchFunction.combine(Row::detail, Detail::zone);
+
+            indexed.findAll(BY_ZONE, "north").toList();
+            ZONE_READS.set(0);
+
+            assertEquals(
+                labels(indexed.findAll(BY_ZONE, "north").toList()),
+                labels(indexed.findAll(combined, "north").toList())
+            );
+            assertEquals(0, ZONE_READS.get());
         }
 
         @Test
@@ -462,6 +539,43 @@ class IndexableTest {
         }
 
         @Test
+        void findAll_multiHopPath_matches() {
+            differential(rows -> rows.findAll(BY_ZONE, "north").toList());
+        }
+
+        @Test
+        void findAll_multiHopPathThroughANullIntermediate_matches() {
+            // One element holds no detail at all, so reading through it raises the
+            // NullPointerException both the scan and the index build read as a non-match.
+            differential(rows -> rows.findAll(BY_ZONE, "south").toList());
+        }
+
+        @Test
+        void findAll_multiHopPathToANullValue_matches() {
+            differential(rows -> rows.findAll(BY_ZONE, null).toList());
+        }
+
+        @Test
+        void findAll_multiHopByCombine_matches() {
+            differential(rows -> rows.findAll(SearchFunction.combine(Row::detail, Detail::zone), "north").toList());
+        }
+
+        @Test
+        void findFirst_multiHopPath_matches() {
+            differentialFirst(rows -> rows.findFirst(BY_ZONE, "north"));
+        }
+
+        @Test
+        void findLast_multiHopPath_matches() {
+            differentialFirst(rows -> rows.findLast(BY_ZONE, "north"));
+        }
+
+        @Test
+        void findAll_multiHopPathToAnAbsentValue_matches() {
+            differential(rows -> rows.findAll(BY_ZONE, "east").toList());
+        }
+
+        @Test
         void contains_indexedProperty_matches() {
             assertEquals(scanned.contains(BY_MODE, "alpha"), indexed.contains(BY_MODE, "alpha"));
             assertEquals(scanned.contains(BY_MODE, "delta"), indexed.contains(BY_MODE, "delta"));
@@ -484,14 +598,14 @@ class IndexableTest {
         void findAll_singleElement_matches() {
             indexed.clear();
             scanned.clear();
-            indexed.add(new Fast("alpha", "A1", 1, List.of("admin"), "only"));
-            scanned.add(new Slow("alpha", "A1", 1, List.of("admin"), "only"));
+            indexed.add(new Fast("alpha", "A1", 1, List.of("admin"), "only", new Detail("north")));
+            scanned.add(new Slow("alpha", "A1", 1, List.of("admin"), "only", new Detail("north")));
             differential(rows -> rows.findAll(BY_MODE, "alpha").toList());
         }
 
         @Test
         void findAll_uniqueIndexOverDuplicateValues_throws() {
-            indexed.add(new Fast("delta", "A1", 9, List.of(), "duplicate"));
+            indexed.add(new Fast("delta", "A1", 9, List.of(), "duplicate", new Detail("north")));
 
             IllegalStateException thrown = assertThrows(
                 IllegalStateException.class,
@@ -505,7 +619,7 @@ class IndexableTest {
         void findAll_handRolledSortable_scansWithoutAnIndex() {
             // The interface stays implementable by a lambda, which is what keeps every existing
             // Searchable and Sortable usable unchanged.
-            List<Row> source = List.of(new Fast("alpha", "A1", 1, List.of(), "only"));
+            List<Row> source = List.of(new Fast("alpha", "A1", 1, List.of(), "only", new Detail("north")));
             Sortable<Row> custom = () -> SingleStream.of(source);
 
             assertTrue(custom.indexes().isEmpty());

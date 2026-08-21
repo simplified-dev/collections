@@ -103,17 +103,15 @@ public final class IndexCache<E> {
         if (this.isEmpty() || references.isEmpty() || references.size() != extractors.size() || references.size() != values.size())
             return null;
 
-        List<String> named = new ArrayList<>(references.size());
+        List<PropertyReference> named = new ArrayList<>(references.size());
 
         for (PropertyReference reference : references) {
             PropertyReference against = reference.against(this.elementType);
 
-            // A multi-hop path reads a property of another class, which this collection does not
-            // declare and cannot promise anything about.
-            if (!against.isDirect())
+            if (!against.isResolved())
                 return null;
 
-            named.add(against.properties().getFirst());
+            named.add(against);
         }
 
         IndexSchema.Declaration declaration = this.schema.covering(named);
@@ -126,7 +124,7 @@ public final class IndexCache<E> {
         if (index == null)
             return null;
 
-        return index.matching(keyOf(declaration.path(), named, values));
+        return index.matching(keyOf(declaration.components(), named, values));
     }
 
     /**
@@ -148,10 +146,10 @@ public final class IndexCache<E> {
 
         PropertyReference against = reference.against(this.elementType);
 
-        if (!against.isDirect())
+        if (!against.isResolved())
             return null;
 
-        List<String> named = List.of(against.properties().getFirst());
+        List<PropertyReference> named = List.of(against);
         IndexSchema.Declaration declaration = this.schema.covering(named);
 
         if (declaration == null)
@@ -166,12 +164,12 @@ public final class IndexCache<E> {
      *
      * @return the index, or {@code null} when these elements cannot carry it
      */
-    private @Nullable Index<E> indexFor(@NotNull IndexSchema.Declaration declaration, @NotNull List<String> named, @NotNull List<SearchFunction<E, ?>> extractors, boolean containment) {
+    private @Nullable Index<E> indexFor(@NotNull IndexSchema.Declaration declaration, @NotNull List<PropertyReference> named, @NotNull List<SearchFunction<E, ?>> extractors, boolean containment) {
         Index<E> index = this.built.computeIfAbsent(
-            new Slot(declaration.path(), containment),
+            new Slot(declaration.components(), containment),
             slot -> containment
-                ? this.buildContaining(ordered(slot.path(), named, extractors).getFirst())
-                : this.build(declaration, ordered(slot.path(), named, extractors))
+                ? this.buildContaining(ordered(slot.components(), named, extractors).getFirst())
+                : this.build(declaration, ordered(slot.components(), named, extractors))
         );
 
         return index == UNUSABLE ? null : index;
@@ -211,7 +209,7 @@ public final class IndexCache<E> {
             if (declaration.unique() && !bucket.isEmpty())
                 throw new IllegalStateException(String.format(
                     "Index '%s' on '%s' is declared unique and two elements carry '%s'",
-                    String.join(", ", declaration.path()),
+                    declaration.describe(),
                     this.elementType.getSimpleName(),
                     key
                 ));
@@ -299,14 +297,14 @@ public final class IndexCache<E> {
      *
      * @return the key to probe with
      */
-    private static @Nullable Object keyOf(@NotNull List<String> path, @NotNull List<String> named, @NotNull List<Object> values) {
-        if (path.size() == 1)
-            return values.get(named.indexOf(path.getFirst()));
+    private static @Nullable Object keyOf(@NotNull List<PropertyReference> components, @NotNull List<PropertyReference> named, @NotNull List<Object> values) {
+        if (components.size() == 1)
+            return values.get(named.indexOf(components.getFirst()));
 
-        Object[] key = new Object[path.size()];
+        Object[] key = new Object[components.size()];
 
         for (int position = 0; position < key.length; position++)
-            key[position] = values.get(named.indexOf(path.get(position)));
+            key[position] = values.get(named.indexOf(components.get(position)));
 
         return Arrays.asList(key);
     }
@@ -314,11 +312,11 @@ public final class IndexCache<E> {
     /**
      * Rearranges the extractors a query supplied into the index's declared order.
      *
-     * @return the extractors, one per property of the path
+     * @return the extractors, one per component of the tuple
      */
-    private static <E> @NotNull List<SearchFunction<E, ?>> ordered(@NotNull List<String> path, @NotNull List<String> named, @NotNull List<SearchFunction<E, ?>> extractors) {
-        List<SearchFunction<E, ?>> reordered = new ArrayList<>(path.size());
-        path.forEach(property -> reordered.add(extractors.get(named.indexOf(property))));
+    private static <E> @NotNull List<SearchFunction<E, ?>> ordered(@NotNull List<PropertyReference> components, @NotNull List<PropertyReference> named, @NotNull List<SearchFunction<E, ?>> extractors) {
+        List<SearchFunction<E, ?>> reordered = new ArrayList<>(components.size());
+        components.forEach(component -> reordered.add(extractors.get(named.indexOf(component))));
         return reordered;
     }
 
@@ -337,13 +335,13 @@ public final class IndexCache<E> {
     }
 
     /**
-     * One property path, asked about in one of the two ways a query can ask about it.
+     * One property tuple, asked about in one of the two ways a query can ask about it.
      *
-     * @param path the property tuple the index is built over
+     * @param components the property tuple the index is built over
      * @param containment whether the index files an element under the members of the value it
      *        carries rather than under the value itself
      */
-    private record Slot(@NotNull List<String> path, boolean containment) {}
+    private record Slot(@NotNull List<PropertyReference> components, boolean containment) {}
 
     /**
      * One built index, frozen after construction.
