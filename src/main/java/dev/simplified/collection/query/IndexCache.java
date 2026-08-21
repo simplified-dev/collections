@@ -183,7 +183,13 @@ public final class IndexCache<E> {
      */
     @SuppressWarnings("unchecked")
     private @NotNull Index<E> build(@NotNull IndexSchema.Declaration declaration, @NotNull List<SearchFunction<E, ?>> extractors) {
-        Map<Object, List<E>> buckets = new HashMap<>();
+        boolean unique = declaration.unique();
+
+        // A unique index carries one key per element, so it is sized once rather than rehashed all
+        // the way up. A shared index has no such bound and is left to grow, because sizing it for
+        // one key per element would allocate a table the width of the collection to hold a handful
+        // of distinct values.
+        Map<Object, Object> buckets = unique ? HashMap.newHashMap(this.elements.length) : new HashMap<>();
 
         for (Object element : this.elements) {
             // A null element carries no property, and applying any accessor to it raises the
@@ -204,20 +210,24 @@ public final class IndexCache<E> {
                 continue;
             }
 
-            List<E> bucket = buckets.computeIfAbsent(key, held -> new ArrayList<>(declaration.unique() ? 1 : 4));
+            if (unique) {
+                // A list of one rather than a growable list of one: an immutable singleton carries
+                // its element in a field instead of an array, so it is one small object per element
+                // where an ArrayList is two larger ones plus a wrapper.
+                Object held = buckets.putIfAbsent(key, List.of(element));
 
-            if (declaration.unique() && !bucket.isEmpty())
-                throw new IllegalStateException(String.format(
-                    "Index '%s' on '%s' is declared unique and two elements carry '%s'",
-                    declaration.describe(),
-                    this.elementType.getSimpleName(),
-                    key
-                ));
-
-            bucket.add((E) element);
+                if (held != null)
+                    throw new IllegalStateException(String.format(
+                        "Index '%s' on '%s' is declared unique and two elements carry '%s'",
+                        declaration.describe(),
+                        this.elementType.getSimpleName(),
+                        key
+                    ));
+            } else
+                ((List<Object>) buckets.computeIfAbsent(key, held -> new ArrayList<>(4))).add(element);
         }
 
-        return freeze(buckets);
+        return seal(buckets, unique);
     }
 
     /**
@@ -230,7 +240,7 @@ public final class IndexCache<E> {
      */
     @SuppressWarnings("unchecked")
     private @NotNull Index<E> buildContaining(@NotNull SearchFunction<E, ?> extractor) {
-        Map<Object, List<E>> buckets = new HashMap<>();
+        Map<Object, Object> buckets = new HashMap<>();
 
         for (Object element : this.elements) {
             if (element == null)
@@ -252,24 +262,33 @@ public final class IndexCache<E> {
                 continue;
 
             for (Object member : members) {
-                List<E> bucket = buckets.computeIfAbsent(member, held -> new ArrayList<>(4));
+                List<Object> bucket = (List<Object>) buckets.computeIfAbsent(member, held -> new ArrayList<>(4));
 
                 // A list holding one value twice still puts its element in the bucket once.
                 if (bucket.isEmpty() || bucket.getLast() != element)
-                    bucket.add((E) element);
+                    bucket.add(element);
             }
         }
 
-        return freeze(buckets);
+        return seal(buckets, false);
     }
 
     /**
-     * Seals the buckets so nothing downstream can reorder or add to a shared answer.
+     * Seals every growable bucket, so a lookup can hand one out without copying or wrapping it.
      *
+     * <p>A unique index is already sealed, each of its buckets being an immutable singleton built
+     * in place. Sealing on the way in rather than on the way out is what keeps a lookup free of
+     * allocation, which is the side of the trade a read-mostly collection is on.
+     *
+     * @param buckets the buckets to seal
+     * @param unique whether the buckets were built as immutable singletons
      * @return the sealed index
      */
-    private static <E> @NotNull Index<E> freeze(@NotNull Map<Object, List<E>> buckets) {
-        buckets.replaceAll((key, bucket) -> Collections.unmodifiableList(bucket));
+    @SuppressWarnings("unchecked")
+    private static <E> @NotNull Index<E> seal(@NotNull Map<Object, Object> buckets, boolean unique) {
+        if (!unique)
+            buckets.replaceAll((key, bucket) -> Collections.unmodifiableList((List<E>) bucket));
+
         return new Index<>(buckets);
     }
 
@@ -344,11 +363,11 @@ public final class IndexCache<E> {
     private record Slot(@NotNull List<PropertyReference> components, boolean containment) {}
 
     /**
-     * One built index, frozen after construction.
+     * One built index, sealed at construction and never mutated after it.
      *
-     * @param buckets the elements under each value, each bucket in source order
+     * @param buckets the elements under each value, each bucket in source order and unmodifiable
      */
-    private record Index<E>(@NotNull Map<Object, List<E>> buckets) {
+    private record Index<E>(@NotNull Map<Object, Object> buckets) {
 
         /**
          * Answers the elements filed under one key.
@@ -356,9 +375,10 @@ public final class IndexCache<E> {
          * @param key the value to probe with
          * @return the elements in source order, empty when nothing carries the value
          */
+        @SuppressWarnings("unchecked")
         private @NotNull List<E> matching(@Nullable Object key) {
-            List<E> bucket = this.buckets().get(key);
-            return bucket == null ? List.of() : bucket;
+            Object held = this.buckets().get(key);
+            return held == null ? List.of() : (List<E>) held;
         }
 
     }

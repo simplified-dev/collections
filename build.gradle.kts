@@ -76,4 +76,8 @@ jmh {
     if (warmupProp != null) warmupIterations.set(warmupProp.toInt())
     val iterProp = providers.gradleProperty("jmhIter").orNull
     if (iterProp != null) iterations.set(iterProp.toInt())
+    // -PjmhProfilers=gc reports bytes allocated per operation, which is deterministic where
+    // throughput on a loaded machine is not.
+    val profilersProp = providers.gradleProperty("jmhProfilers").orNull
+    if (profilersProp != null) profilers.set(profilersProp.split(","))
 }
