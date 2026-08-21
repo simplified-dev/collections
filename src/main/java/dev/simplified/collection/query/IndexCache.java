@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class IndexCache<E> {
 
-    private static final IndexCache<?> NONE = new IndexCache<>(new Object[0]);
+    private static final IndexCache<?> NONE = new IndexCache<>(new Object[0], null, IndexSchema.EMPTY);
 
     /**
      * Marks a property that was asked for and cannot be indexed, so the refusal is decided once
@@ -46,10 +46,10 @@ public final class IndexCache<E> {
     private final @NotNull ConcurrentHashMap<IndexSchema.Declaration, Index<E>> equality = new ConcurrentHashMap<>();
     private final @NotNull ConcurrentHashMap<IndexSchema.Declaration, Index<E>> containment = new ConcurrentHashMap<>();
 
-    private IndexCache(@Nullable Object @NotNull [] elements) {
+    private IndexCache(@Nullable Object @NotNull [] elements, @Nullable Class<?> elementType, @NotNull IndexSchema schema) {
         this.elements = elements;
-        this.elementType = typeOf(elements);
-        this.schema = this.elementType == null ? IndexSchema.EMPTY : IndexSchema.of(this.elementType);
+        this.elementType = elementType;
+        this.schema = schema;
     }
 
     /**
@@ -70,12 +70,22 @@ public final class IndexCache<E> {
      * <p>The array is read in place rather than copied, so a caller must not mutate it afterwards -
      * which is already the contract of the iteration snapshot this is built from.
      *
+     * <p>Elements declaring no {@link Indexed} field answer the shared empty cache, so a collection
+     * of them carries nothing at all rather than a fresh cache per write that no query could ever
+     * be answered from.
+     *
      * @param snapshot the elements in source order
      * @param <E> the element type
      * @return a cache over those elements, holding no index until one is asked for
      */
     public static <E> @NotNull IndexCache<E> over(@Nullable Object @NotNull [] snapshot) {
-        return snapshot.length == 0 ? none() : new IndexCache<>(snapshot);
+        Class<?> elementType = typeOf(snapshot);
+
+        if (elementType == null)
+            return none();
+
+        IndexSchema schema = IndexSchema.of(elementType);
+        return schema.isEmpty() ? none() : new IndexCache<>(snapshot, elementType, schema);
     }
 
     /**
@@ -85,7 +95,7 @@ public final class IndexCache<E> {
      * @return {@code true} when no query can be answered from an index
      */
     public boolean isEmpty() {
-        return this.elementType == null || this.schema.isEmpty();
+        return this.elementType == null;
     }
 
     /**

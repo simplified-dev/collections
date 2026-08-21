@@ -363,6 +363,9 @@ class IndexCacheTest {
         void lookup_classDeclaringNothing_isRefused() {
             IndexCache<Bare> cache = IndexCache.over(new Bare[] { new Bare("a"), new Bare("b") });
 
+            // Nothing the class declares can ever be asked for, so there is nothing to hold and the
+            // shared empty cache stands in for one.
+            assertSame(IndexCache.none(), cache);
             assertTrue(cache.isEmpty());
             assertNull(cache.lookup(
                 List.of(PropertyReference.of((SearchFunction<Bare, String>) Bare::id)),
