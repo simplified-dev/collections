@@ -6,9 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,7 +34,7 @@ public final class IndexCache<E> {
      * Marks a property that was asked for and cannot be indexed, so the refusal is decided once
      * rather than on every query.
      */
-    private static final Index<?> UNUSABLE = new Index<>(Map.of());
+    private static final Index<?> UNUSABLE = new Index<>(0);
 
     private final @Nullable Object @NotNull [] elements;
     private final @Nullable Class<?> elementType;
@@ -219,11 +217,11 @@ public final class IndexCache<E> {
     private @NotNull Index<E> build(@NotNull IndexSchema.Declaration declaration, @NotNull List<SearchFunction<E, ?>> extractors) {
         boolean unique = declaration.unique();
 
-        // A unique index carries one key per element, so it is sized once rather than rehashed all
-        // the way up. A shared index has no such bound and is left to grow, because sizing it for
-        // one key per element would allocate a table the width of the collection to hold a handful
-        // of distinct values.
-        Map<Object, Object> buckets = unique ? HashMap.newHashMap(this.elements.length) : new HashMap<>();
+        // A unique index carries one key per element, so its table is sized once rather than
+        // rehashed all the way up. A shared index has no such bound and starts small, because
+        // sizing it for one key per element would allocate a table the width of the collection to
+        // hold a handful of distinct values.
+        Index<E> index = new Index<>(unique ? this.elements.length : 0);
 
         for (Object element : this.elements) {
             // A null element carries no property, and applying any accessor to it raises the
@@ -244,24 +242,17 @@ public final class IndexCache<E> {
                 continue;
             }
 
-            if (unique) {
-                // A list of one rather than a growable list of one: an immutable singleton carries
-                // its element in a field instead of an array, so it is one small object per element
-                // where an ArrayList is two larger ones plus a wrapper.
-                Object held = buckets.putIfAbsent(key, List.of(element));
-
-                if (held != null)
-                    throw new IllegalStateException(String.format(
-                        "Index '%s' on '%s' is declared unique and two elements carry '%s'",
-                        declaration.describe(),
-                        this.elementType.getSimpleName(),
-                        key
-                    ));
-            } else
-                ((List<Object>) buckets.computeIfAbsent(key, held -> new ArrayList<>(4))).add(element);
+            if (!index.file(key, element) && unique)
+                throw new IllegalStateException(String.format(
+                    "Index '%s' on '%s' is declared unique and two elements carry '%s'",
+                    declaration.describe(),
+                    this.elementType.getSimpleName(),
+                    key
+                ));
         }
 
-        return seal(buckets, unique);
+        index.seal();
+        return index;
     }
 
     /**
@@ -274,7 +265,7 @@ public final class IndexCache<E> {
      */
     @SuppressWarnings("unchecked")
     private @NotNull Index<E> buildContaining(@NotNull SearchFunction<E, ?> extractor) {
-        Map<Object, Object> buckets = new HashMap<>();
+        Index<E> index = new Index<>(0);
 
         for (Object element : this.elements) {
             if (element == null)
@@ -295,35 +286,12 @@ public final class IndexCache<E> {
             if (!(read instanceof Iterable<?> members))
                 continue;
 
-            for (Object member : members) {
-                List<Object> bucket = (List<Object>) buckets.computeIfAbsent(member, held -> new ArrayList<>(4));
-
-                // A list holding one value twice still puts its element in the bucket once.
-                if (bucket.isEmpty() || bucket.getLast() != element)
-                    bucket.add(element);
-            }
+            for (Object member : members)
+                index.fileOnce(member, element);
         }
 
-        return seal(buckets, false);
-    }
-
-    /**
-     * Seals every growable bucket, so a lookup can hand one out without copying or wrapping it.
-     *
-     * <p>A unique index is already sealed, each of its buckets being an immutable singleton built
-     * in place. Sealing on the way in rather than on the way out is what keeps a lookup free of
-     * allocation, which is the side of the trade a read-mostly collection is on.
-     *
-     * @param buckets the buckets to seal
-     * @param unique whether the buckets were built as immutable singletons
-     * @return the sealed index
-     */
-    @SuppressWarnings("unchecked")
-    private static <E> @NotNull Index<E> seal(@NotNull Map<Object, Object> buckets, boolean unique) {
-        if (!unique)
-            buckets.replaceAll((key, bucket) -> Collections.unmodifiableList((List<E>) bucket));
-
-        return new Index<>(buckets);
+        index.seal();
+        return index;
     }
 
     /**
@@ -388,11 +356,118 @@ public final class IndexCache<E> {
     }
 
     /**
-     * One built index, sealed at construction and never mutated after it.
+     * One built index, holding the elements filed under each value of an indexed property.
      *
-     * @param buckets the elements under each value, each bucket in source order and unmodifiable
+     * <p>The buckets live in one flat, open-addressed table - a key at every even slot and whatever
+     * is filed under it at the odd slot after it - probed linearly from the slot a mixed hash names.
+     * A build walks every element of the collection, so the per-entry node a chained map would mint
+     * for each of them is the largest cost of building at all, and a flat table has none.
+     *
+     * <p>An index is filled once and sealed, and neither the table nor a bucket is touched
+     * afterwards.
+     *
+     * @param <E> the element type of the indexed collection
      */
-    private record Index<E>(@NotNull Map<Object, Object> buckets) {
+    private static final class Index<E> {
+
+        /**
+         * Stands in for a null key, so an empty slot stays distinguishable from one holding the key
+         * that a null property value files under.
+         */
+        private static final Object NULL_KEY = new Object();
+
+        /**
+         * How full the table is allowed to get. Linear probing degrades steeply past three quarters,
+         * and a table twice the width of what it holds is the price of carrying no nodes.
+         */
+        private static final float LOAD = 0.75F;
+
+        /**
+         * The widest table that can be addressed, the array holding two slots per entry.
+         */
+        private static final int LIMIT = 1 << 29;
+
+        private @Nullable Object @NotNull [] table;
+        private int mask;
+        private int filled;
+        private int ceiling;
+
+        /**
+         * Builds an empty index whose table is wide enough for the given number of keys.
+         *
+         * @param keys how many keys the table is expected to hold
+         */
+        private Index(int keys) {
+            int capacity = 4;
+
+            while (capacity < LIMIT && capacity * LOAD < keys)
+                capacity <<= 1;
+
+            this.reset(capacity);
+        }
+
+        /**
+         * Files one element under a key, joining whatever is filed there already.
+         *
+         * @param key the value the element carries
+         * @param element the element to file
+         * @return {@code true} when nothing was filed under that key yet
+         */
+        private boolean file(@Nullable Object key, @NotNull Object element) {
+            Object probe = probeOf(key);
+            int at = this.slotFor(probe);
+            Object filed = this.table[at + 1];
+
+            if (filed == null) {
+                this.take(at, probe, element);
+                return true;
+            }
+
+            this.join(at, filed, element);
+            return false;
+        }
+
+        /**
+         * Files one element under a key unless it is the element filed there most recently, which is
+         * what a list holding one value twice reaches.
+         *
+         * @param key the value the element carries
+         * @param element the element to file
+         */
+        private void fileOnce(@Nullable Object key, @NotNull Object element) {
+            Object probe = probeOf(key);
+            int at = this.slotFor(probe);
+            Object filed = this.table[at + 1];
+
+            if (filed == null) {
+                this.take(at, probe, element);
+                return;
+            }
+
+            if (last(filed) != element)
+                this.join(at, filed, element);
+        }
+
+        /**
+         * Seals every bucket, so a lookup can hand one out without copying or wrapping it.
+         *
+         * <p>Sealing on the way in rather than on the way out is what keeps a lookup free of
+         * allocation, which is the side of the trade a read-mostly collection is on. A key only one
+         * element carries - the shape of a reference table, and of every unique index - never grows
+         * a bucket at all, and seals as an immutable singleton straight off the element.
+         */
+        private void seal() {
+            for (int at = 1; at < this.table.length; at += 2) {
+                Object filed = this.table[at];
+
+                if (filed == null)
+                    continue;
+
+                this.table[at] = filed instanceof Bucket<?> bucket
+                    ? Collections.unmodifiableList(bucket)
+                    : List.of(filed);
+            }
+        }
 
         /**
          * Answers the elements filed under one key.
@@ -402,8 +477,159 @@ public final class IndexCache<E> {
          */
         @SuppressWarnings("unchecked")
         private @NotNull List<E> matching(@Nullable Object key) {
-            Object held = this.buckets().get(key);
-            return held == null ? List.of() : (List<E>) held;
+            Object[] table = this.table;
+            int mask = this.mask;
+            Object probe = probeOf(key);
+            int at = mix(probe.hashCode()) & mask;
+
+            while (true) {
+                Object held = table[at];
+
+                if (held == null)
+                    return List.of();
+
+                if (held == probe || probe.equals(held))
+                    return (List<E>) table[at + 1];
+
+                at = (at + 2) & mask;
+            }
+        }
+
+        /**
+         * Finds the slot a key belongs at, which is the one already holding it or the first free one
+         * after where its hash lands.
+         *
+         * @param probe the key, or the stand-in a null one is held under
+         * @return the index of the key slot, the bucket living at the slot after it
+         */
+        private int slotFor(@NotNull Object probe) {
+            Object[] table = this.table;
+            int mask = this.mask;
+            int at = mix(probe.hashCode()) & mask;
+
+            while (true) {
+                Object held = table[at];
+
+                if (held == null || held == probe || probe.equals(held))
+                    return at;
+
+                at = (at + 2) & mask;
+            }
+        }
+
+        /**
+         * Claims a free slot for a key nothing is filed under yet, widening the table when it fills.
+         *
+         * <p>Widening rehashes, so the slot means nothing afterwards and no caller may keep it.
+         *
+         * @param at the free slot
+         * @param probe the key to hold there
+         * @param element the first element to file under it
+         */
+        private void take(int at, @NotNull Object probe, @NotNull Object element) {
+            this.table[at] = probe;
+            this.table[at + 1] = element;
+
+            if (++this.filled > this.ceiling)
+                this.widen();
+        }
+
+        /**
+         * Adds one more element to a key something is already filed under.
+         *
+         * @param at the slot holding the key
+         * @param filed what is filed there, a bare element until a second one joins it
+         * @param element the element to add
+         */
+        @SuppressWarnings("unchecked")
+        private void join(int at, @NotNull Object filed, @NotNull Object element) {
+            if (filed instanceof Bucket<?> bucket)
+                ((Bucket<Object>) bucket).add(element);
+            else
+                this.table[at + 1] = new Bucket<>(filed, element);
+        }
+
+        /**
+         * Doubles the table and re-files everything into it.
+         */
+        private void widen() {
+            Object[] narrow = this.table;
+            this.reset(Math.min(LIMIT, (this.mask + 2)));
+
+            for (int at = 0; at < narrow.length; at += 2) {
+                Object probe = narrow[at];
+
+                if (probe == null)
+                    continue;
+
+                int slot = this.slotFor(probe);
+                this.table[slot] = probe;
+                this.table[slot + 1] = narrow[at + 1];
+            }
+        }
+
+        /**
+         * Lays out an empty table wide enough for the given number of keys.
+         *
+         * @param capacity the number of keys, a power of two
+         */
+        private void reset(int capacity) {
+            this.table = new Object[capacity << 1];
+            // Every key sits at an even slot, so the low bit is cleared out of the mask and a probe
+            // steps two at a time.
+            this.mask = (this.table.length - 1) & ~1;
+            this.ceiling = (int) (capacity * LOAD);
+        }
+
+        /**
+         * Reads the element a bucket most recently took.
+         *
+         * @param filed what is filed under a key, a bare element until a second one joins it
+         * @return the element filed most recently
+         */
+        private static @NotNull Object last(@NotNull Object filed) {
+            return filed instanceof Bucket<?> bucket ? bucket.getLast() : filed;
+        }
+
+        /**
+         * Names the key a value is held under.
+         *
+         * @param key the value, which may be null
+         * @return the key, or the stand-in a null one is held under
+         */
+        private static @NotNull Object probeOf(@Nullable Object key) {
+            return key == null ? NULL_KEY : key;
+        }
+
+        /**
+         * Spreads a hash across the whole width of the table, because linear probing turns a hash
+         * that clusters in the low bits into a run of occupied slots.
+         *
+         * @param hash the key's own hash
+         * @return the spread hash
+         */
+        private static int mix(int hash) {
+            hash *= 0x9E3779B9;
+            return hash ^ (hash >>> 15);
+        }
+
+        /**
+         * The growable bucket a key more than one element carries is filed in.
+         *
+         * <p>A type of its own rather than a plain list, so a bucket is told apart from a bare
+         * element by what it is - an element can be any list at all, and testing for one would file
+         * it wrongly.
+         *
+         * @param <E> the element type
+         */
+        private static final class Bucket<E> extends ArrayList<E> {
+
+            private Bucket(@NotNull E first, @NotNull E second) {
+                super(4);
+                this.add(first);
+                this.add(second);
+            }
+
         }
 
     }

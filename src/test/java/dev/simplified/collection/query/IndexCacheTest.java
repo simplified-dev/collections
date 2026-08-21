@@ -88,6 +88,37 @@ class IndexCacheTest {
      */
     record Bare(String id) {}
 
+    /**
+     * Key every instance of which hashes alike, so two of them can only be told apart by probing on
+     * past the slot they both land in.
+     */
+    record Clashing(String name) {
+
+        @Override
+        public int hashCode() {
+            return 7;
+        }
+
+    }
+
+    /**
+     * Fixture keyed by a value that hashes alike for every element.
+     */
+    static class Clashed {
+
+        @Indexed
+        private final Clashing key;
+
+        Clashed(String key) {
+            this.key = key == null ? null : new Clashing(key);
+        }
+
+        Clashing getKey() {
+            return this.key;
+        }
+
+    }
+
     private static final SearchFunction<Row, String> BY_MODE = Row::getMode;
     private static final SearchFunction<Row, String> BY_CODE = Row::getCode;
     private static final SearchFunction<Row, String> BY_GROUPED_MODE = Row::getGroupedMode;
@@ -186,6 +217,84 @@ class IndexCacheTest {
     }
 
     @Nested
+    class Tables {
+
+        @Test
+        void lookup_moreKeysThanTheTableStartedWith_answersEveryOneOfThem() {
+            // Far past the width the table is laid out at, so it is rehashed several times over and
+            // every key has to survive being re-filed.
+            Row[] rows = new Row[600];
+
+            for (int at = 0; at < rows.length; at++)
+                rows[at] = new Row("mode-" + at % 300, "code-" + at, at, "label-" + at);
+
+            IndexCache<Row> cache = cacheOf(rows);
+
+            for (int at = 0; at < 300; at++)
+                assertEquals(List.of(rows[at], rows[at + 300]), lookup(cache, BY_MODE, "mode-" + at));
+
+            assertEquals(List.of(rows[417]), lookup(cache, BY_CODE, "code-417"));
+            assertEquals(List.of(), lookup(cache, BY_MODE, "mode-300"));
+        }
+
+        @Test
+        void lookup_nullKeyAmongManyOthers_survivesTheTableWidening() {
+            Row[] rows = new Row[200];
+            rows[0] = NULL_MODE;
+
+            for (int at = 1; at < rows.length; at++)
+                rows[at] = new Row("mode-" + at, "code-" + at, at, "label-" + at);
+
+            assertEquals(List.of(NULL_MODE), lookup(cacheOf(rows), BY_MODE, null));
+        }
+
+        @Test
+        void lookup_keysThatAllHashAlike_areStillToldApart() {
+            Clashed[] rows = new Clashed[64];
+
+            for (int at = 0; at < rows.length; at++)
+                rows[at] = new Clashed("key-" + at);
+
+            IndexCache<Clashed> cache = IndexCache.over(rows);
+            SearchFunction<Clashed, Clashing> byKey = Clashed::getKey;
+
+            for (int at = 0; at < rows.length; at++) {
+                assertEquals(
+                    List.of(rows[at]),
+                    cache.lookup(List.of(PropertyReference.of(byKey)), List.of(byKey), List.of(new Clashing("key-" + at)))
+                );
+            }
+
+            assertEquals(
+                List.of(),
+                cache.lookup(List.of(PropertyReference.of(byKey)), List.of(byKey), List.of(new Clashing("absent")))
+            );
+        }
+
+        @Test
+        void lookup_oneElementHeldTwice_answersItTwice() {
+            // The scan hands back both occurrences, so a bucket that quietly folded them into one
+            // would disagree with it.
+            List<Row> found = lookup(cacheOf(ALPHA_ONE, ALPHA_ONE, BETA_ONE), BY_MODE, "alpha");
+
+            assertEquals(List.of(ALPHA_ONE, ALPHA_ONE), found);
+        }
+
+        @Test
+        void lookup_bucket_isUnmodifiable() {
+            assertThrows(
+                UnsupportedOperationException.class,
+                () -> lookup(cacheOf(ALPHA_ONE, ALPHA_TWO, BETA_ONE), BY_MODE, "alpha").clear()
+            );
+            assertThrows(
+                UnsupportedOperationException.class,
+                () -> lookup(cacheOf(ALPHA_ONE, ALPHA_TWO, BETA_ONE), BY_MODE, "beta").clear()
+            );
+        }
+
+    }
+
+    @Nested
     class Composites {
 
         @Test
@@ -274,6 +383,16 @@ class IndexCacheTest {
         @Test
         void lookup_none_isRefused() {
             assertNull(lookup(IndexCache.none(), BY_MODE, "alpha"));
+        }
+
+        @Test
+        void lookup_elementsOfMoreThanOneClass_isRefused() {
+            // The schema is read off the first element present, and an element of another class need
+            // not carry the property it names at all.
+            Object[] mixed = { ALPHA_ONE, new Bare("b"), BETA_ONE };
+            IndexCache<Row> cache = IndexCache.over(mixed);
+
+            assertNull(cache.lookup(List.of(PropertyReference.of(BY_MODE)), List.of(BY_MODE), Collections.singletonList("alpha")));
         }
 
         @Test
