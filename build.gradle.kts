@@ -14,9 +14,13 @@ java {
 
 repositories {
     mavenCentral()
+    maven(url = "https://jitpack.io")
 }
 
 dependencies {
+    // Simplified Utils
+    api("com.github.simplified-dev:utils") { version { strictly("5d14f56") } }
+
     // JetBrains Annotations
     api(libs.annotations)
 
