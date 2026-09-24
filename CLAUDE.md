@@ -88,7 +88,7 @@ Thread-safe concurrent collection library using ReadWriteLock-based atomic opera
 - ASM (`testImplementation` only) - the reference `LambdaBodyReaderDifferentialTest` holds `LambdaBodyReader` against; nothing in `src/main` names it
 - Gson (`compileOnly`, opt-in) - powers `ConcurrentTypeAdapterFactory`; absent from runtime unless the consumer pulls in Gson themselves
 - JUnit 5, Hamcrest (test), JMH (benchmarks)
-- Simplified-Dev `utils` (`api`, `com.github.simplified-dev:utils` from JitPack, pinned `strictly("5d14f56")`) - home of `dev.simplified.util.Possible`, which consumers of collections reach through this `api` edge. Nothing in this module names it, and `utils` does not depend on collections, so the edge runs one way
+- Simplified-Dev `utils` (`api`, `com.github.simplified-dev:utils` from JitPack, pinned `strictly("d675d06")`) - home of `dev.simplified.util.Possible`, which consumers of collections reach through this `api` edge. Nothing in this module names it, and `utils` does not depend on collections, so the edge runs one way
 - Simplified Annotations is the other Simplified-Dev module on the build (`io.github.simplified-dev:annotations` from Maven Central), `compileOnly` plus annotation processor
 
 ## Build

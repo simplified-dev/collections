@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     // Simplified Utils
-    api("com.github.simplified-dev:utils") { version { strictly("5d14f56") } }
+    api("com.github.simplified-dev:utils") { version { strictly("d675d06") } }
 
     // JetBrains Annotations
     api(libs.annotations)
