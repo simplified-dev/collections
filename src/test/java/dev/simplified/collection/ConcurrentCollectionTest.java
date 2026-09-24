@@ -107,6 +107,17 @@ class ConcurrentCollectionTest {
 		}
 
 		@Test
+		void contains_byFunction_extractorRaisingNullPointer_readsAsNonMatch() {
+			// String::length raises a NullPointerException on the null element, which every finder
+			// reads as a non-match rather than as the failure of the whole query.
+			ConcurrentList<String> c = Concurrent.newList("alpha", null, "charlie");
+			assertEquals(c.findFirstOrNull(String::length, 7) != null, c.contains(String::length, 7));
+			assertEquals(c.findFirstOrNull(String::length, 99) != null, c.contains(String::length, 99));
+			assertTrue(c.contains(String::length, 7));
+			assertFalse(c.contains(String::length, 99));
+		}
+
+		@Test
 		void indexedStream_pairsElementsWithIndexAndSize() {
 			ConcurrentCollection<String> c = Concurrent.newList("a", "b", "c");
 			long count = c.indexedStream().count();

@@ -42,6 +42,9 @@ public interface ConcurrentCollection<E> extends Collection<E>, Indexable<E>, Se
 	 * Returns {@code true} if this collection contains an element whose value, extracted by the
 	 * given function, equals the specified value.
 	 *
+	 * <p>An element whose extractor raises a {@link NullPointerException} on the way to the
+	 * value does not match, as in every other finder.
+	 *
 	 * @param <S> the type of the extracted value
 	 * @param function the function to extract a value from each element
 	 * @param value the value to search for

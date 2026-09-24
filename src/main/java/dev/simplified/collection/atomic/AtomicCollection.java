@@ -346,6 +346,9 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	/**
 	 * Returns {@code true} if this collection contains an element whose value,
 	 * extracted by the given function, equals the specified value.
+	 * <p>
+	 * An element whose extractor raises a {@link NullPointerException} on the way to the value
+	 * does not match, as in every other finder.
 	 *
 	 * @param <S> the type of the extracted value
 	 * @param function the function to extract a value from each element
@@ -360,8 +363,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 		return this.withReadLock(backing -> {
 			for (E element : this.ref) {
-				if (Objects.equals(function.apply(element), value))
-					return true;
+				try {
+					if (Objects.equals(function.apply(element), value))
+						return true;
+				} catch (NullPointerException absent) {
+					// A null on the way to the property reads as a non-match, as the index build
+					// and the other finders' scans read it.
+				}
 			}
 
 			return false;

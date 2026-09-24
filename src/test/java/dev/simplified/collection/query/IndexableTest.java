@@ -873,6 +873,14 @@ class IndexableTest {
             assertEquals(scanned.contains(BY_MODE, null), indexed.contains(BY_MODE, null));
         }
 
+        @Test
+        void contains_multiHopPathThroughANullIntermediate_matches() {
+            // No element's zone is east, so the scan reaches the element holding no detail and has
+            // to read the NullPointerException it raises as the non-match the index build reads.
+            assertEquals(scanned.contains(BY_ZONE, "east"), indexed.contains(BY_ZONE, "east"));
+            assertEquals(scanned.contains(BY_ZONE, "south"), indexed.contains(BY_ZONE, "south"));
+        }
+
     }
 
     @Nested
