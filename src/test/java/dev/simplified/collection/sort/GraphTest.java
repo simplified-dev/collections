@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -204,6 +205,118 @@ class GraphTest {
 			assertFalse(r.hasEdge("A", "B"));
 		}
 
+		@Test
+		void successorsCannotChangeTheGraph() {
+			Graph<String> graph = Graph.<String>builder().withEdge("A", "B").build();
+
+			assertThrows(UnsupportedOperationException.class, () -> graph.successors("A").add("C"));
+			assertThrows(UnsupportedOperationException.class, () -> graph.getNodeEdges().get("A").add("C"));
+			assertThrows(UnsupportedOperationException.class, () -> graph.getNodes().add("C"));
+		}
+
+		@Test
+		void reusedBuilderLeavesABuiltGraphAlone() {
+			Graph.Builder<String> builder = Graph.<String>builder().withEdge("A", "B");
+			Graph<String> graph = builder.build();
+			builder.withEdge("A", "C");
+
+			assertEquals(List.of("B"), graph.successors("A"));
+			assertTrue(graph.predecessors("C").isEmpty());
+			assertFalse(graph.contains("C"));
+		}
+
+	}
+
+	@Nested
+	class Reachability {
+
+		@Test
+		void chainReachesTransitively() {
+			Graph<Integer> graph = Graph.<Integer>builder()
+				.withValues(1, 2, 3)
+				.withEdge(1, 2)
+				.withEdge(2, 3)
+				.build();
+
+			assertEquals(List.of(2, 3), List.copyOf(graph.descendants(1)));
+			assertEquals(List.of(2, 1), List.copyOf(graph.ancestors(3)));
+			assertTrue(graph.descendants(3).isEmpty());
+			assertTrue(graph.ancestors(1).isEmpty());
+		}
+
+		@Test
+		void nodeOffEveryCycleIsNotItsOwnAncestor() {
+			Graph<Integer> graph = Graph.<Integer>builder()
+				.withEdge(1, 2)
+				.withEdge(2, 3)
+				.build();
+
+			assertFalse(graph.descendants(1).contains(1));
+			assertFalse(graph.ancestors(3).contains(3));
+		}
+
+		@Test
+		void cycleIsWalkedOnceAndHoldsItsOwnNodes() {
+			Graph<Integer> graph = Graph.<Integer>builder()
+				.withValues(1, 2, 3, 4)
+				.withEdge(1, 2)
+				.withEdge(2, 3)
+				.withEdge(3, 1)
+				.withEdge(4, 1)
+				.build();
+
+			assertEquals(Set.of(1, 2, 3, 4), graph.ancestors(1));
+			assertEquals(Set.of(1, 2, 3), graph.descendants(1));
+			assertFalse(graph.ancestors(4).contains(4));
+		}
+
+		@Test
+		void selfEdgeReachesItself() {
+			Graph<String> graph = Graph.<String>builder().withEdge("A", "A").build();
+
+			assertEquals(Set.of("A"), graph.descendants("A"));
+			assertEquals(Set.of("A"), graph.ancestors("A"));
+		}
+
+		@Test
+		void diamondVisitsTheSharedNodeOnce() {
+			Graph<Integer> graph = Graph.<Integer>builder()
+				.withEdge(1, 2)
+				.withEdge(1, 3)
+				.withEdge(2, 4)
+				.withEdge(3, 4)
+				.build();
+
+			assertEquals(List.of(2, 3, 4), List.copyOf(graph.descendants(1)));
+			assertEquals(Set.of(1, 2, 3), graph.ancestors(4));
+		}
+
+		@Test
+		void unknownNodeReachesNothing() {
+			Graph<String> graph = Graph.<String>builder().withEdge("A", "B").build();
+
+			assertTrue(graph.ancestors("Z").isEmpty());
+			assertTrue(graph.descendants("Z").isEmpty());
+		}
+
+		@Test
+		void resultIsUnmodifiable() {
+			Graph<String> graph = Graph.<String>builder().withEdge("A", "B").build();
+
+			assertThrows(UnsupportedOperationException.class, () -> graph.descendants("A").add("C"));
+		}
+
+		@Test
+		void deepChainDoesNotBlowStack() {
+			int n = 20_000;
+			Graph.Builder<Integer> b = Graph.<Integer>builder();
+			for (int i = 0; i < n - 1; i++) b.withEdge(i, i + 1);
+
+			Graph<Integer> graph = b.build();
+			assertEquals(n - 1, graph.ancestors(n - 1).size());
+			assertEquals(n - 1, graph.descendants(0).size());
+		}
+
 	}
 
 	@Nested
@@ -233,6 +346,34 @@ class GraphTest {
 			assertEquals(2, layers.size());
 			assertEquals(Set.of("B"), Set.copyOf(layers.get(0)));
 			assertEquals(Set.of("A"), Set.copyOf(layers.get(1)));
+		}
+
+		@Test
+		void secondBuildMatchesTheFirst() {
+			// A -> C comes from the edge function and registers C; the function would also answer
+			// C -> D, but C was never registered through withValues, so no build asks it.
+			Graph.Builder<String> builder = Graph.<String>builder()
+				.withValues("A", "B")
+				.withEdge("B", "A")
+				.withEdgeFunction(value -> switch (value) {
+					case "A" -> Stream.of("C");
+					case "C" -> Stream.of("D");
+					default -> Stream.empty();
+				});
+
+			Graph<String> first = builder.build();
+			Graph<String> second = builder.build();
+
+			for (Graph<String> graph : List.of(first, second)) {
+				assertEquals(List.of("C"), graph.successors("A"));
+				assertEquals(List.of("A"), graph.successors("B"));
+				assertEquals(1, graph.outDegree("A"));
+				assertEquals(1, graph.inDegree("A"));
+				assertFalse(graph.hasEdge("C", "D"));
+				assertFalse(graph.contains("D"));
+			}
+
+			assertEquals(List.copyOf(first.getNodes()), List.copyOf(second.getNodes()));
 		}
 
 	}
