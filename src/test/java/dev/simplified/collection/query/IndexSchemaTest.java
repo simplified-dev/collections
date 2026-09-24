@@ -659,6 +659,12 @@ class IndexSchemaTest {
 
     }
 
+    /**
+     * Subtype declaring nothing of its own, the shape of a runtime proxy or of a subclass that
+     * only overrides behaviour.
+     */
+    static class Quiet extends Row {}
+
     @Nested
     class Hierarchy {
 
@@ -713,6 +719,27 @@ class IndexSchemaTest {
 
             assertNotNull(schema.coveringPath(List.of("mode")));
             assertNull(schema.declaring(tuple(PlainPair.class, "mode", "tier")));
+        }
+
+        @Test
+        void declaringClass_isTheMostDerivedClassDeclaringAnything() {
+            // Base declares region and Row declares its own on top, so Row is the most derived
+            // class declaring anything, for itself and for a subclass declaring nothing.
+            assertEquals(Base.class, IndexSchema.of(Base.class).declaringClass());
+            assertEquals(Row.class, IndexSchema.of(Row.class).declaringClass());
+            assertEquals(Row.class, IndexSchema.of(Quiet.class).declaringClass());
+        }
+
+        @Test
+        void of_subclassDeclaringNothing_declaresWhatItsSuperclassDoes() {
+            // Every declaration is inherited, with its components restated on the subclass.
+            IndexSchema schema = IndexSchema.of(Quiet.class);
+            IndexSchema.Declaration code = schema.coveringPath(List.of("code"));
+
+            assertEquals(4, schema.declarations().size());
+            assertNotNull(schema.declaring(tuple(Quiet.class, "mode", "tier")));
+            assertNotNull(code);
+            assertTrue(code.unique());
         }
 
     }

@@ -39,9 +39,11 @@ public final class IndexCache<E> {
     private final @Nullable Object @NotNull [] elements;
 
     /**
-     * The class the schema was read from, which is the class of the first element present. The
-     * shared empty cache stands one in that declares nothing, so a cache that can answer anything
-     * always names a real type.
+     * The class the schema was read from, which every element a build files is an instance of -
+     * the class of the first element present, or the widest class some element has that reads the
+     * same declarations when the first one's class declares nothing of its own. The shared empty
+     * cache stands one in that declares nothing, so a cache that can answer anything always names
+     * a real type.
      */
     private final @NotNull Class<?> elementType;
     private final @NotNull IndexSchema schema;
@@ -76,22 +78,67 @@ public final class IndexCache<E> {
      * <p>The array is read in place rather than copied, so a caller must not mutate it afterwards -
      * which is already the contract of the iteration snapshot this is built from.
      *
-     * <p>Elements declaring no {@link Indexed} field answer the shared empty cache, so a collection
-     * of them carries nothing at all rather than a fresh cache per write that no query could ever
-     * be answered from.
+     * <p>A first element whose class declares no {@link Indexed} property answers the shared empty
+     * cache, so a collection of such elements carries nothing at all rather than a fresh cache per
+     * write that no query could ever be answered from.
+     *
+     * <p>A first element whose class declares nothing of its own - a runtime proxy, or a subclass
+     * that only overrides behaviour - reads the declarations of the class above it, and so does
+     * every class between the two. The widest of those some element has stands in for it, so a
+     * proxy ahead of the plain instances of its entity indexes them all. A superclass no element
+     * has never stands in, so siblings held with no instance of their shared class are scanned.
      *
      * @param snapshot the elements in source order
      * @param <E> the element type
      * @return a cache over those elements, holding no index until one is asked for
      */
     public static <E> @NotNull IndexCache<E> over(@Nullable Object @NotNull [] snapshot) {
-        Class<?> elementType = typeOf(snapshot);
+        Class<?> first = typeOf(snapshot);
 
-        if (elementType == null)
+        if (first == null)
             return none();
 
-        IndexSchema schema = IndexSchema.of(elementType);
-        return schema.isEmpty() ? none() : new IndexCache<>(snapshot, elementType, schema);
+        IndexSchema schema = IndexSchema.of(first);
+
+        if (schema.isEmpty())
+            return none();
+
+        // A class declaring on its own level cannot be stood in for, so a snapshot it leads is
+        // never walked.
+        if (schema.declaringClass() == first)
+            return new IndexCache<>(snapshot, first, schema);
+
+        Class<?> widest = widestOf(snapshot, first, schema.declaringClass());
+        return new IndexCache<>(snapshot, widest, widest == first ? schema : IndexSchema.of(widest));
+    }
+
+    /**
+     * Finds the widest class some element has that still reads the first element's declarations.
+     *
+     * @param elements the elements in source order
+     * @param first the class of the first element present
+     * @param ceiling the most derived class declaring anything of its own
+     * @return the widest element class from {@code first} up to {@code ceiling}
+     */
+    private static @NotNull Class<?> widestOf(@Nullable Object @NotNull [] elements, @NotNull Class<?> first, @NotNull Class<?> ceiling) {
+        Class<?> widest = first;
+
+        for (Object element : elements) {
+            if (element == null)
+                continue;
+
+            Class<?> type = element.getClass();
+
+            if (type != widest && type.isAssignableFrom(widest) && ceiling.isAssignableFrom(type)) {
+                widest = type;
+
+                // Nothing wider reads these declarations, so the rest need not be looked at.
+                if (widest == ceiling)
+                    break;
+            }
+        }
+
+        return widest;
     }
 
     /**
@@ -415,7 +462,8 @@ public final class IndexCache<E> {
     }
 
     /**
-     * Reads the class the schema is taken from, which is the class of the first element present.
+     * Reads the class of the first element present, which the schema is read from unless a wider
+     * element class stands in for it.
      *
      * @return the element class, or {@code null} when nothing is present to read one from
      */

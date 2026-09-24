@@ -196,6 +196,58 @@ class IndexableTest {
     }
 
     /**
+     * Stand-in for a runtime proxy of an indexed element: a subclass declaring nothing of its own,
+     * whose unannotated overrides hand every read to the element it stands for, so the counters
+     * see each real read.
+     */
+    static final class FastProxy extends Fast {
+
+        private final Fast target;
+
+        FastProxy(Fast target) {
+            super(null, null, 0, null, null, null);
+            this.target = target;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public Detail detail() {
+            return this.target.detail();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String mode() {
+            return this.target.mode();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String code() {
+            return this.target.code();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int tier() {
+            return this.target.tier();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public List<String> tags() {
+            return this.target.tags();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String label() {
+            return this.target.label();
+        }
+
+    }
+
+    /**
      * An indexed element that can no longer be read, the way a detached proxy of an entity raises
      * from every accessor once the session that could load it is gone.
      */
@@ -339,15 +391,30 @@ class IndexableTest {
     private ConcurrentList<Row> scanned;
 
     @BeforeEach
-    @SuppressWarnings("unchecked")
     void setup() {
         this.indexed = Concurrent.newList();
         this.scanned = Concurrent.newList();
 
         for (Object[] row : DATA) {
-            this.indexed.add(new Fast((String) row[0], (String) row[1], (int) row[2], (List<String>) row[3], (String) row[4], (Detail) row[5]));
-            this.scanned.add(new Slow((String) row[0], (String) row[1], (int) row[2], (List<String>) row[3], (String) row[4], (Detail) row[5]));
+            this.indexed.add(fast(row));
+            this.scanned.add(slow(row));
         }
+    }
+
+    /**
+     * Builds the indexed fixture for one row of {@link #DATA}.
+     */
+    @SuppressWarnings("unchecked")
+    private static Fast fast(Object[] row) {
+        return new Fast((String) row[0], (String) row[1], (int) row[2], (List<String>) row[3], (String) row[4], (Detail) row[5]);
+    }
+
+    /**
+     * Builds the control fixture for one row of {@link #DATA}.
+     */
+    @SuppressWarnings("unchecked")
+    private static Slow slow(Object[] row) {
+        return new Slow((String) row[0], (String) row[1], (int) row[2], (List<String>) row[3], (String) row[4], (Detail) row[5]);
     }
 
     /**
@@ -886,6 +953,99 @@ class IndexableTest {
             assertEquals(fromScan.getMessage(), fromIndex.getMessage());
         }
 
+        @Test
+        void findAll_proxyFirst_readsTheAccessorOnlyWhileBuilding() {
+            // The proxy declares nothing of its own, so the plain rows behind it are read against
+            // the class it stands for and the index serves all of them.
+            indexed.set(0, new FastProxy((Fast) indexed.getFirst()));
+
+            indexed.findAll(BY_MODE, "alpha").toList();
+            READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                indexed.findAll(BY_MODE, "alpha").toList();
+
+            assertEquals(0, READS.get());
+
+            indexed.findFirstOrNull(BY_MODE, "alpha");
+            READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                assertNotNull(indexed.findFirstOrNull(BY_MODE, "alpha"));
+
+            assertEquals(0, READS.get());
+
+            indexed.containsAll(BY_TAGS, "admin").toList();
+            TAG_READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                indexed.containsAll(BY_TAGS, "admin").toList();
+
+            assertEquals(0, TAG_READS.get());
+        }
+
+        @Test
+        void findAll_unmodifiableCopyLedByAProxy_readsTheAccessorOnlyWhileBuilding() {
+            // An unmodifiable copy is never written, so the cache its first query builds is the one
+            // it answers from for the rest of its life.
+            indexed.set(0, new FastProxy((Fast) indexed.getFirst()));
+            ConcurrentList<Row> frozen = indexed.toUnmodifiable();
+            ConcurrentList<Row> control = scanned.toUnmodifiable();
+
+            assertEquals(labels(control.findAll(BY_MODE, "alpha").toList()), labels(frozen.findAll(BY_MODE, "alpha").toList()));
+            READS.set(0);
+
+            for (int repeat = 0; repeat < 25; repeat++)
+                frozen.findAll(BY_MODE, "alpha").toList();
+
+            assertEquals(0, READS.get());
+        }
+
+        @Test
+        void everyOrder_proxiesBesideTheirEntity_matchTheScanAndServe() {
+            // Rows 0 and 2 are proxied on the indexed side, so half the orders lead with a proxy
+            // and half with a plain row, and every one of them has to agree with the scan and
+            // answer from an index.
+            List<Function<ConcurrentList<Row>, Object>> queries = List.of(
+                rows -> labels(rows.findAll(BY_MODE, "alpha").toList()),
+                rows -> rows.findFirst(BY_MODE, "alpha").map(Row::label),
+                rows -> labelOf(rows.findFirstOrNull(BY_MODE, "alpha")),
+                rows -> rows.findLast(BY_MODE, "alpha").map(Row::label),
+                rows -> labels(rows.containsAll(BY_TAGS, "admin").toList()),
+                rows -> labels(rows.findAll(SearchFunction.Match.ALL, composite("alpha", 1)).toList()),
+                rows -> labels(rows.findAll(BY_ZONE, "north").toList())
+            );
+            List<List<Integer>> orders = permutations(List.of(0, 1, 2, 3));
+            List<List<Integer>> scanning = new ArrayList<>();
+            assertEquals(24, orders.size());
+
+            for (List<Integer> order : orders) {
+                indexed = Concurrent.newList();
+                scanned = Concurrent.newList();
+
+                for (int row : order) {
+                    Fast plain = fast(DATA[row]);
+                    indexed.add(row % 2 == 0 ? new FastProxy(plain) : plain);
+                    scanned.add(slow(DATA[row]));
+                }
+
+                for (Function<ConcurrentList<Row>, Object> query : queries)
+                    assertEquals(query.apply(scanned), query.apply(indexed), () -> "order " + order);
+
+                READS.set(0);
+
+                for (Function<ConcurrentList<Row>, Object> query : queries)
+                    query.apply(indexed);
+
+                if (READS.get() != 0)
+                    scanning.add(order);
+            }
+
+            // Every order is gathered before asserting, so a failure names all the orders that
+            // scanned rather than the first.
+            assertEquals(List.of(), scanning);
+        }
+
     }
 
     /**
@@ -900,6 +1060,30 @@ class IndexableTest {
      */
     private static List<Pair<SearchFunction<Row, Object>, Object>> reversedComposite(int tier, String mode) {
         return List.of(Pair.of(BY_TIER_VALUE, (Object) tier), Pair.of(BY_MODE_VALUE, (Object) mode));
+    }
+
+    /**
+     * Every order of the given items.
+     */
+    private static List<List<Integer>> permutations(List<Integer> items) {
+        if (items.size() <= 1)
+            return List.of(items);
+
+        List<List<Integer>> orders = new ArrayList<>();
+
+        for (Integer head : items) {
+            List<Integer> rest = new ArrayList<>(items);
+            rest.remove(head);
+
+            for (List<Integer> tail : permutations(rest)) {
+                List<Integer> order = new ArrayList<>(tail.size() + 1);
+                order.add(head);
+                order.addAll(tail);
+                orders.add(order);
+            }
+        }
+
+        return orders;
     }
 
 }

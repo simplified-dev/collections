@@ -86,6 +86,19 @@ import java.lang.annotation.Target;
  * properties are effectively final, which is the requirement a hash key already carries, held over a
  * wider surface.
  *
+ * <h2>Collections holding more than one class</h2>
+ *
+ * <p>A collection reads its declarations off the class of its first element. When that class
+ * declares nothing of its own - a runtime proxy of an entity, or a subclass that only overrides
+ * behaviour - the widest class some element has, up to the one carrying the declarations, is read
+ * instead. An index serves when every element is an instance of the class read, and the collection
+ * is scanned otherwise, with the same answers. A proxy and the plain instances of its entity index
+ * together in any order, and so do subclasses declaring nothing held beside an instance of the class
+ * they inherit from. Siblings with no instance of their shared class present are scanned, which is
+ * every mix of siblings under an abstract base, and so is a subclass declaring something of its own
+ * ahead of an instance of a class above it. Declare what a mixed collection is queried by on the
+ * class it is held as, and leave the subclasses held beside it declaring nothing of their own.
+ *
  * @see Indexable
  * @see PropertyReference
  */

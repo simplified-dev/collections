@@ -43,7 +43,7 @@ final class IndexSchema {
     /**
      * The answer for a class declaring nothing, which every query falls through to a scan against.
      */
-    static final IndexSchema EMPTY = new IndexSchema(Map.of());
+    static final IndexSchema EMPTY = new IndexSchema(Map.of(), Object.class);
 
     /**
      * What each class declares about itself, with nothing reached through.
@@ -85,8 +85,16 @@ final class IndexSchema {
      */
     private final @NotNull Map<List<String>, Declaration> bySinglePath;
 
-    private IndexSchema(@NotNull Map<List<PropertyReference>, Declaration> declarations) {
+    /**
+     * The most derived class whose own fields or accessors carry a declaration. A class declaring
+     * nothing of its own - a runtime proxy, or a subclass that only overrides behaviour - reads
+     * exactly what this class reads, and so does every class between the two.
+     */
+    private final @NotNull Class<?> declaringClass;
+
+    private IndexSchema(@NotNull Map<List<PropertyReference>, Declaration> declarations, @NotNull Class<?> declaringClass) {
         this.declarations = declarations;
+        this.declaringClass = declaringClass;
         Map<Set<PropertyReference>, Declaration> byComponents = new LinkedHashMap<>();
         Map<List<String>, Declaration> bySinglePath = new LinkedHashMap<>();
 
@@ -119,6 +127,10 @@ final class IndexSchema {
      */
     boolean isEmpty() {
         return this.declarations.isEmpty();
+    }
+
+    @NotNull Class<?> declaringClass() {
+        return this.declaringClass;
     }
 
     /**
@@ -202,7 +214,7 @@ final class IndexSchema {
 
                 for (Indexed found : field.getAnnotationsByType(Indexed.class)) {
                     declared.add(field.getName());
-                    locals.add(new Local(field.getName(), field.getType(), found));
+                    locals.add(new Local(field.getName(), field.getType(), found, current));
                 }
             }
 
@@ -220,7 +232,7 @@ final class IndexSchema {
                     continue;
 
                 for (Indexed found : accessor.getAnnotationsByType(Indexed.class))
-                    locals.add(new Local(property, accessor.getReturnType(), found));
+                    locals.add(new Local(property, accessor.getReturnType(), found, current));
             }
 
             claimed.addAll(declared);
@@ -278,7 +290,10 @@ final class IndexSchema {
         }
 
         groups.forEach((name, grouped) -> declare(declarations, type, name, grouped));
-        return declarations.isEmpty() ? EMPTY : new IndexSchema(Map.copyOf(declarations));
+
+        // Locals are read most derived first, so the first one sits on the most derived declaring
+        // class.
+        return declarations.isEmpty() ? EMPTY : new IndexSchema(Map.copyOf(declarations), locals.getFirst().declaredOn());
     }
 
     /**
@@ -457,8 +472,9 @@ final class IndexSchema {
      *        strips down to
      * @param type the type the property holds, declared by the field or answered by the accessor
      * @param declared the annotation read off it
+     * @param declaredOn the class whose own field or accessor carries the annotation
      */
-    private record Local(@NotNull String property, @NotNull Class<?> type, @NotNull Indexed declared) {}
+    private record Local(@NotNull String property, @NotNull Class<?> type, @NotNull Indexed declared, @NotNull Class<?> declaredOn) {}
 
     /**
      * One index a class declares.

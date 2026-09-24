@@ -111,6 +111,164 @@ class IndexCacheTest {
     }
 
     /**
+     * Stand-in for a runtime proxy of a row: a subclass declaring nothing of its own, whose
+     * unannotated overrides hand every read to the row it stands for.
+     */
+    static class RowProxy extends Row {
+
+        private final Row target;
+
+        RowProxy(Row target) {
+            super(null, null, 0, null);
+            this.target = target;
+        }
+
+        @Override
+        String getMode() {
+            return this.target.getMode();
+        }
+
+        @Override
+        String getCode() {
+            return this.target.getCode();
+        }
+
+        @Override
+        String getGroupedMode() {
+            return this.target.getGroupedMode();
+        }
+
+        @Override
+        int getTier() {
+            return this.target.getTier();
+        }
+
+        @Override
+        String getLabel() {
+            return this.target.getLabel();
+        }
+
+    }
+
+    /**
+     * Supertype carrying every declaration its subclasses share - one plain index and one unique
+     * index.
+     */
+    static class Animal {
+
+        @Indexed
+        private final String name;
+
+        @Indexed(unique = true)
+        private final String tag;
+
+        Animal(String name, String tag) {
+            this.name = name;
+            this.tag = tag;
+        }
+
+        String getName() {
+            return this.name;
+        }
+
+        String getTag() {
+            return this.tag;
+        }
+
+    }
+
+    /**
+     * Subclass declaring nothing of its own.
+     */
+    static class Dog extends Animal {
+
+        private final String breed;
+
+        Dog(String name, String tag, String breed) {
+            super(name, tag);
+            this.breed = breed;
+        }
+
+        String getBreed() {
+            return this.breed;
+        }
+
+    }
+
+    /**
+     * Sibling of {@link Dog}, declaring nothing of its own either.
+     */
+    static class Cat extends Animal {
+
+        Cat(String name, String tag) {
+            super(name, tag);
+        }
+
+    }
+
+    /**
+     * Subclass declaring an index of its own on an override.
+     */
+    static class Hound extends Dog {
+
+        Hound(String name, String tag, String breed) {
+            super(name, tag, breed);
+        }
+
+        @Override
+        @Indexed
+        String getBreed() {
+            return super.getBreed();
+        }
+
+    }
+
+    /**
+     * Supertype declaring nothing.
+     */
+    static class Pet {
+
+        private final String name;
+
+        Pet(String name) {
+            this.name = name;
+        }
+
+        String getName() {
+            return this.name;
+        }
+
+    }
+
+    /**
+     * Subclass promising on an override that no two of its instances share a name.
+     */
+    static class UniqueDog extends Pet {
+
+        UniqueDog(String name) {
+            super(name);
+        }
+
+        @Override
+        @Indexed(unique = true)
+        String getName() {
+            return super.getName();
+        }
+
+    }
+
+    /**
+     * Sibling of {@link UniqueDog}, declaring nothing.
+     */
+    static class PlainCat extends Pet {
+
+        PlainCat(String name) {
+            super(name);
+        }
+
+    }
+
+    /**
      * Fixture whose accessor dereferences its own field, so reading the property raises a
      * {@link NullPointerException} for some elements and not others.
      */
@@ -257,6 +415,9 @@ class IndexCacheTest {
     private static final SearchFunction<Row, String> BY_LABEL = Row::getLabel;
     private static final SearchFunction<Tagged, List<String>> BY_TAGS = Tagged::getTags;
     private static final SearchFunction<Referencing, Object> BY_TARGET = Referencing::getTarget;
+    private static final SearchFunction<Animal, String> BY_NAME = Animal::getName;
+    private static final SearchFunction<Animal, String> BY_TAG = Animal::getTag;
+    private static final SearchFunction<Pet, String> BY_PET_NAME = Pet::getName;
 
     private static final Row ALPHA_ONE = new Row("alpha", "A1", 1, "first");
     private static final Row ALPHA_TWO = new Row("alpha", "A2", 2, "second");
@@ -272,6 +433,14 @@ class IndexCacheTest {
      */
     private static List<Row> lookup(IndexCache<Row> cache, SearchFunction<Row, ?> extractor, Object value) {
         return cache.lookup(List.of(PropertyReference.of(extractor)), List.of(extractor), Collections.singletonList(value));
+    }
+
+    /**
+     * Probes one single-property index over any fixture.
+     */
+    private static <T> List<T> lookup(Object[] elements, SearchFunction<T, ?> extractor, Object value) {
+        IndexCache<T> cache = IndexCache.over(elements);
+        return cache.lookup(PropertyReference.of(extractor), extractor, value);
     }
 
     /**
@@ -570,8 +739,8 @@ class IndexCacheTest {
 
         @Test
         void lookup_elementsOfMoreThanOneClass_isRefused() {
-            // The schema is read off the first element present, and an element of another class need
-            // not carry the property it names at all.
+            // Neither class extends the other, so no class some element has covers them all, and an
+            // element of another class need not carry the property the query names at all.
             Object[] mixed = { ALPHA_ONE, new Bare("b"), BETA_ONE };
             IndexCache<Row> cache = IndexCache.over(mixed);
 
@@ -651,6 +820,112 @@ class IndexCacheTest {
             );
 
             assertTrue(thrown.getMessage().contains("unique"));
+        }
+
+        @Test
+        void lookup_proxyFirst_answersFromTheIndex() {
+            // The proxy declares nothing of its own, so the row class it stands for is read in its
+            // place and the plain rows behind it are filed beside it.
+            RowProxy proxy = new RowProxy(ALPHA_ONE);
+            List<Row> found = lookup(cacheOf(proxy, BETA_ONE, ALPHA_TWO), BY_MODE, "alpha");
+
+            assertEquals(List.of(proxy, ALPHA_TWO), found);
+            assertSame(proxy, found.getFirst());
+        }
+
+        @Test
+        void lookup_proxyFirstComposite_answersFromTheIndex() {
+            RowProxy proxy = new RowProxy(ALPHA_ONE);
+            IndexCache<Row> cache = cacheOf(proxy, BETA_ONE, ALPHA_TWO);
+            List<PropertyReference> references = List.of(PropertyReference.of(BY_GROUPED_MODE), PropertyReference.of(BY_TIER));
+            List<SearchFunction<Row, ?>> extractors = List.of(BY_GROUPED_MODE, BY_TIER);
+
+            assertEquals(List.of(proxy), cache.lookup(references, extractors, List.of("alpha", 1)));
+            assertEquals(List.of(ALPHA_TWO), cache.lookup(references, extractors, List.of("alpha", 2)));
+        }
+
+        @Test
+        void lookup_proxyFirstOverDuplicateUniqueValues_throwsNamingTheEntity() {
+            // A plain row first throws over these values, so a proxy first throws the same and
+            // names the class that made the promise rather than its own.
+            Row first = new Row("alpha", "SAME", 1, "first");
+            Row second = new Row("beta", "SAME", 2, "second");
+
+            IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> lookup(cacheOf(new RowProxy(first), second), BY_CODE, "SAME")
+            );
+
+            assertTrue(thrown.getMessage().contains("'Row'"));
+            assertFalse(thrown.getMessage().contains("RowProxy"));
+        }
+
+        @Test
+        void lookup_everyProxy_answers() {
+            RowProxy alpha = new RowProxy(ALPHA_ONE);
+            RowProxy beta = new RowProxy(BETA_ONE);
+
+            assertEquals(List.of(beta), lookup(cacheOf(alpha, beta), BY_MODE, "beta"));
+        }
+
+        @Test
+        void lookup_proxyAheadOfAnotherClass_isStillRefused() {
+            Object[] mixed = { new RowProxy(ALPHA_ONE), new Bare("b"), BETA_ONE };
+
+            assertNull(lookup(mixed, BY_MODE, "alpha"));
+        }
+
+        @Test
+        void lookup_subclassFirstWithItsSuperclassPresent_answers() {
+            Dog dog = new Dog("rex", "T1", "beagle");
+            Cat cat = new Cat("tom", "T2");
+            Animal animal = new Animal("rex", "T3");
+
+            assertEquals(List.of(dog, animal), lookup(new Animal[] { dog, cat, animal }, BY_NAME, "rex"));
+        }
+
+        @Test
+        void lookup_siblingsWithNoInstanceOfTheirSuperclass_isRefused() {
+            // Reading the superclass neither element has would enforce its unique tag across two
+            // classes that no order of these elements enforces it on.
+            Dog dog = new Dog("rex", "SAME", "beagle");
+            Cat cat = new Cat("rex", "SAME");
+
+            assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { dog, cat }, BY_NAME, "rex")));
+            assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { cat, dog }, BY_NAME, "rex")));
+            assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { dog, cat }, BY_TAG, "SAME")));
+            assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { cat, dog }, BY_TAG, "SAME")));
+        }
+
+        @Test
+        void lookup_subclassDeclaringItsOwnAheadOfItsSuperclass_isRefused() {
+            // The hound reads a declaration the animal does not, so nothing stands in for it.
+            Hound hound = new Hound("rex", "T1", "bloodhound");
+            Animal animal = new Animal("rex", "T2");
+
+            assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { hound, animal }, BY_NAME, "rex")));
+        }
+
+        @Test
+        void lookup_uniqueOnASubclass_isNotEnforcedOnASibling() {
+            UniqueDog dog = new UniqueDog("rex");
+            PlainCat cat = new PlainCat("rex");
+
+            assertNull(assertDoesNotThrow(() -> lookup(new Pet[] { dog, cat }, BY_PET_NAME, "rex")));
+            assertNull(assertDoesNotThrow(() -> lookup(new Pet[] { cat, dog }, BY_PET_NAME, "rex")));
+        }
+
+        @Test
+        void lookup_castPastTheDeclaringClass_isRefusedBeforeItRuns() {
+            // The extractor casts, so applying it to the cat would throw. The scan stops at the
+            // hound, so the index has to refuse before it ever applies the extractor.
+            SearchFunction<Animal, String> byBreed = element -> ((Hound) element).getBreed();
+            Hound hound = new Hound("rex", "T1", "bloodhound");
+            Cat cat = new Cat("tom", "T2");
+            Animal animal = new Animal("sam", "T3");
+
+            assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { hound, cat }, byBreed, "bloodhound")));
+            assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { cat, hound, animal }, byBreed, "bloodhound")));
         }
 
     }
