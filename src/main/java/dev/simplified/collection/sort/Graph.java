@@ -6,6 +6,7 @@ import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.collection.ConcurrentMap;
+import dev.simplified.collection.ConcurrentSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,6 +19,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -35,7 +37,8 @@ import java.util.stream.Stream;
  * variant ({@link #layeredTopologicalSort()}) suitable for parallel scheduling, the same orderings
  * projected as {@link SortAlgorithm} strategies via {@link #asLinearSort()} and
  * {@link #asLayeredSort()}, and structural queries ({@link #predecessors}, {@link #successors},
- * {@link #roots}, {@link #leaves}, etc.).
+ * their transitive {@link #ancestors} and {@link #descendants}, {@link #roots}, {@link #leaves},
+ * etc.). The sorts refuse a cycle; the structural queries answer over one.
  *
  * <p>An edge {@code A -> B} is interpreted as "{@code A} depends on {@code B}" - so {@code B}
  * appears earlier in the topological order than {@code A}.
@@ -50,16 +53,31 @@ public class Graph<T> {
     @Getter(AccessLevel.NONE)
     private final @NotNull ConcurrentMap<T, ConcurrentList<T>> reverseAdjacency;
 
-    private Graph(@NotNull ConcurrentList<T> nodes, @NotNull ConcurrentMap<T, ConcurrentList<T>> nodeEdges) {
-        this.nodes = nodes;
-        this.nodeEdges = nodeEdges;
+    /**
+     * Constructs a graph over the given nodes and edges, copying the node list and every edge list
+     * into unmodifiable snapshots, so neither direction of an edge can change once the graph exists.
+     * <p>
+     * The working structures are plain JDK collections; only what the graph publishes is a
+     * concurrent type, and an unmodifiable one reads without taking a lock.
+     *
+     * @param nodes the node values, in registration order
+     * @param nodeEdges the outgoing edges, keyed by the node they leave
+     */
+    private Graph(@NotNull List<T> nodes, @NotNull Map<T, List<T>> nodeEdges) {
+        Map<T, ConcurrentList<T>> forward = HashMap.newHashMap(nodeEdges.size());
+        Map<T, List<T>> reverse = new HashMap<>();
 
-        ConcurrentMap<T, ConcurrentList<T>> reverse = Concurrent.newMap();
-        nodeEdges.forEach((source, targets) -> targets.forEach(target ->
-            reverse.computeIfAbsent(target, k -> Concurrent.newList()).add(source)
-        ));
-        reverse.replaceAll((target, sources) -> sources.toUnmodifiable());
-        this.reverseAdjacency = reverse.toUnmodifiable();
+        nodeEdges.forEach((source, targets) -> {
+            forward.put(source, Concurrent.newUnmodifiableList(targets));
+            targets.forEach(target -> reverse.computeIfAbsent(target, k -> new ArrayList<>()).add(source));
+        });
+
+        Map<T, ConcurrentList<T>> backward = HashMap.newHashMap(reverse.size());
+        reverse.forEach((target, sources) -> backward.put(target, Concurrent.newUnmodifiableList(sources)));
+
+        this.nodes = Concurrent.newUnmodifiableList(nodes);
+        this.nodeEdges = Concurrent.newUnmodifiableMap(forward);
+        this.reverseAdjacency = Concurrent.newUnmodifiableMap(backward);
     }
 
     /**
@@ -76,6 +94,9 @@ public class Graph<T> {
     /**
      * Returns whether the graph contains the given node.
      *
+     * <p><b>Time:</b> {@code O(N)} - a scan of the node list.
+     * <p><b>Space:</b> {@code O(1)} - nothing is allocated.
+     *
      * @param node the node to test
      * @return {@code true} if {@code node} is a registered node in this graph
      */
@@ -85,6 +106,10 @@ public class Graph<T> {
 
     /**
      * Returns whether a directed edge {@code from -> to} exists in the graph.
+     *
+     * <p><b>Time:</b> {@code O(d)} - one lookup, then a scan of the {@code d} edges leaving
+     * {@code from}.
+     * <p><b>Space:</b> {@code O(1)} - nothing is allocated.
      *
      * @param from the source node
      * @param to the target node
@@ -98,6 +123,9 @@ public class Graph<T> {
     /**
      * Returns the nodes reachable via outgoing edges from {@code node} (its dependencies).
      *
+     * <p><b>Time:</b> {@code O(1)} - one lookup in the adjacency held since construction.
+     * <p><b>Space:</b> {@code O(1)} - the held list is returned, not copied.
+     *
      * @param node the source node
      * @return an unmodifiable list of successors, or an empty list if none
      */
@@ -109,6 +137,9 @@ public class Graph<T> {
     /**
      * Returns the nodes that have an outgoing edge to {@code node} (its dependents).
      *
+     * <p><b>Time:</b> {@code O(1)} - one lookup in the reverse adjacency built at construction.
+     * <p><b>Space:</b> {@code O(1)} - the held list is returned, not copied.
+     *
      * @param node the target node
      * @return an unmodifiable list of predecessors, or an empty list if none
      */
@@ -118,7 +149,44 @@ public class Graph<T> {
     }
 
     /**
+     * Returns every node {@code node} reaches along one or more outgoing edges - its dependencies,
+     * direct and transitive.
+     * <p>
+     * Safe on any graph, cyclic or not: each node is visited once however many paths reach it, and
+     * {@code node} itself is in the result exactly when it lies on a cycle, a self-edge included. A
+     * node not in the graph reaches nothing.
+     *
+     * <p><b>Time:</b> {@code O(N + E)} over the reachable subgraph.
+     * <p><b>Space:</b> {@code O(N)} for the visited set and the work queue.
+     *
+     * @param node the node to walk from
+     * @return an unmodifiable set of the nodes reached, in breadth-first order
+     */
+    public @NotNull ConcurrentSet<T> descendants(@NotNull T node) {
+        return reachable(node, this.nodeEdges);
+    }
+
+    /**
+     * Returns every node that reaches {@code node} along one or more edges - its dependents, direct
+     * and transitive.
+     * <p>
+     * The mirror of {@link #descendants}, walked over incoming edges, with the same cycle guarantees.
+     *
+     * <p><b>Time:</b> {@code O(N + E)} over the reaching subgraph.
+     * <p><b>Space:</b> {@code O(N)} for the visited set and the work queue.
+     *
+     * @param node the node to walk back from
+     * @return an unmodifiable set of the nodes reaching {@code node}, in breadth-first order
+     */
+    public @NotNull ConcurrentSet<T> ancestors(@NotNull T node) {
+        return reachable(node, this.reverseAdjacency);
+    }
+
+    /**
      * Returns the number of outgoing edges from {@code node}.
+     *
+     * <p><b>Time:</b> {@code O(1)} - one lookup in the adjacency held since construction.
+     * <p><b>Space:</b> {@code O(1)} - nothing is allocated.
      *
      * @param node the node to inspect
      * @return the out-degree of {@code node}
@@ -131,6 +199,9 @@ public class Graph<T> {
     /**
      * Returns the number of incoming edges to {@code node}.
      *
+     * <p><b>Time:</b> {@code O(1)} - one lookup in the reverse adjacency built at construction.
+     * <p><b>Space:</b> {@code O(1)} - nothing is allocated.
+     *
      * @param node the node to inspect
      * @return the in-degree of {@code node}
      */
@@ -141,6 +212,9 @@ public class Graph<T> {
 
     /**
      * Returns the nodes with no incoming edges - the entry points of the dependency graph.
+     *
+     * <p><b>Time:</b> {@code O(N)} - one in-degree lookup per node.
+     * <p><b>Space:</b> {@code O(N)} for the returned list.
      *
      * @return an unmodifiable list of root nodes, in registration order
      */
@@ -153,6 +227,9 @@ public class Graph<T> {
     /**
      * Returns the nodes with no outgoing edges - the leaves of the dependency graph.
      *
+     * <p><b>Time:</b> {@code O(N)} - one out-degree lookup per node.
+     * <p><b>Space:</b> {@code O(N)} for the returned list.
+     *
      * @return an unmodifiable list of leaf nodes, in registration order
      */
     public @NotNull ConcurrentList<T> leaves() {
@@ -163,6 +240,9 @@ public class Graph<T> {
 
     /**
      * Returns a new graph with the same node set and every edge direction flipped.
+     *
+     * <p><b>Time:</b> {@code O(N + E)} - every edge is added to a fresh builder once, then sealed.
+     * <p><b>Space:</b> {@code O(N + E)} for the new graph's node list and both adjacencies.
      *
      * @return a fresh {@code Graph} whose edges run opposite to this one's
      */
@@ -361,16 +441,52 @@ public class Graph<T> {
     }
 
     /**
+     * Walks breadth-first from a node's neighbours, expanding each node once.
+     * <p>
+     * The start is not marked visited before the walk, so it joins the result only when an edge
+     * leads back to it.
+     *
+     * @param start the node to walk from
+     * @param adjacency the edges to follow, keyed by the node they leave
+     * @param <T> the type of values stored in graph nodes
+     * @return an unmodifiable set of the nodes reached, in breadth-first order
+     */
+    private static <T> @NotNull ConcurrentSet<T> reachable(
+        @NotNull T start,
+        @NotNull ConcurrentMap<T, ConcurrentList<T>> adjacency
+    ) {
+        Set<T> seen = new LinkedHashSet<>();
+        Deque<T> pending = new ArrayDeque<>();
+        ConcurrentList<T> first = adjacency.get(start);
+        if (first != null) pending.addAll(first);
+
+        while (!pending.isEmpty()) {
+            T next = pending.poll();
+
+            if (!seen.add(next))
+                continue;
+
+            ConcurrentList<T> neighbors = adjacency.get(next);
+            if (neighbors != null) pending.addAll(neighbors);
+        }
+
+        return Concurrent.newUnmodifiableLinkedSet(seen);
+    }
+
+    /**
      * A builder for constructing {@link Graph} instances with nodes and edges.
+     * <p>
+     * A builder holds plain JDK collections and belongs to the thread building with it; the graph
+     * it builds is immutable and safe to share.
      *
      * @param <T> the type of values stored in graph nodes
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class Builder<T> {
 
-        private final ConcurrentList<T> values = Concurrent.newList();
-        private final ConcurrentMap<T, ConcurrentList<T>> nodeEdges = Concurrent.newMap();
-        private Optional<Function<T, Stream<T>>> edgeFunction = Optional.empty();
+        private final @NotNull List<T> values = new ArrayList<>();
+        private final @NotNull Map<T, List<T>> nodeEdges = new HashMap<>();
+        private @NotNull Optional<Function<T, Stream<T>>> edgeFunction = Optional.empty();
 
         /**
          * Adds a directed edge from {@code left} to {@code right}.
@@ -379,11 +495,8 @@ public class Graph<T> {
          * @param right the target node value
          * @return this builder
          */
-        public Builder<T> withEdge(@NotNull T left, @NotNull T right) {
-            if (!this.nodeEdges.containsKey(left))
-                this.nodeEdges.put(left, Concurrent.newList());
-
-            this.nodeEdges.get(left).add(right);
+        public @NotNull Builder<T> withEdge(@NotNull T left, @NotNull T right) {
+            this.nodeEdges.computeIfAbsent(left, key -> new ArrayList<>()).add(right);
             return this;
         }
 
@@ -393,7 +506,7 @@ public class Graph<T> {
          * @param function the edge function, or {@code null} to clear
          * @return this builder
          */
-        public Builder<T> withEdgeFunction(@Nullable Function<T, Stream<T>> function) {
+        public @NotNull Builder<T> withEdgeFunction(@Nullable Function<T, Stream<T>> function) {
             return this.withEdgeFunction(Optional.ofNullable(function));
         }
 
@@ -403,7 +516,7 @@ public class Graph<T> {
          * @param function an optional edge function
          * @return this builder
          */
-        public Builder<T> withEdgeFunction(@NotNull Optional<Function<T, Stream<T>>> function) {
+        public @NotNull Builder<T> withEdgeFunction(@NotNull Optional<Function<T, Stream<T>>> function) {
             this.edgeFunction = function;
             return this;
         }
@@ -414,7 +527,7 @@ public class Graph<T> {
          * @param values the node values to add
          * @return this builder
          */
-        public Builder<T> withValues(@NotNull T... values) {
+        public @NotNull Builder<T> withValues(@NotNull T... values) {
             return this.withValues(Arrays.asList(values));
         }
 
@@ -424,36 +537,46 @@ public class Graph<T> {
          * @param values the node values to add
          * @return this builder
          */
-        public Builder<T> withValues(@NotNull Iterable<T> values) {
+        public @NotNull Builder<T> withValues(@NotNull Iterable<T> values) {
             values.forEach(this.values::add);
             return this;
         }
 
         /**
-         * Builds the graph. If an edge function was provided, it is applied to each node value
-         * to compute edges. Any node referenced by an edge but not previously registered via
-         * {@link #withValues} is auto-registered (in edge-iteration order) before the immutable
+         * Builds the graph. If an edge function was provided, it is applied to each value
+         * registered via {@link #withValues} to compute edges. Any node referenced by an edge but
+         * not registered that way joins the graph (in edge-iteration order) before the immutable
          * graph is constructed.
+         * <p>
+         * Building reads this builder without changing it, so building again yields the same nodes
+         * and edges, and a builder used again leaves every graph it built untouched.
+         *
+         * <p><b>Time:</b> {@code O(N + E)} plus the edge function's own cost - one call of it per
+         * registered value, one pass registering the nodes the edges name, and one sealing every
+         * edge list.
+         * <p><b>Space:</b> {@code O(N + E)} for the working copies and the graph's node list and
+         * both adjacencies.
          *
          * @return the constructed graph
          */
         public @NotNull Graph<T> build() {
+            List<T> nodes = new ArrayList<>(this.values);
+            Map<T, List<T>> edges = HashMap.newHashMap(this.nodeEdges.size());
+            this.nodeEdges.forEach((source, targets) -> edges.put(source, new ArrayList<>(targets)));
+
             this.edgeFunction.ifPresent(edgeFunction -> this.values.forEach(value -> edgeFunction.apply(value)
-                .forEach(edge -> this.withEdge(value, edge))
+                .forEach(edge -> edges.computeIfAbsent(value, key -> new ArrayList<>()).add(edge))
             ));
 
-            Set<T> seen = new HashSet<>(this.values);
-            this.nodeEdges.forEach((source, targets) -> {
-                if (seen.add(source)) this.values.add(source);
+            Set<T> seen = new HashSet<>(nodes);
+            edges.forEach((source, targets) -> {
+                if (seen.add(source)) nodes.add(source);
                 targets.forEach(target -> {
-                    if (seen.add(target)) this.values.add(target);
+                    if (seen.add(target)) nodes.add(target);
                 });
             });
 
-            return new Graph<>(
-                this.values.toUnmodifiable(),
-                this.nodeEdges.toUnmodifiable()
-            );
+            return new Graph<>(nodes, edges);
         }
 
     }

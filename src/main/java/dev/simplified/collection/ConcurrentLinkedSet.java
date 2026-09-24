@@ -99,7 +99,7 @@ public class ConcurrentLinkedSet<E> extends ConcurrentHashSet<E> {
 	 */
 	@Override
 	protected @NotNull AbstractSet<E> cloneRef() {
-		return this.withReadLock(() -> new LinkedHashSet<>(this.ref));
+		return this.withReadLock(backing -> new LinkedHashSet<>(backing));
 	}
 
 	/**

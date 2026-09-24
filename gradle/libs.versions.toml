@@ -1,8 +1,9 @@
 [versions]
-simplified-annotations = "2.6.1"
+simplified-annotations = "2.7.0"
 annotations = "26.0.2"
 log4j2 = "2.25.3"
 gson = "2.11.0"
+asm = "9.9"
 junit-jupiter = "5.11.4"
 hamcrest = "2.2"
 jmh = "1.37"
@@ -12,6 +13,7 @@ simplified-annotations = { group = "io.github.simplified-dev", name = "annotatio
 annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
 log4j2-api = { group = "org.apache.logging.log4j", name = "log4j-api", version.ref = "log4j2" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
 junit-jupiter-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit-jupiter" }
 junit-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }

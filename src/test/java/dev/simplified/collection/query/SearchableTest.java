@@ -112,7 +112,7 @@ class SearchableTest {
             List<Person> result = people.compare(
                 SearchFunction.Match.ALL,
                 eq,
-                List.<Pair<Function<Person, String>, String>>of()
+                List.<Pair<SearchFunction<Person, String>, String>>of()
             ).toList();
             assertEquals(people.size(), result.size());
         }
@@ -125,7 +125,7 @@ class SearchableTest {
             List<Person> result = people.compare(
                 SearchFunction.Match.ANY,
                 eq,
-                List.<Pair<Function<Person, String>, String>>of()
+                List.<Pair<SearchFunction<Person, String>, String>>of()
             ).toList();
             assertTrue(result.isEmpty());
         }
@@ -141,6 +141,25 @@ class SearchableTest {
             );
             assertNotNull(stream);
             assertEquals(3L, stream.count());
+        }
+
+        @Test
+        void compare_acceptsAComparisonOverEitherFunctionType() {
+            // The comparison only reads an extractor, never decodes one, so it is accepted over a
+            // Function as readily as over a SearchFunction - a caller writing one needs to know
+            // nothing about the latter. That this compiles is the assertion; the equality below
+            // just shows both spellings answer the same.
+            TriPredicate<Function<Person, String>, Person, String> overFunction =
+                (f, p, v) -> Objects.equals(f.apply(p), v);
+            TriPredicate<SearchFunction<Person, String>, Person, String> overSearchFunction =
+                (f, p, v) -> Objects.equals(f.apply(p), v);
+
+            List<Pair<SearchFunction<Person, String>, String>> predicates = List.of(Pair.of(NAME, "alice"));
+
+            assertEquals(
+                people.compare(SearchFunction.Match.ALL, overFunction, predicates).toList(),
+                people.compare(SearchFunction.Match.ALL, overSearchFunction, predicates).toList()
+            );
         }
 
         // Note: cannot construct a third Match enum value, so the IllegalArgumentException
@@ -333,7 +352,7 @@ class SearchableTest {
         @Test
         void findAll_iterablePairs_defaultsToAll() {
             List<Person> list = people.findAll(
-                List.<Pair<Function<Person, String>, String>>of(Pair.of(NAME, "alice"))
+                List.<Pair<SearchFunction<Person, String>, String>>of(Pair.of(NAME, "alice"))
             ).toList();
             assertEquals(3, list.size());
         }
@@ -567,7 +586,7 @@ class SearchableTest {
             // ALL with no predicates means the for-loop never runs - all elements pass
             List<Person> list = people.containsAll(
                 SearchFunction.Match.ALL,
-                List.<Pair<Function<Person, List<String>>, String>>of()
+                List.<Pair<SearchFunction<Person, List<String>>, String>>of()
             ).toList();
             assertEquals(people.size(), list.size());
         }
@@ -576,7 +595,7 @@ class SearchableTest {
         void findAll_emptyPredicates_all_returnsAllElements() {
             List<Person> list = people.findAll(
                 SearchFunction.Match.ALL,
-                List.<Pair<Function<Person, String>, String>>of()
+                List.<Pair<SearchFunction<Person, String>, String>>of()
             ).toList();
             assertEquals(people.size(), list.size());
         }

@@ -5,9 +5,6 @@ import dev.simplified.collection.tuple.pair.PairStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serial;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -29,6 +26,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -46,13 +44,24 @@ import java.util.function.Supplier;
  */
 public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {
 
-	protected final @NotNull M ref;
+	/**
+	 * The backing map. Private rather than protected, and reachable only as the argument the
+	 * {@code withReadLock} / {@code withWriteLock} helpers hand to an action, so a subclass cannot
+	 * name it outside a lock at all - which is the only way this class can promise that what it
+	 * guards stays guarded.
+	 */
+	private final @NotNull M ref;
 	protected final @NotNull ReadWriteLock lock;
 
 	/**
 	 * Monitor guarding creation of the three lazy views.
+	 * <p>
+	 * An empty array rather than a bare {@link Object}, because a monitor has to be {@code final} to
+	 * be a monitor at all and a plain object is not serializable - so a transient one would have to
+	 * be reassigned after deserialization, which is the thing {@code final} forbids. An empty array
+	 * costs the same, serializes, and is distinct per instance.
 	 */
-	private transient @NotNull Object viewLock = new Object();
+	private final @NotNull Object @NotNull [] viewLock = new Object[0];
 
 	/**
 	 * Lazily initialized live view of the entry set.
@@ -118,19 +127,6 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Restores the view monitor, which deserialization does not run field initializers to create.
-	 *
-	 * @param in the stream being read
-	 * @throws IOException if the stream cannot be read
-	 * @throws ClassNotFoundException if a serialized class cannot be resolved
-	 */
-	@Serial
-	private void readObject(@NotNull ObjectInputStream in) throws IOException, ClassNotFoundException {
-		in.defaultReadObject();
-		this.viewLock = new Object();
-	}
-
-	/**
 	 * Invalidates all cached view iteration snapshots. Must be called from every write path
 	 * while still holding the write lock so the nullify is ordered before the unlock.
 	 */
@@ -148,22 +144,17 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	protected void onSnapshotInvalidated() {}
 
 	/**
-	 * Hook invoked at the entry of every view-side mutating operation that does not delegate to a
-	 * public {@code AtomicMap} mutator. Default is a no-op; {@code ConcurrentUnmodifiable*}
-	 * subclasses override to throw {@link UnsupportedOperationException} before the write lock is
-	 * acquired, avoiding the lock-acquire cost on rejected calls and protecting against future
-	 * mutation paths added to {@code AtomicMap} that bypass the explicit public mutator overrides.
+	 * Hook invoked before every write, from the two {@code withWriteLock} helpers that every
+	 * mutator on this map, its subclasses and its views funnels through. Default is a no-op;
+	 * {@code ConcurrentUnmodifiable*} subclasses override it to throw
+	 * {@link UnsupportedOperationException}, which is the whole of how they refuse to be modified.
 	 *
-	 * <p>Call sites: {@link KeySetView#remove(Object)}, {@link ValuesView#remove(Object)}, and
-	 * {@link ValuesIterator#remove()} - any view-side mutator that acquires the write lock without
-	 * first delegating to a public {@code AtomicMap} mutator (which has its own UOE override on
-	 * {@code Unmodifiable*} subclasses). View paths that delegate to public mutators
-	 * ({@link EntrySetView#remove(Object)}, {@link EntrySetView#clear()},
-	 * {@link KeySetView#clear()}, {@link ValuesView#clear()}, and the corresponding
-	 * {@code *Iterator.remove()} that route through {@code AtomicMap.remove}) intentionally skip
-	 * the hook because the public mutator's UOE override fires before the lock is acquired.
+	 * <p>One hook rather than an override per mutator: a mutator that is missed cannot be refused,
+	 * and this is the one place every write already passes through - so nothing can be missed, and
+	 * a mutator added later is refused without anyone remembering to say so. It rejects before the
+	 * lock is acquired, so a refused call costs no lock at all.
 	 */
-	protected void checkMutationAllowed() {}
+	protected void checkModificationAllowed() {}
 
 	/**
 	 * Returns the characteristic bits the {@link #entrySet()} spliterator advertises. Subclasses
@@ -198,11 +189,19 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the read lock held and returns its result.
+	 * Runs the given action with the read lock held and answers what it returns.
+	 * <p>
+	 * The lock helpers carry two names. {@code withXLock} is for an action that answers something
+	 * and {@code execXLock} for one that answers nothing; either takes the backing map as
+	 * its argument, or takes none at all when the action does not need it - a lock-guarded sub-view
+	 * reads through itself rather than through what this class holds. The split falls there because
+	 * two one-argument shapes cannot share one name: a lambda whose parameter type is inferred is
+	 * not read for its body when the compiler chooses between overloads, so {@link Function} and
+	 * {@link Consumer} would be ambiguous at every call site.
 	 *
-	 * @param action the action to execute under the read lock
+	 * @param action the action to run under the read lock
 	 * @param <R> the result type
-	 * @return the value returned by {@code action}
+	 * @return the value {@code action} returns
 	 */
 	protected final <R> R withReadLock(@NotNull Supplier<R> action) {
 		this.lock.readLock().lock();
@@ -215,11 +214,28 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the read lock held.
+	 * Runs the given action over the backing map with the read lock held and answers what it returns.
 	 *
-	 * @param action the action to execute under the read lock
+	 * @param action the action to run over the backing map under the read lock
+	 * @param <R> the result type
+	 * @return the value {@code action} returns
 	 */
-	protected final void withReadLock(@NotNull Runnable action) {
+	protected final <R> R withReadLock(@NotNull Function<M, R> action) {
+		this.lock.readLock().lock();
+
+		try {
+			return action.apply(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Runs the given action with the read lock held.
+	 *
+	 * @param action the action to run under the read lock
+	 */
+	protected final void execReadLock(@NotNull Runnable action) {
 		this.lock.readLock().lock();
 
 		try {
@@ -230,14 +246,33 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the write lock held and returns its result. Invalidates the
-	 * view-iteration snapshots in the {@code finally} block before releasing the lock.
+	 * Runs the given action over the backing map with the read lock held.
 	 *
-	 * @param action the action to execute under the write lock
+	 * @param action the action to run over the backing map under the read lock
+	 */
+	protected final void execReadLock(@NotNull Consumer<M> action) {
+		this.lock.readLock().lock();
+
+		try {
+			action.accept(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Runs the given action with the write lock held and answers what it returns.
+	 * <p>
+	 * Asks {@link #checkModificationAllowed()} first and drops the cached view-iteration snapshots
+	 * before releasing the lock.
+	 *
+	 * @param action the action to run under the write lock
 	 * @param <R> the result type
-	 * @return the value returned by {@code action}
+	 * @return the value {@code action} returns
+	 * @throws UnsupportedOperationException if this map rejects modification
 	 */
 	protected final <R> R withWriteLock(@NotNull Supplier<R> action) {
+		this.checkModificationAllowed();
 		this.lock.writeLock().lock();
 
 		try {
@@ -249,12 +284,39 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the write lock held. Invalidates the view-iteration
-	 * snapshots in the {@code finally} block before releasing the lock.
+	 * Runs the given action over the backing map with the write lock held and answers what it returns.
+	 * <p>
+	 * Asks {@link #checkModificationAllowed()} first and drops the cached view-iteration snapshots
+	 * before releasing the lock.
 	 *
-	 * @param action the action to execute under the write lock
+	 * @param action the action to run over the backing map under the write lock
+	 * @param <R> the result type
+	 * @return the value {@code action} returns
+	 * @throws UnsupportedOperationException if this map rejects modification
 	 */
-	protected final void withWriteLock(@NotNull Runnable action) {
+	protected final <R> R withWriteLock(@NotNull Function<M, R> action) {
+		this.checkModificationAllowed();
+		this.lock.writeLock().lock();
+
+		try {
+			return action.apply(this.ref);
+		} finally {
+			this.invalidateViewSnapshots();
+			this.lock.writeLock().unlock();
+		}
+	}
+
+	/**
+	 * Runs the given action with the write lock held.
+	 * <p>
+	 * Asks {@link #checkModificationAllowed()} first and drops the cached view-iteration snapshots
+	 * before releasing the lock.
+	 *
+	 * @param action the action to run under the write lock
+	 * @throws UnsupportedOperationException if this map rejects modification
+	 */
+	protected final void execWriteLock(@NotNull Runnable action) {
+		this.checkModificationAllowed();
 		this.lock.writeLock().lock();
 
 		try {
@@ -266,11 +328,32 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	}
 
 	/**
+	 * Runs the given action over the backing map with the write lock held.
+	 * <p>
+	 * Asks {@link #checkModificationAllowed()} first and drops the cached view-iteration snapshots
+	 * before releasing the lock.
+	 *
+	 * @param action the action to run over the backing map under the write lock
+	 * @throws UnsupportedOperationException if this map rejects modification
+	 */
+	protected final void execWriteLock(@NotNull Consumer<M> action) {
+		this.checkModificationAllowed();
+		this.lock.writeLock().lock();
+
+		try {
+			action.accept(this.ref);
+		} finally {
+			this.invalidateViewSnapshots();
+			this.lock.writeLock().unlock();
+		}
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public void clear() {
-		this.withWriteLock(this.ref::clear);
+		this.execWriteLock(AbstractMap::clear);
 	}
 
 	/**
@@ -278,7 +361,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public @Nullable V compute(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-		return this.withWriteLock(() -> this.ref.compute(key, remappingFunction));
+		return this.withWriteLock(backing -> backing.compute(key, remappingFunction));
 	}
 
 	/**
@@ -286,7 +369,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public V computeIfAbsent(K key, @NotNull Function<? super K, ? extends V> mappingFunction) {
-		return this.withWriteLock(() -> this.ref.computeIfAbsent(key, mappingFunction));
+		return this.withWriteLock(backing -> backing.computeIfAbsent(key, mappingFunction));
 	}
 
 	/**
@@ -294,7 +377,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public @Nullable V computeIfPresent(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-		return this.withWriteLock(() -> this.ref.computeIfPresent(key, remappingFunction));
+		return this.withWriteLock(backing -> backing.computeIfPresent(key, remappingFunction));
 	}
 
 	/**
@@ -302,7 +385,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public final boolean containsKey(Object key) {
-		return this.withReadLock(() -> this.ref.containsKey(key));
+		return this.withReadLock(backing -> backing.containsKey(key));
 	}
 
 	/**
@@ -310,7 +393,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public final boolean containsValue(Object value) {
-		return this.withReadLock(() -> this.ref.containsValue(value));
+		return this.withReadLock(backing -> backing.containsValue(value));
 	}
 
 	/**
@@ -354,14 +437,18 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return an unshared copy of this map's current contents
 	 */
 	protected @NotNull Object comparisonSnapshot() {
-		return this.withReadLock(() -> {
-			if (this.ref instanceof SortedMap<K, V> sorted) {
+		return this.withReadLock(backing -> {
+			// A map is parameterized once, so a backing map that is also sorted is sorted over the
+			// same two types - which the compiler cannot see from the bound alone.
+			if (backing instanceof SortedMap) {
+				@SuppressWarnings("unchecked")
+				SortedMap<K, V> sorted = (SortedMap<K, V>) backing;
 				TreeMap<K, V> copy = new TreeMap<>(sorted.comparator());
-				copy.putAll(this.ref);
+				copy.putAll(backing);
 				return copy;
 			}
 
-			return new LinkedHashMap<K, V>(this.ref);
+			return new LinkedHashMap<K, V>(backing);
 		});
 	}
 
@@ -384,7 +471,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		}
 
 		final Object target = obj;
-		return this.withReadLock(() -> this.ref.equals(target));
+		return this.withReadLock(backing -> backing.equals(target));
 	}
 
 	/**
@@ -392,7 +479,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public final V get(Object key) {
-		return this.withReadLock(() -> this.ref.get(key));
+		return this.withReadLock(backing -> backing.get(key));
 	}
 
 	/**
@@ -411,7 +498,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public final V getOrDefault(Object key, V defaultValue) {
-		return this.withReadLock(() -> this.ref.getOrDefault(key, defaultValue));
+		return this.withReadLock(backing -> backing.getOrDefault(key, defaultValue));
 	}
 
 	/**
@@ -419,7 +506,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public final int hashCode() {
-		return this.withReadLock(this.ref::hashCode);
+		return this.withReadLock(AbstractMap::hashCode);
 	}
 
 	/**
@@ -427,7 +514,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public final boolean isEmpty() {
-		return this.withReadLock(this.ref::isEmpty);
+		return this.withReadLock(AbstractMap::isEmpty);
 	}
 
 	/**
@@ -487,7 +574,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public @Nullable V put(K key, V value) {
-		return this.withWriteLock(() -> this.ref.put(key, value));
+		return this.withWriteLock(backing -> backing.put(key, value));
 	}
 
 	/**
@@ -505,7 +592,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public void putAll(@NotNull Map<? extends K, ? extends V> map) {
-		this.withWriteLock(() -> this.ref.putAll(map));
+		this.execWriteLock(backing -> backing.putAll(map));
 	}
 
 	/**
@@ -517,7 +604,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return {@code true} if the entry was added
 	 */
 	public boolean putIf(@NotNull Supplier<Boolean> predicate, K key, V value) {
-		return this.withWriteLock(() -> {
+		return this.withWriteLock(backing -> {
 			if (predicate.get()) {
 				this.ref.put(key, value);
 				return true;
@@ -558,7 +645,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return {@code true} if the entry was added
 	 */
 	public boolean putIf(@NotNull Predicate<M> predicate, K key, V value) {
-		return this.withWriteLock(() -> {
+		return this.withWriteLock(backing -> {
 			if (predicate.test(this.ref)) {
 				this.ref.put(key, value);
 				return true;
@@ -573,7 +660,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public @Nullable V putIfAbsent(K key, V value) {
-		return this.withWriteLock(() -> this.ref.putIfAbsent(key, value));
+		return this.withWriteLock(backing -> backing.putIfAbsent(key, value));
 	}
 
 	/**
@@ -581,7 +668,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public @Nullable V remove(Object key) {
-		return this.withWriteLock(() -> this.ref.remove(key));
+		return this.withWriteLock(backing -> backing.remove(key));
 	}
 
 	/**
@@ -601,7 +688,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 * @return {@code true} if any entries were removed
 	 */
 	public boolean removeIf(@NotNull Predicate<? super Entry<K, V>> predicate) {
-		return this.withWriteLock(() -> this.ref.entrySet().removeIf(predicate));
+		return this.withWriteLock(backing -> backing.entrySet().removeIf(predicate));
 	}
 
 	/**
@@ -621,7 +708,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public boolean remove(Object key, Object value) {
-		return this.withWriteLock(() -> this.ref.remove(key, value));
+		return this.withWriteLock(backing -> backing.remove(key, value));
 	}
 
 	/**
@@ -629,7 +716,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 	 */
 	@Override
 	public final int size() {
-		return this.withReadLock(this.ref::size);
+		return this.withReadLock(AbstractMap::size);
 	}
 
 	/**
@@ -673,7 +760,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Object[] snapshot = this.entrySetSnapshot;
 
 		if (snapshot == null) {
-			snapshot = this.withReadLock(() -> {
+			snapshot = this.withReadLock(backing -> {
 				Object[] cached = this.entrySetSnapshot;
 
 				if (cached == null) {
@@ -703,7 +790,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Object[] snapshot = this.keySetSnapshot;
 
 		if (snapshot == null) {
-			snapshot = this.withReadLock(() -> {
+			snapshot = this.withReadLock(backing -> {
 				Object[] cached = this.keySetSnapshot;
 
 				if (cached == null) {
@@ -726,7 +813,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		Object[] snapshot = this.valuesSnapshot;
 
 		if (snapshot == null) {
-			snapshot = this.withReadLock(() -> {
+			snapshot = this.withReadLock(backing -> {
 				Object[] cached = this.valuesSnapshot;
 
 				if (cached == null) {
@@ -873,7 +960,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 			if (!(o instanceof Entry<?, ?>))
 				return false;
 
-			return AtomicMap.this.withReadLock(() -> AtomicMap.this.ref.entrySet().contains(o));
+			return AtomicMap.this.withReadLock(backing -> backing.entrySet().contains(o));
 		}
 
 		@Override
@@ -923,10 +1010,12 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 		}
 
 		@Override
+		@SuppressWarnings("SuspiciousMethodCalls")
 		public boolean remove(Object o) {
-			AtomicMap.this.checkMutationAllowed();
-			return AtomicMap.this.withWriteLock(() -> {
-				if (!AtomicMap.this.ref.containsKey(o))
+			// Set.remove takes any Object by contract, so asking the backing map about one is the
+			// question this method exists to answer rather than a mistyped key.
+			return AtomicMap.this.withWriteLock(backing -> {
+				if (!backing.containsKey(o))
 					return false;
 
 				AtomicMap.this.remove(o);
@@ -977,8 +1066,7 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 
 		@Override
 		public boolean remove(Object o) {
-			AtomicMap.this.checkMutationAllowed();
-			return AtomicMap.this.withWriteLock(() -> {
+			return AtomicMap.this.withWriteLock(backing -> {
 				Iterator<Entry<K, V>> it = AtomicMap.this.ref.entrySet().iterator();
 				while (it.hasNext()) {
 					if (Objects.equals(it.next().getValue(), o)) {
@@ -1098,10 +1186,9 @@ public abstract class AtomicMap<K, V, M extends AbstractMap<K, V>> extends Abstr
 				throw new IllegalStateException();
 
 			Object value = this.snapshot[this.last];
-			AtomicMap.this.checkMutationAllowed();
 
-			AtomicMap.this.withWriteLock(() -> {
-				Iterator<Entry<K, V>> it = AtomicMap.this.ref.entrySet().iterator();
+			AtomicMap.this.execWriteLock(backing -> {
+				Iterator<Entry<K, V>> it = backing.entrySet().iterator();
 				while (it.hasNext()) {
 					if (Objects.equals(it.next().getValue(), value)) {
 						it.remove();

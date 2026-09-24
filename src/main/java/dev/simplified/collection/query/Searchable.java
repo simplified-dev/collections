@@ -17,6 +17,10 @@ import java.util.stream.Stream;
  * Supports equality-based searching ({@link #findAll}), list-containment searching ({@link #containsAll}),
  * and predicate-based matching ({@link #matchAll}) with configurable {@link SearchFunction.Match} modes.
  *
+ * <p>Every extractor is a {@link SearchFunction} rather than a {@link Function}, so the property a
+ * method reference reads stays recoverable and an implementation is free to answer from an index
+ * instead of a scan.
+ *
  * @param <E> the element type of the searchable collection
  */
 @FunctionalInterface
@@ -32,27 +36,31 @@ public interface Searchable<E> {
      * When {@code match} is {@link SearchFunction.Match#ALL ALL}, every predicate must match;
      * when {@link SearchFunction.Match#ANY ANY}, at least one predicate must match.
      *
+     * <p>The comparison only ever reads an extractor, so it is accepted over any supertype of one -
+     * a caller writing a comparison that just applies what it is handed declares it over
+     * {@link Function} and needs to know nothing about {@link SearchFunction}.
+     *
      * @param match the match mode (ALL or ANY)
      * @param compare the comparison function applied per predicate
      * @param predicates the field-extractor/value pairs to compare against
      * @param <S> the type of the compared value
      * @return a filtered stream of matching elements
-     * @throws dev.simplified.persistence.exception.JpaException if an invalid match type is provided
+     * @throws IllegalArgumentException if an invalid match type is provided
      */
-    default <S> @NotNull SingleStream<E> compare(@NotNull SearchFunction.Match match, @NotNull TriPredicate<Function<E, S>, E, S> compare, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
+    default <S> @NotNull SingleStream<E> compare(@NotNull SearchFunction.Match match, @NotNull TriPredicate<? super SearchFunction<E, S>, E, S> compare, @NotNull Iterable<Pair<SearchFunction<E, S>, S>> predicates) {
         SingleStream<E> itemsCopy = this.stream();
 
         if (match == SearchFunction.Match.ANY) {
             itemsCopy = itemsCopy.filter(it -> {
                 boolean matches = false;
 
-                for (Pair<Function<E, S>, S> predicate : predicates)
+                for (Pair<SearchFunction<E, S>, S> predicate : predicates)
                     matches |= compare.test(predicate.left(), it, predicate.getValue());
 
                 return matches;
             });
         } else if (match == SearchFunction.Match.ALL) {
-            for (Pair<Function<E, S>, S> predicate : predicates)
+            for (Pair<SearchFunction<E, S>, S> predicate : predicates)
                 itemsCopy = itemsCopy.filter(it -> compare.test(predicate.left(), it, predicate.right()));
         } else
             throw new IllegalArgumentException(String.format("Invalid match type '%s'", match));
@@ -70,22 +78,22 @@ public interface Searchable<E> {
      * @param predicates the list-field-extractor/value pairs to check containment against
      * @param <S> the element type within the list field
      * @return a filtered stream of matching elements
-     * @throws dev.simplified.persistence.exception.JpaException if an invalid match type is provided
+     * @throws IllegalArgumentException if an invalid match type is provided
      */
-    default <S> @NotNull SingleStream<E> contains(@NotNull SearchFunction.Match match, @NotNull TriPredicate<Function<E, List<S>>, E, S> compare, @NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
+    default <S> @NotNull SingleStream<E> contains(@NotNull SearchFunction.Match match, @NotNull TriPredicate<? super SearchFunction<E, List<S>>, E, S> compare, @NotNull Iterable<Pair<SearchFunction<E, List<S>>, S>> predicates) {
         SingleStream<E> itemsCopy = this.stream();
 
         if (match == SearchFunction.Match.ANY) {
             itemsCopy = itemsCopy.filter(it -> {
                 boolean matches = false;
 
-                for (Pair<Function<E, List<S>>, S> predicate : predicates)
+                for (Pair<SearchFunction<E, List<S>>, S> predicate : predicates)
                     matches |= compare.test(predicate.left(), it, predicate.getValue());
 
                 return matches;
             });
         } else if (match == SearchFunction.Match.ALL) {
-            for (Pair<Function<E, List<S>>, S> predicate : predicates)
+            for (Pair<SearchFunction<E, List<S>>, S> predicate : predicates)
                 itemsCopy = itemsCopy.filter(it -> compare.test(predicate.left(), it, predicate.right()));
         } else
             throw new IllegalArgumentException(String.format("Invalid match type '%s'", match));
@@ -103,7 +111,7 @@ public interface Searchable<E> {
      * @param <S> the element type within the list field
      * @return a stream of elements whose list field contains the value
      */
-    default <S> @NotNull Stream<E> containsAll(@NotNull Function<E, List<S>> function, S value) {
+    default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction<E, List<S>> function, S value) {
         return this.containsAll(SearchFunction.Match.ALL, function, value);
     }
 
@@ -114,7 +122,7 @@ public interface Searchable<E> {
      * @param <S> the element type within the list field
      * @return a stream of elements matching all containment predicates
      */
-    default <S> @NotNull Stream<E> containsAll(@NotNull Pair<Function<E, List<S>>, S>... predicates) {
+    default <S> @NotNull Stream<E> containsAll(@NotNull Pair<SearchFunction<E, List<S>>, S>... predicates) {
         return this.containsAll(Arrays.asList(predicates));
     }
 
@@ -125,7 +133,7 @@ public interface Searchable<E> {
      * @param <S> the element type within the list field
      * @return a stream of elements matching all containment predicates
      */
-    default <S> @NotNull Stream<E> containsAll(@NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
+    default <S> @NotNull Stream<E> containsAll(@NotNull Iterable<Pair<SearchFunction<E, List<S>>, S>> predicates) {
         return this.containsAll(SearchFunction.Match.ALL, predicates);
     }
 
@@ -138,7 +146,7 @@ public interface Searchable<E> {
      * @param <S> the element type within the list field
      * @return a stream of elements whose list field contains the value
      */
-    default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull Function<E, List<S>> function, S value) {
+    default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, List<S>> function, S value) {
         return this.containsAll(match, List.of(Pair.of(function, value)));
     }
 
@@ -150,7 +158,7 @@ public interface Searchable<E> {
      * @param <S> the element type within the list field
      * @return a stream of elements matching the containment predicates
      */
-    default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, List<S>>, S>... predicates) {
+    default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull Pair<SearchFunction<E, List<S>>, S>... predicates) {
         return this.containsAll(match, Arrays.asList(predicates));
     }
 
@@ -163,7 +171,7 @@ public interface Searchable<E> {
      * @param <S> the element type within the list field
      * @return a stream of elements matching the containment predicates
      */
-    default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, List<S>>, S>> predicates) {
+    default <S> @NotNull Stream<E> containsAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<SearchFunction<E, List<S>>, S>> predicates) {
         return this.contains(
             match,
             (predicate, it, value) -> {
@@ -188,7 +196,7 @@ public interface Searchable<E> {
      * @param <S> the type of the compared value
      * @return a stream of elements whose field equals the value
      */
-    default <S> @NotNull SingleStream<E> findAll(@NotNull Function<E, S> function, S value) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction<E, S> function, S value) {
         return this.findAll(SearchFunction.Match.ALL, function, value);
     }
 
@@ -199,7 +207,7 @@ public interface Searchable<E> {
      * @param <S> the type of the compared value
      * @return a stream of elements matching all predicates
      */
-    default <S> @NotNull SingleStream<E> findAll(@NotNull Pair<Function<E, S>, S>... predicates) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull Pair<SearchFunction<E, S>, S>... predicates) {
         return this.findAll(Arrays.asList(predicates));
     }
 
@@ -210,7 +218,7 @@ public interface Searchable<E> {
      * @param <S> the type of the compared value
      * @return a stream of elements matching all predicates
      */
-    default <S> @NotNull SingleStream<E> findAll(@NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull Iterable<Pair<SearchFunction<E, S>, S>> predicates) {
         return this.findAll(SearchFunction.Match.ALL, predicates);
     }
 
@@ -223,7 +231,7 @@ public interface Searchable<E> {
      * @param <S> the type of the compared value
      * @return a stream of elements whose field equals the value
      */
-    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Function<E, S> function, S value) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull SearchFunction<E, S> function, S value) {
         return this.findAll(match, List.of(Pair.of(function, value)));
     }
 
@@ -235,7 +243,7 @@ public interface Searchable<E> {
      * @param <S> the type of the compared value
      * @return a stream of elements matching the predicates
      */
-    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Pair<Function<E, S>, S>... predicates) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Pair<SearchFunction<E, S>, S>... predicates) {
         return this.findAll(match, Arrays.asList(predicates));
     }
 
@@ -248,7 +256,7 @@ public interface Searchable<E> {
      * @param <S> the type of the compared value
      * @return a stream of elements matching the predicates
      */
-    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<Function<E, S>, S>> predicates) {
+    default <S> @NotNull SingleStream<E> findAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Pair<SearchFunction<E, S>, S>> predicates) {
         return this.compare(
             match,
             (predicate, it, value) -> {
@@ -302,6 +310,7 @@ public interface Searchable<E> {
      * @param match the match mode (ALL or ANY)
      * @param predicates the predicates to test against each element
      * @return a stream of elements satisfying the predicates
+     * @throws IllegalArgumentException if an invalid match type is provided
      */
     default @NotNull SingleStream<E> matchAll(@NotNull SearchFunction.Match match, @NotNull Iterable<Predicate<E>> predicates) {
         if (match == SearchFunction.Match.ALL) {

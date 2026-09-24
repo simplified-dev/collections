@@ -103,7 +103,7 @@ public class ConcurrentLinkedMap<K, V> extends ConcurrentHashMap<K, V> {
 	 */
 	@Override
 	protected @NotNull AbstractMap<K, V> cloneRef() {
-		return this.withReadLock(() -> new LinkedHashMap<>(this.ref));
+		return this.withReadLock(backing -> new LinkedHashMap<>(backing));
 	}
 
 	/**

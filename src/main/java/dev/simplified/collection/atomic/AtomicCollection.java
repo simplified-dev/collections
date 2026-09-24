@@ -2,6 +2,10 @@ package dev.simplified.collection.atomic;
 
 import dev.simplified.collection.ConcurrentCollection;
 import dev.simplified.collection.StreamUtil;
+import dev.simplified.collection.query.IndexCache;
+import dev.simplified.collection.query.Indexed;
+import dev.simplified.collection.query.PropertyReference;
+import dev.simplified.collection.query.SearchFunction;
 import dev.simplified.collection.tuple.single.SingleStream;
 import dev.simplified.collection.tuple.triple.TripleStream;
 import org.jetbrains.annotations.NotNull;
@@ -13,12 +17,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -37,7 +43,14 @@ import java.util.stream.StreamSupport;
 @SuppressWarnings("all")
 public abstract class AtomicCollection<E, T extends Collection<E>> extends AbstractCollection<E> implements ConcurrentCollection<E> {
 
-	protected final @NotNull T ref;
+	/**
+	 * The backing collection. Private rather than protected, and reachable only as the argument the
+	 * {@code withReadLock} / {@code withWriteLock} helpers hand to an action, so a subclass cannot
+	 * name it outside a lock at all - which is the only way this class can promise that what it
+	 * guards stays guarded.
+	 */
+	private final @NotNull T ref;
+
 	protected final @NotNull ReadWriteLock lock;
 
 	/**
@@ -46,6 +59,13 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * safely to lock-free readers; iterators never mutate the snapshot so sharing it is safe.
 	 */
 	protected transient volatile @Nullable Object @Nullable [] snapshotCache;
+
+	/**
+	 * Cached hash indexes over the {@link Indexed} properties of this collection's elements, built
+	 * on the first query that names one and dropped alongside {@link #snapshotCache} by every
+	 * mutator.
+	 */
+	protected transient volatile @Nullable IndexCache<E> indexCache;
 
 	protected AtomicCollection(@NotNull T ref) {
 		this(ref, new ReentrantReadWriteLock());
@@ -64,22 +84,35 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * Invalidates the cached iterator snapshot. Called from the {@code finally} block of every
-	 * mutator on this collection, before the write lock is released.
+	 * Invalidates the cached iterator snapshot and the indexes built over it. Called from the
+	 * {@code finally} block of every mutator on this collection, before the write lock is released.
+	 * <p>
+	 * The index is dropped here rather than in {@link #onSnapshotInvalidated()} because subclasses
+	 * override that hook without calling {@code super}, and an index that outlives a write would
+	 * answer with elements the collection no longer holds.
 	 */
 	protected void invalidateSnapshot() {
 		if (this.snapshotCache != null) this.snapshotCache = null;
+		if (this.indexCache != null) this.indexCache = null;
 		this.onSnapshotInvalidated();
 	}
 
 	/**
-	 * Executes the given action with the read lock held and returns its result.
+	 * Runs the given action with the read lock held and answers what it returns.
+	 * <p>
+	 * The lock helpers carry two names. {@code withXLock} is for an action that answers something
+	 * and {@code execXLock} for one that answers nothing; either takes the backing collection as
+	 * its argument, or takes none at all when the action does not need it - a lock-guarded sub-view
+	 * reads through itself rather than through what this class holds. The split falls there because
+	 * two one-argument shapes cannot share one name: a lambda whose parameter type is inferred is
+	 * not read for its body when the compiler chooses between overloads, so {@link Function} and
+	 * {@link Consumer} would be ambiguous at every call site.
 	 *
-	 * @param action the action to execute under the read lock
+	 * @param action the action to run under the read lock
 	 * @param <R> the result type
-	 * @return the value returned by {@code action}
+	 * @return the value {@code action} returns
 	 */
-	protected final <R> R withReadLock(@NotNull java.util.function.Supplier<R> action) {
+	protected final <R> R withReadLock(@NotNull Supplier<R> action) {
 		this.lock.readLock().lock();
 
 		try {
@@ -90,11 +123,29 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the read lock held.
+	 * Runs the given action over the backing collection with the read lock held and answers what it
+	 * returns.
 	 *
-	 * @param action the action to execute under the read lock
+	 * @param action the action to run over the backing collection under the read lock
+	 * @param <R> the result type
+	 * @return the value {@code action} returns
 	 */
-	protected final void withReadLock(@NotNull Runnable action) {
+	protected final <R> R withReadLock(@NotNull Function<T, R> action) {
+		this.lock.readLock().lock();
+
+		try {
+			return action.apply(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Runs the given action with the read lock held.
+	 *
+	 * @param action the action to run under the read lock
+	 */
+	protected final void execReadLock(@NotNull Runnable action) {
 		this.lock.readLock().lock();
 
 		try {
@@ -105,14 +156,33 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the write lock held and returns its result. Invalidates the
-	 * iterator snapshot in the {@code finally} block before releasing the lock.
+	 * Runs the given action over the backing collection with the read lock held.
 	 *
-	 * @param action the action to execute under the write lock
-	 * @param <R> the result type
-	 * @return the value returned by {@code action}
+	 * @param action the action to run over the backing collection under the read lock
 	 */
-	protected final <R> R withWriteLock(@NotNull java.util.function.Supplier<R> action) {
+	protected final void execReadLock(@NotNull Consumer<T> action) {
+		this.lock.readLock().lock();
+
+		try {
+			action.accept(this.ref);
+		} finally {
+			this.lock.readLock().unlock();
+		}
+	}
+
+	/**
+	 * Runs the given action with the write lock held and answers what it returns.
+	 * <p>
+	 * Asks {@link #checkModificationAllowed()} first and drops the cached iteration snapshot
+	 * before releasing the lock.
+	 *
+	 * @param action the action to run under the write lock
+	 * @param <R> the result type
+	 * @return the value {@code action} returns
+	 * @throws UnsupportedOperationException if this collection rejects modification
+	 */
+	protected final <R> R withWriteLock(@NotNull Supplier<R> action) {
+		this.checkModificationAllowed();
 		this.lock.writeLock().lock();
 
 		try {
@@ -124,16 +194,65 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	}
 
 	/**
-	 * Executes the given action with the write lock held. Invalidates the iterator snapshot in
-	 * the {@code finally} block before releasing the lock.
+	 * Runs the given action over the backing collection with the write lock held and answers what it
+	 * returns.
+	 * <p>
+	 * Asks {@link #checkModificationAllowed()} first and drops the cached iteration snapshot
+	 * before releasing the lock.
 	 *
-	 * @param action the action to execute under the write lock
+	 * @param action the action to run over the backing collection under the write lock
+	 * @param <R> the result type
+	 * @return the value {@code action} returns
+	 * @throws UnsupportedOperationException if this collection rejects modification
 	 */
-	protected final void withWriteLock(@NotNull Runnable action) {
+	protected final <R> R withWriteLock(@NotNull Function<T, R> action) {
+		this.checkModificationAllowed();
+		this.lock.writeLock().lock();
+
+		try {
+			return action.apply(this.ref);
+		} finally {
+			this.invalidateSnapshot();
+			this.lock.writeLock().unlock();
+		}
+	}
+
+	/**
+	 * Runs the given action with the write lock held.
+	 * <p>
+	 * Asks {@link #checkModificationAllowed()} first and drops the cached iteration snapshot
+	 * before releasing the lock.
+	 *
+	 * @param action the action to run under the write lock
+	 * @throws UnsupportedOperationException if this collection rejects modification
+	 */
+	protected final void execWriteLock(@NotNull Runnable action) {
+		this.checkModificationAllowed();
 		this.lock.writeLock().lock();
 
 		try {
 			action.run();
+		} finally {
+			this.invalidateSnapshot();
+			this.lock.writeLock().unlock();
+		}
+	}
+
+	/**
+	 * Runs the given action over the backing collection with the write lock held.
+	 * <p>
+	 * Asks {@link #checkModificationAllowed()} first and drops the cached iteration snapshot
+	 * before releasing the lock.
+	 *
+	 * @param action the action to run over the backing collection under the write lock
+	 * @throws UnsupportedOperationException if this collection rejects modification
+	 */
+	protected final void execWriteLock(@NotNull Consumer<T> action) {
+		this.checkModificationAllowed();
+		this.lock.writeLock().lock();
+
+		try {
+			action.accept(this.ref);
 		} finally {
 			this.invalidateSnapshot();
 			this.lock.writeLock().unlock();
@@ -147,11 +266,24 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	protected void onSnapshotInvalidated() {}
 
 	/**
+	 * Hook invoked before every write, from the two {@code withWriteLock} helpers that every
+	 * mutator on this collection and its subclasses funnels through. Default is a no-op;
+	 * {@code ConcurrentUnmodifiable*} subclasses override it to throw
+	 * {@link UnsupportedOperationException}, which is the whole of how they refuse to be modified.
+	 * <p>
+	 * One hook rather than an override per mutator: a mutator that is missed cannot be refused, and
+	 * this is the one place every write already passes through - so nothing can be missed, and a
+	 * mutator added later is refused without anyone remembering to say so. It rejects before the
+	 * lock is acquired, so a refused call costs no lock at all.
+	 */
+	protected void checkModificationAllowed() {}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean add(@NotNull E element) {
-		return this.withWriteLock(() -> this.ref.add(element));
+		return this.withWriteLock(backing -> backing.add(element));
 	}
 
 	/**
@@ -169,7 +301,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public boolean addAll(@NotNull Collection<? extends E> collection) {
-		return this.withWriteLock(() -> this.ref.addAll(collection));
+		return this.withWriteLock(backing -> backing.addAll(collection));
 	}
 
 	/**
@@ -180,7 +312,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @return {@code true} if the element was added to this collection
 	 */
 	public boolean addIf(@NotNull Supplier<Boolean> predicate, @NotNull E element) {
-		return this.withWriteLock(() -> predicate.get() && this.ref.add(element));
+		return this.withWriteLock(backing -> predicate.get() && backing.add(element));
 	}
 
 	/**
@@ -192,7 +324,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @return {@code true} if the element was added to this collection
 	 */
 	public boolean addIf(@NotNull Predicate<T> predicate, @NotNull E element) {
-		return this.withWriteLock(() -> predicate.test(this.ref) && this.ref.add(element));
+		return this.withWriteLock(backing -> predicate.test(backing) && backing.add(element));
 	}
 
 	/**
@@ -200,7 +332,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public void clear() {
-		this.withWriteLock(this.ref::clear);
+		this.execWriteLock(Collection::clear);
 	}
 
 	/**
@@ -208,23 +340,36 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public boolean contains(Object item) {
-		return this.withReadLock(() -> this.ref.contains(item));
+		return this.withReadLock(backing -> backing.contains(item));
 	}
 
 	/**
 	 * Returns {@code true} if this collection contains an element whose value,
 	 * extracted by the given function, equals the specified value.
+	 * <p>
+	 * An element whose extractor raises a {@link NullPointerException} on the way to the value
+	 * does not match, as in every other finder.
 	 *
 	 * @param <S> the type of the extracted value
 	 * @param function the function to extract a value from each element
 	 * @param value the value to search for
 	 * @return {@code true} if a matching element is found
 	 */
-	public final <S> boolean contains(@NotNull Function<E, S> function, S value) {
-		return this.withReadLock(() -> {
+	public final <S> boolean contains(@NotNull SearchFunction<E, S> function, S value) {
+		List<E> indexed = this.indexes().lookup(PropertyReference.of(function), function, value);
+
+		if (indexed != null)
+			return !indexed.isEmpty();
+
+		return this.withReadLock(backing -> {
 			for (E element : this.ref) {
-				if (Objects.equals(function.apply(element), value))
-					return true;
+				try {
+					if (Objects.equals(function.apply(element), value))
+						return true;
+				} catch (NullPointerException absent) {
+					// A null on the way to the property reads as a non-match, as the index build
+					// and the other finders' scans read it.
+				}
 			}
 
 			return false;
@@ -233,10 +378,37 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 
 	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Built lazily under the read lock with the same double-checked shape as
+	 * {@link #cachedOrFreshSnapshotArray()}, so a build can never interleave with a write and
+	 * publish an index describing elements the collection has already dropped.
+	 */
+	@Override
+	public @NotNull IndexCache<E> indexes() {
+		IndexCache<E> cache = this.indexCache;
+
+		if (cache == null) {
+			cache = this.withReadLock(backing -> {
+				IndexCache<E> held = this.indexCache;
+
+				if (held == null) {
+					held = IndexCache.over(this.cachedOrFreshSnapshotArray());
+					this.indexCache = held;
+				}
+
+				return held;
+			});
+		}
+
+		return cache;
+	}
+
+	/**
+	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean containsAll(@NotNull Collection<?> collection) {
-		return this.withReadLock(() -> this.ref.containsAll(collection));
+		return this.withReadLock(backing -> backing.containsAll(collection));
 	}
 
 	/**
@@ -260,7 +432,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @return an unshared copy of this collection's current contents
 	 */
 	protected @NotNull Object comparisonSnapshot() {
-		return this.withReadLock(() -> new ArrayList<>(this.ref));
+		return this.withReadLock(backing -> new ArrayList<>(backing));
 	}
 
 	/**
@@ -283,7 +455,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 		}
 
 		final Object target = obj;
-		return this.withReadLock(() -> this.ref.equals(target));
+		return this.withReadLock(backing -> backing.equals(target));
 	}
 
 	/**
@@ -291,7 +463,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public final int hashCode() {
-		return this.withReadLock(this.ref::hashCode);
+		return this.withReadLock(Collection::hashCode);
 	}
 
 	/**
@@ -319,7 +491,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public final boolean isEmpty() {
-		return this.withReadLock(this.ref::isEmpty);
+		return this.withReadLock(Collection::isEmpty);
 	}
 
 	/**
@@ -345,7 +517,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 		Object[] snapshot = this.snapshotCache;
 
 		if (snapshot == null) {
-			snapshot = this.withReadLock(() -> {
+			snapshot = this.withReadLock(backing -> {
 				Object[] cached = this.snapshotCache;
 
 				if (cached == null) {
@@ -414,7 +586,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public boolean remove(Object element) {
-		return this.withWriteLock(() -> this.ref.remove(element));
+		return this.withWriteLock(backing -> backing.remove(element));
 	}
 
 	/**
@@ -425,9 +597,10 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 * @param existingElement the element to be replaced
 	 * @param replaceWith the element to replace with
 	 * @return {@code true} if the element was replaced
+	 * @throws UnsupportedOperationException if this collection rejects mutation
 	 */
 	public final boolean replace(@NotNull E existingElement, @NotNull E replaceWith) {
-		return this.withWriteLock(() -> this.ref.remove(existingElement) && this.ref.add(replaceWith));
+		return this.withWriteLock(backing -> backing.remove(existingElement) && backing.add(replaceWith));
 	}
 
 	/**
@@ -435,7 +608,22 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public boolean removeAll(@NotNull Collection<?> collection) {
-		return this.withWriteLock(() -> this.ref.removeAll(collection));
+		return this.withWriteLock(backing -> backing.removeAll(collection));
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Applied to the backing collection in one write rather than through the snapshot iterator the
+	 * inherited default walks, so the removals are one atomic step and a list drops the element at
+	 * each matching position rather than the first one equal to it.
+	 */
+	@Override
+	public boolean removeIf(@NotNull Predicate<? super E> filter) {
+		return this.withWriteLock(backing -> backing.removeIf(filter));
 	}
 
 	/**
@@ -443,7 +631,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public boolean retainAll(@NotNull Collection<?> collection) {
-		return this.withWriteLock(() -> this.ref.retainAll(collection));
+		return this.withWriteLock(backing -> backing.retainAll(collection));
 	}
 
 	/**
@@ -451,7 +639,7 @@ public abstract class AtomicCollection<E, T extends Collection<E>> extends Abstr
 	 */
 	@Override
 	public final int size() {
-		return this.withReadLock(this.ref::size);
+		return this.withReadLock(Collection::size);
 	}
 
 	/**

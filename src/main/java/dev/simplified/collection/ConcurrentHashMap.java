@@ -112,7 +112,7 @@ public class ConcurrentHashMap<K, V> extends AtomicMap<K, V, AbstractMap<K, V>> 
 	 * @return a fresh {@link AbstractMap} containing the current entries
 	 */
 	protected @NotNull AbstractMap<K, V> cloneRef() {
-		return this.withReadLock(() -> new HashMap<>(this.ref));
+		return this.withReadLock(backing -> new HashMap<>(backing));
 	}
 
 	/**

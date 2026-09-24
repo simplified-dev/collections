@@ -126,7 +126,7 @@ public class ConcurrentTreeMap<K, V> extends AtomicNavigableMap<K, V, TreeMap<K,
 	 * @return a fresh {@link TreeMap} containing the current entries
 	 */
 	protected @NotNull TreeMap<K, V> cloneRef() {
-		return this.withReadLock(() -> new TreeMap<>(this.ref));
+		return this.withReadLock(backing -> new TreeMap<>(backing));
 	}
 
 	/**

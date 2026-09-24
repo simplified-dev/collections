@@ -14,9 +14,13 @@ java {
 
 repositories {
     mavenCentral()
+    maven(url = "https://jitpack.io")
 }
 
 dependencies {
+    // Simplified Utils
+    api("com.github.simplified-dev:utils") { version { strictly("d675d06") } }
+
     // JetBrains Annotations
     api(libs.annotations)
 
@@ -27,6 +31,10 @@ dependencies {
     // dev.simplified.collection.gson.ConcurrentTypeAdapterFactory SPI)
     compileOnly(libs.gson)
     testImplementation(libs.gson)
+
+    // ASM (tests only - LambdaBodyReaderDifferentialTest reads every compiled class with both
+    // ASM and dev.simplified.collection.query.LambdaBodyReader and asserts they agree)
+    testImplementation(libs.asm)
 
     // Simplified Annotations
     compileOnly(libs.simplified.annotations)
@@ -71,4 +79,8 @@ jmh {
     if (warmupProp != null) warmupIterations.set(warmupProp.toInt())
     val iterProp = providers.gradleProperty("jmhIter").orNull
     if (iterProp != null) iterations.set(iterProp.toInt())
+    // -PjmhProfilers=gc reports bytes allocated per operation, which is deterministic where
+    // throughput on a loaded machine is not.
+    val profilersProp = providers.gradleProperty("jmhProfilers").orNull
+    if (profilersProp != null) profilers.set(profilersProp.split(","))
 }

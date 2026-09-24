@@ -122,7 +122,7 @@ public class ConcurrentArrayQueue<E> extends AtomicQueue<E, ArrayDeque<E>> imple
 	 */
 	@Override
 	public @NotNull ConcurrentQueue<E> toUnmodifiable() {
-		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue<>(this.withReadLock(() -> new ArrayDeque<>(this.ref)));
+		return new ConcurrentUnmodifiable.UnmodifiableConcurrentArrayQueue<>(this.withReadLock(backing -> new ArrayDeque<>(backing)));
 	}
 
 }

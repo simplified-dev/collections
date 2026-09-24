@@ -1,8 +1,8 @@
 package dev.simplified.collection;
 
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
 import dev.simplified.collection.ConcurrentLinkedList;
+import dev.simplified.collection.ConcurrentList;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
