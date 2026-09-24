@@ -43,11 +43,23 @@ import java.lang.annotation.Target;
  * collection holds two elements sharing a value fails to build rather than answering one of them,
  * wherever both of those elements made the promise.
  *
+ * <p>Declarations are read from a class and its superclasses, never from the interfaces it
+ * implements. An {@code @Indexed} on an interface's accessor declares nothing, and the implementing
+ * class's override does not inherit it, so declare on the implementing class.
+ *
  * <p>The most derived declaration of a property is the one read: a shadowing field or an annotated
  * override restates the property, and nothing a supertype declares about it applies, {@link #unique}
  * included. An override carrying no {@code @Indexed} restates nothing, so the supertype's declaration
  * stands. Restating a member of a group outside that group breaks the group on the class restating
  * it, as {@link #group} describes.
+ *
+ * <p>A class contradicting itself fails fast rather than scanning in silence. One property declared
+ * both {@link #unique} and not, two members of a group given one {@link #order}, or members of a
+ * group sitting on one class that disagree on {@link #unique} throw an
+ * {@link IllegalArgumentException} naming the class and the property or group at fault, from the
+ * first query against a collection of that class and from every query after it. The throw depends
+ * on the declarations alone, never on what the elements hold, so the first test touching the class
+ * catches it.
  *
  * <h2>Reaching a property of a property</h2>
  *
