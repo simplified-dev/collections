@@ -47,6 +47,12 @@ import java.lang.annotation.Target;
  * implements. An {@code @Indexed} on an interface's accessor declares nothing, and the implementing
  * class's override does not inherit it, so declare on the implementing class.
  *
+ * <p>A persistence mapping declares nothing. {@code @Id}, {@code @Column(unique = true)} and the
+ * association annotations of {@code jakarta.persistence} or {@code javax.persistence} say how rows
+ * are stored rather than what code asks by, and a table's uniqueness constraint is no promise about
+ * every collection its rows are held in. An entity queried by its id carries {@code @Indexed}
+ * beside {@code @Id}.
+ *
  * <p>The most derived declaration of a property is the one read: a shadowing field or an annotated
  * override restates the property, and nothing a supertype declares about it applies, {@link #unique}
  * included. An override carrying no {@code @Indexed} restates nothing, so the supertype's declaration
