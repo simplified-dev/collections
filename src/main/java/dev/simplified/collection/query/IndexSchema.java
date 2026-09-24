@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -171,16 +172,22 @@ final class IndexSchema {
     }
 
     /**
-     * Collects every {@link Indexed} annotation on a class and its supertypes, without reaching
+     * Collects the {@link Indexed} annotations a class and its supertypes declare, without reaching
      * through any of them.
      *
      * @param type the class to read
-     * @return one entry per annotation, most derived first
+     * @return one entry per annotation on the most derived declaration of each property, most
+     *         derived first
      */
     private static @NotNull List<Local> readLocal(@NotNull Class<?> type) {
         List<Local> locals = new ArrayList<>();
 
-        // Most derived first, so a shadowing field wins the way a field read would.
+        // What a more derived class already declares, which a supertype's declaration of the same
+        // property yields to. Only an annotation claims, so an unannotated override hides nothing.
+        Set<String> claimed = new HashSet<>();
+
+        // Most derived first, so a shadowing field or an annotated override wins the way a field
+        // read or a virtual call would.
         for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
             Set<String> declared = new LinkedHashSet<>();
 
@@ -188,6 +195,9 @@ final class IndexSchema {
                 // A static field holds one value for every element, so an index over it sorts
                 // nothing and would answer every query with the whole collection.
                 if (Modifier.isStatic(field.getModifiers()))
+                    continue;
+
+                if (claimed.contains(field.getName()))
                     continue;
 
                 for (Indexed found : field.getAnnotationsByType(Indexed.class)) {
@@ -206,12 +216,14 @@ final class IndexSchema {
 
                 // A record propagates a component's annotation to both its field and its accessor,
                 // and a class may carry it on both by hand. Either way it is one declaration.
-                if (!declared.add(property))
+                if (claimed.contains(property) || !declared.add(property))
                     continue;
 
                 for (Indexed found : accessor.getAnnotationsByType(Indexed.class))
                     locals.add(new Local(property, accessor.getReturnType(), found));
             }
+
+            claimed.addAll(declared);
         }
 
         return List.copyOf(locals);

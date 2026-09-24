@@ -42,6 +42,11 @@ import java.lang.annotation.Target;
  * is a promise about the elements rather than a hint about the schema: an index declared unique whose
  * collection holds two elements sharing a value fails to build rather than answering one of them.
  *
+ * <p>The most derived declaration of a property is the one read: a shadowing field or an annotated
+ * override restates the property, and nothing a supertype declares about it applies, {@link #unique}
+ * included. An override carrying no {@code @Indexed} restates nothing, so the supertype's declaration
+ * stands.
+ *
  * <h2>Reaching a property of a property</h2>
  *
  * <p>Indexing a field that holds another object also indexes what that object declares about itself,

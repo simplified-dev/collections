@@ -530,4 +530,191 @@ class IndexSchemaTest {
 
     }
 
+    // --- Hierarchies ---
+
+    /**
+     * Supertype declaring a composite on its accessors.
+     */
+    static class GroupBase {
+
+        @Indexed(group = "pair", order = 0)
+        public String getMode() {
+            return "";
+        }
+
+        @Indexed(group = "pair", order = 1)
+        public int getTier() {
+            return 0;
+        }
+
+    }
+
+    /**
+     * Subtype repeating one member of its supertype's composite on an override.
+     */
+    static class GroupSub extends GroupBase {
+
+        @Override
+        @Indexed(group = "pair", order = 0)
+        public String getMode() {
+            return "sub";
+        }
+
+    }
+
+    /**
+     * Supertype declaring a composite on its fields.
+     */
+    static class ShadowBase {
+
+        @Indexed(group = "pair", order = 0)
+        private String mode = "";
+
+        @Indexed(group = "pair", order = 1)
+        private int tier;
+
+    }
+
+    /**
+     * Subtype repeating one member of its supertype's composite on a field shadowing the one it
+     * sits on.
+     */
+    static class ShadowSub extends ShadowBase {
+
+        @Indexed(group = "pair", order = 0)
+        private String mode = "";
+
+    }
+
+    /**
+     * Supertype declaring a plain index on its accessor.
+     */
+    static class CodeBase {
+
+        @Indexed
+        public String getCode() {
+            return "";
+        }
+
+    }
+
+    /**
+     * Subtype whose override promises the same property unique.
+     */
+    static class UniqueCode extends CodeBase {
+
+        @Override
+        @Indexed(unique = true)
+        public String getCode() {
+            return "";
+        }
+
+    }
+
+    /**
+     * Subtype overriding a declared accessor with no annotation, the way a runtime proxy of an
+     * entity overrides every accessor it intercepts.
+     */
+    static class QuietAccessed extends Accessed {
+
+        QuietAccessed() {
+            super("", null, "");
+        }
+
+        @Override
+        public String getCode() {
+            return super.getCode();
+        }
+
+    }
+
+    /**
+     * Supertype declaring one accessor both as an index of its own and as a member of a composite.
+     */
+    static class PairBase {
+
+        @Indexed
+        @Indexed(group = "pair", order = 0)
+        public String getMode() {
+            return "";
+        }
+
+        @Indexed(group = "pair", order = 1)
+        public int getTier() {
+            return 0;
+        }
+
+    }
+
+    /**
+     * Subtype restating that accessor as an index of its own and nothing more.
+     */
+    static class PlainPair extends PairBase {
+
+        @Override
+        @Indexed
+        public String getMode() {
+            return "";
+        }
+
+    }
+
+    @Nested
+    class Hierarchy {
+
+        @Test
+        void of_overrideRepeatingAGroupMember_isOneComposite() {
+            // The override restates mode, so the supertype's mode is not read a second time and
+            // each position in the group is held once.
+            IndexSchema schema = IndexSchema.of(GroupSub.class);
+
+            assertEquals(1, schema.declarations().size());
+            assertNotNull(schema.declaring(tuple(GroupSub.class, "mode", "tier")));
+        }
+
+        @Test
+        void of_shadowingFieldRepeatingAGroupMember_isOneComposite() {
+            IndexSchema schema = IndexSchema.of(ShadowSub.class);
+
+            assertEquals(1, schema.declarations().size());
+            assertNotNull(schema.declaring(tuple(ShadowSub.class, "mode", "tier")));
+        }
+
+        @Test
+        void of_overrideChangingUnique_carriesTheSubclassPromise() {
+            // The most derived declaration is the one read, so the subclass's promise holds for its
+            // instances and the supertype's holds for its own.
+            IndexSchema.Declaration derived = IndexSchema.of(UniqueCode.class).coveringPath(List.of("code"));
+            IndexSchema.Declaration base = IndexSchema.of(CodeBase.class).coveringPath(List.of("code"));
+
+            assertNotNull(derived);
+            assertTrue(derived.unique());
+            assertNotNull(base);
+            assertFalse(base.unique());
+        }
+
+        @Test
+        void of_unannotatedOverride_keepsTheSupertypeDeclaration() {
+            // Only an annotation restates a property, so an override carrying none - all a runtime
+            // proxy's overrides carry - leaves the supertype's declaration standing.
+            IndexSchema.Declaration declaration = IndexSchema.of(QuietAccessed.class).coveringPath(List.of("code"));
+
+            assertNotNull(declaration);
+            assertTrue(declaration.unique());
+        }
+
+        @Test
+        void of_overrideRestatingAProperty_dropsItsSupertypeGroup() {
+            // The supertype joins mode to a composite; the override declares it on its own and
+            // nothing more, so the composite does not apply to the subclass.
+            assertNotNull(IndexSchema.of(PairBase.class).declaring(tuple(PairBase.class, "mode", "tier")));
+
+            IndexSchema schema = IndexSchema.of(PlainPair.class);
+
+            assertNotNull(schema.coveringPath(List.of("mode")));
+            assertNull(schema.declaring(tuple(PlainPair.class, "mode", "tier")));
+        }
+
+    }
+
 }
