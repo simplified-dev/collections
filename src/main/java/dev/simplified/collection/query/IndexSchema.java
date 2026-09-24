@@ -394,11 +394,18 @@ final class IndexSchema {
     }
 
     /**
-     * Reduces one group's members to a single composite declaration.
+     * Reduces one group's members to a single composite declaration, or to nothing when the class
+     * sees only one of them.
      *
      * @throws IllegalArgumentException if the members disagree on uniqueness or share a position
      */
     private static void declare(@NotNull Map<List<PropertyReference>, Declaration> declarations, @NotNull Class<?> type, @NotNull String name, @NotNull List<Local> grouped) {
+        // One value is no composite. It is how a group split across a hierarchy looks from the
+        // class holding one member, or a group an override has taken a member out of, and a unique
+        // there would promise a key nobody wrote.
+        if (grouped.size() < 2)
+            return;
+
         boolean unique = grouped.getFirst().declared().unique();
 
         for (Local local : grouped) {

@@ -665,6 +665,58 @@ class IndexSchemaTest {
      */
     static class Quiet extends Row {}
 
+    /**
+     * Supertype holding one member of a unique group, whose other member only its subclass
+     * declares.
+     */
+    static class SplitBase {
+
+        @Indexed(group = "key", order = 0, unique = true)
+        private String region = "";
+
+    }
+
+    /**
+     * Subtype declaring the rest of its supertype's group, so the whole key is seen from here alone.
+     */
+    static class SplitSub extends SplitBase {
+
+        @Indexed(group = "key", order = 1, unique = true)
+        private String code = "";
+
+    }
+
+    /**
+     * Supertype promising a unique key over two accessors.
+     */
+    static class KeyBase {
+
+        @Indexed(group = "key", order = 0, unique = true)
+        public String getA() {
+            return "";
+        }
+
+        @Indexed(group = "key", order = 1, unique = true)
+        public String getB() {
+            return "";
+        }
+
+    }
+
+    /**
+     * Subtype restating one member of that key as an index of its own, which takes it out of the
+     * key.
+     */
+    static class RestatedKey extends KeyBase {
+
+        @Override
+        @Indexed
+        public String getB() {
+            return "";
+        }
+
+    }
+
     @Nested
     class Hierarchy {
 
@@ -712,13 +764,15 @@ class IndexSchemaTest {
         @Test
         void of_overrideRestatingAProperty_dropsItsSupertypeGroup() {
             // The supertype joins mode to a composite; the override declares it on its own and
-            // nothing more, so the composite does not apply to the subclass.
+            // nothing more, so the composite does not apply to the subclass, and the tier it leaves
+            // behind is one member of a group, which declares nothing.
             assertNotNull(IndexSchema.of(PairBase.class).declaring(tuple(PairBase.class, "mode", "tier")));
 
             IndexSchema schema = IndexSchema.of(PlainPair.class);
 
             assertNotNull(schema.coveringPath(List.of("mode")));
             assertNull(schema.declaring(tuple(PlainPair.class, "mode", "tier")));
+            assertNull(schema.coveringPath(List.of("tier")));
         }
 
         @Test
@@ -740,6 +794,30 @@ class IndexSchemaTest {
             assertNotNull(schema.declaring(tuple(Quiet.class, "mode", "tier")));
             assertNotNull(code);
             assertTrue(code.unique());
+        }
+
+        @Test
+        void of_groupSeenAsOneMember_declaresNothing() {
+            // From the supertype the key is one value, which is no composite, and a unique over it
+            // would promise that no two elements share a region - a promise nobody wrote.
+            assertSame(IndexSchema.EMPTY, IndexSchema.of(SplitBase.class));
+
+            IndexSchema.Declaration key = IndexSchema.of(SplitSub.class).declaring(tuple(SplitSub.class, "region", "code"));
+
+            assertNotNull(key);
+            assertTrue(key.unique());
+        }
+
+        @Test
+        void of_overrideTakingAMemberOutOfAUniqueGroup_leavesNoPartialKey() {
+            // The override restates b on its own, so a is all the subclass sees of the key, and two
+            // elements sharing a while differing in b keep the promise the supertype made.
+            IndexSchema schema = IndexSchema.of(RestatedKey.class);
+            IndexSchema.Declaration b = schema.coveringPath(List.of("b"));
+
+            assertNull(schema.coveringPath(List.of("a")));
+            assertNotNull(b);
+            assertFalse(b.unique());
         }
 
     }

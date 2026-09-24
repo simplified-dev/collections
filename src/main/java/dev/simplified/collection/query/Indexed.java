@@ -109,7 +109,9 @@ public @interface Indexed {
 
     /**
      * Name joining this field to the other fields of one composite index, empty when the field is
-     * an index on its own.
+     * an index on its own. A group needs two or more members on the class being read, and a class
+     * seeing only one member of a group declares nothing for it - so declare every member on one
+     * class.
      */
     @NotNull String group() default "";
 

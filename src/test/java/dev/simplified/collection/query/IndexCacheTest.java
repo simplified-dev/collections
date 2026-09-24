@@ -269,6 +269,45 @@ class IndexCacheTest {
     }
 
     /**
+     * Supertype holding one member of a unique group, whose other member only its subclass
+     * declares.
+     */
+    static class SplitBase {
+
+        @Indexed(group = "key", order = 0, unique = true)
+        private final String region;
+
+        SplitBase(String region) {
+            this.region = region;
+        }
+
+        String getRegion() {
+            return this.region;
+        }
+
+    }
+
+    /**
+     * Subclass declaring the rest of its supertype's group, so the whole key is seen from here
+     * alone.
+     */
+    static class SplitSub extends SplitBase {
+
+        @Indexed(group = "key", order = 1, unique = true)
+        private final String code;
+
+        SplitSub(String region, String code) {
+            super(region);
+            this.code = code;
+        }
+
+        String getCode() {
+            return this.code;
+        }
+
+    }
+
+    /**
      * Fixture whose accessor dereferences its own field, so reading the property raises a
      * {@link NullPointerException} for some elements and not others.
      */
@@ -418,6 +457,7 @@ class IndexCacheTest {
     private static final SearchFunction<Animal, String> BY_NAME = Animal::getName;
     private static final SearchFunction<Animal, String> BY_TAG = Animal::getTag;
     private static final SearchFunction<Pet, String> BY_PET_NAME = Pet::getName;
+    private static final SearchFunction<SplitBase, String> BY_REGION = SplitBase::getRegion;
 
     private static final Row ALPHA_ONE = new Row("alpha", "A1", 1, "first");
     private static final Row ALPHA_TWO = new Row("alpha", "A2", 2, "second");
@@ -926,6 +966,21 @@ class IndexCacheTest {
 
             assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { hound, cat }, byBreed, "bloodhound")));
             assertNull(assertDoesNotThrow(() -> lookup(new Animal[] { cat, hound, animal }, byBreed, "bloodhound")));
+        }
+
+        @Test
+        void lookup_groupSplitAcrossTheHierarchy_scansWithoutThrowing() {
+            // From the supertype the key is one value, which is no composite. Read as an index of
+            // its own it would promise that no two elements share a region, which nobody wrote,
+            // and the scan answers both of these.
+            SplitBase base = new SplitBase("x");
+            SplitSub sub = new SplitSub("x", "c1");
+
+            assertNull(assertDoesNotThrow(() -> lookup(new SplitBase[] { base, sub }, BY_REGION, "x")));
+            assertSame(IndexCache.none(), IndexCache.over(new SplitBase[] { base, sub }));
+
+            // Led by the subclass, the region alone is half of a composite, which names no index.
+            assertNull(assertDoesNotThrow(() -> lookup(new SplitBase[] { sub, base }, BY_REGION, "x")));
         }
 
     }
