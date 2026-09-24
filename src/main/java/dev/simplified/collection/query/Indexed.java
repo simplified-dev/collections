@@ -40,8 +40,9 @@ import java.lang.annotation.Target;
  * <p>Repeating the annotation puts one field in more than one index, which is what lets {@code mode}
  * answer both a query about it alone and a query about it together with {@code tier}. {@link #unique}
  * is a promise about the elements rather than a hint about the schema: an index declared unique whose
- * collection holds two elements sharing a value fails to build rather than answering one of them,
- * wherever both of those elements made the promise.
+ * collection holds two different elements sharing a value fails to build rather than answering one
+ * of them, wherever both of those elements made the promise. One element the collection holds twice
+ * is not two elements, and is answered as often as it is held.
  *
  * <p>Declarations are read from a class and its superclasses, never from the interfaces it
  * implements. An {@code @Indexed} on an interface's accessor declares nothing, and the implementing
@@ -156,6 +157,10 @@ public @interface Indexed {
      * {@code unique}, or widens a group into a larger key, promised nothing about this one, so where
      * it shares a value with an instance of the class above it the query answers from a scan rather
      * than failing.
+     *
+     * <p>Only two different objects can share a value. A collection holding one element twice holds
+     * one row twice, which carries its value once, so the query answers that element as often as
+     * the collection holds it.
      */
     boolean unique() default false;
 

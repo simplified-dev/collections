@@ -949,6 +949,34 @@ class IndexCacheTest {
         }
 
         @Test
+        void lookup_uniqueKeyHeldRepeatedlyByOneElement_answersEveryOccurrence() {
+            // A list repeating one row holds one row, so its key is carried once and the row is
+            // answered as often as a scan meets it.
+            Row row = new Row("alpha", "SAME", 1, "first");
+            IndexCache<Row> cache = cacheOf(row, BETA_ONE, row, row);
+            List<Row> found = assertDoesNotThrow(() -> lookup(cache, BY_CODE, "SAME"));
+
+            assertEquals(3, found.size());
+            found.forEach(held -> assertSame(row, held));
+            assertEquals(List.of(BETA_ONE), lookup(cache, BY_CODE, BETA_ONE.getCode()));
+        }
+
+        @Test
+        void lookup_uniqueKeyHeldRepeatedlyThenByAnotherElement_throws() {
+            // The repeats grow a bucket, and the element behind them is still a second row carrying
+            // the key.
+            Row first = new Row("alpha", "SAME", 1, "first");
+            Row second = new Row("beta", "SAME", 2, "second");
+
+            IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> lookup(cacheOf(first, first, second), BY_CODE, "SAME")
+            );
+
+            assertTrue(thrown.getMessage().contains("unique"));
+        }
+
+        @Test
         void lookup_proxyFirst_answersFromTheIndex() {
             // The proxy declares nothing of its own, so the row class it stands for is read in its
             // place and the plain rows behind it are filed beside it.

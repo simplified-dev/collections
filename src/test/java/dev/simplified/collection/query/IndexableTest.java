@@ -915,6 +915,21 @@ class IndexableTest {
         }
 
         @Test
+        void findAll_uniqueKeyHeldTwiceByOneElement_answersLikeTheScan() {
+            // One row held twice carries its code once, so the index answers it as often as the
+            // scan meets it rather than reporting a broken promise.
+            indexed.add(indexed.getFirst());
+            scanned.add(scanned.getFirst());
+            String code = indexed.getFirst().code();
+
+            differential(rows -> rows.findAll(BY_CODE, code).toList());
+            differentialFirst(rows -> rows.findFirst(BY_CODE, code));
+            differentialFirst(rows -> rows.findLast(BY_CODE, code));
+            assertEquals(2, indexed.findAll(BY_CODE, code).toList().size());
+            assertNotNull(indexed.indexes().lookup(PropertyReference.of(BY_CODE), BY_CODE, code));
+        }
+
+        @Test
         void findAll_handRolledSortable_scansWithoutAnIndex() {
             // The interface stays implementable by a lambda, which is what keeps every existing
             // Searchable and Sortable usable unchanged.

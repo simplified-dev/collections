@@ -163,7 +163,8 @@ public final class IndexCache<E> {
      *        time a property is asked for
      * @param values the value each predicate compares against
      * @return the matching elements in source order, or {@code null} when no index covers the query
-     * @throws IllegalStateException if two elements that each promise an index unique share a value
+     * @throws IllegalStateException if two different elements that each promise an index unique
+     *         share a value
      */
     public @Nullable List<E> lookup(@NotNull List<PropertyReference> references, @NotNull List<SearchFunction<E, ?>> extractors, @NotNull List<Object> values) {
         if (this.isEmpty() || references.isEmpty() || references.size() != extractors.size() || references.size() != values.size())
@@ -214,7 +215,8 @@ public final class IndexCache<E> {
      * @param value the value the property must carry
      * @return the matching elements in source order, or {@code null} when the property carries no
      *         index
-     * @throws IllegalStateException if two elements that each promise an index unique share a value
+     * @throws IllegalStateException if two different elements that each promise an index unique
+     *         share a value
      */
     public @Nullable List<E> lookup(@NotNull PropertyReference reference, @NotNull SearchFunction<E, ?> extractor, @Nullable Object value) {
         IndexSchema.Declaration declaration = this.declaring(reference);
@@ -306,9 +308,13 @@ public final class IndexCache<E> {
      * {@link Indexed#unique}, or widens it into a larger group, promised nothing about this key, so
      * sharing one with it refuses the index and the scan answers both.
      *
+     * <p>Only two different objects can break the promise. A collection holding one element twice
+     * holds one row twice, which carries its key once, so the element is filed each time it is held
+     * and answered as often as the scan meets it.
+     *
      * @return the built index, or the {@link #UNUSABLE} marker
-     * @throws IllegalStateException if two elements that each promise the declaration unique carry
-     *         one key
+     * @throws IllegalStateException if two different elements that each promise the declaration
+     *         unique carry one key
      */
     @SuppressWarnings("unchecked")
     private @NotNull Index<E> build(@NotNull IndexSchema.Declaration declaration, @NotNull List<SearchFunction<E, ?>> extractors) {
@@ -352,10 +358,18 @@ public final class IndexCache<E> {
                 return (Index<E>) UNUSABLE;
             }
 
-            // A unique index grows no bucket before its first collision, so what was filed there
-            // is the bare element that carried the key first.
             if (earlier != null && unique) {
-                if (!this.promises(earlier, declaration) || !this.promises(element, declaration))
+                // A unique index grows a bucket only for one element held more than once, so what
+                // was filed there first is the element that carried the key first.
+                Object first = Index.first(earlier);
+
+                // One element held twice is one row the collection repeats, not two rows sharing a
+                // key, so it stays filed once per time it is held and answers as often as the scan
+                // meets it.
+                if (first == element)
+                    continue;
+
+                if (!this.promises(first, declaration) || !this.promises(element, declaration))
                     return (Index<E>) UNUSABLE;
 
                 throw new IllegalStateException(String.format(
@@ -741,6 +755,16 @@ public final class IndexCache<E> {
             // steps two at a time.
             this.mask = (this.table.length - 1) & ~1;
             this.ceiling = (int) (capacity * LOAD);
+        }
+
+        /**
+         * Reads the element a bucket took first.
+         *
+         * @param filed what is filed under a key, a bare element until a second one joins it
+         * @return the element filed first
+         */
+        private static @NotNull Object first(@NotNull Object filed) {
+            return filed instanceof Bucket<?> bucket ? bucket.getFirst() : filed;
         }
 
         /**
