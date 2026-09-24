@@ -308,6 +308,70 @@ class IndexCacheTest {
     }
 
     /**
+     * Supertype promising a unique key over two fields.
+     */
+    static class NarrowKey {
+
+        @Indexed(group = "key", order = 0, unique = true)
+        private final int a;
+
+        @Indexed(group = "key", order = 1, unique = true)
+        private final int b;
+
+        NarrowKey(int a, int b) {
+            this.a = a;
+            this.b = b;
+        }
+
+        int getA() {
+            return this.a;
+        }
+
+        int getB() {
+            return this.b;
+        }
+
+    }
+
+    /**
+     * Subclass widening its supertype's key with a third field, so it promises the wider key and
+     * not the narrower one.
+     */
+    static class WideKey extends NarrowKey {
+
+        @Indexed(group = "key", order = 2, unique = true)
+        private final int c;
+
+        WideKey(int a, int b, int c) {
+            super(a, b);
+            this.c = c;
+        }
+
+        int getC() {
+            return this.c;
+        }
+
+    }
+
+    /**
+     * Subclass restating the widening field as an index of its own, which takes it out of the key
+     * and leaves the two members above it behind.
+     */
+    static class RestatedWide extends WideKey {
+
+        RestatedWide(int a, int b, int c) {
+            super(a, b, c);
+        }
+
+        @Override
+        @Indexed
+        int getC() {
+            return super.getC();
+        }
+
+    }
+
+    /**
      * Fixture whose accessor dereferences its own field, so reading the property raises a
      * {@link NullPointerException} for some elements and not others.
      */
@@ -458,6 +522,9 @@ class IndexCacheTest {
     private static final SearchFunction<Animal, String> BY_TAG = Animal::getTag;
     private static final SearchFunction<Pet, String> BY_PET_NAME = Pet::getName;
     private static final SearchFunction<SplitBase, String> BY_REGION = SplitBase::getRegion;
+    private static final SearchFunction<NarrowKey, Integer> BY_A = NarrowKey::getA;
+    private static final SearchFunction<NarrowKey, Integer> BY_B = NarrowKey::getB;
+    private static final SearchFunction<RestatedWide, Integer> BY_RESTATED_C = RestatedWide::getC;
 
     private static final Row ALPHA_ONE = new Row("alpha", "A1", 1, "first");
     private static final Row ALPHA_TWO = new Row("alpha", "A2", 2, "second");
@@ -481,6 +548,14 @@ class IndexCacheTest {
     private static <T> List<T> lookup(Object[] elements, SearchFunction<T, ?> extractor, Object value) {
         IndexCache<T> cache = IndexCache.over(elements);
         return cache.lookup(PropertyReference.of(extractor), extractor, value);
+    }
+
+    /**
+     * Probes the two-field key over any mix of key fixtures.
+     */
+    private static List<NarrowKey> byKey(Object[] elements, int a, int b) {
+        IndexCache<NarrowKey> cache = IndexCache.over(elements);
+        return cache.lookup(List.of(PropertyReference.of(BY_A), PropertyReference.of(BY_B)), List.of(BY_A, BY_B), List.of(a, b));
     }
 
     /**
@@ -800,6 +875,17 @@ class IndexCacheTest {
             assertTrue(thrown.getMessage().contains("unique"));
         }
 
+        @Test
+        void lookup_uniqueCompositeOverDuplicateKeys_throws() {
+            // Both elements are of the class that promised the key, so the promise is broken.
+            IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> byKey(new NarrowKey[] { new NarrowKey(1, 1), new NarrowKey(1, 1) }, 1, 1)
+            );
+
+            assertTrue(thrown.getMessage().contains("unique"));
+        }
+
     }
 
     @Nested
@@ -981,6 +1067,39 @@ class IndexCacheTest {
 
             // Led by the subclass, the region alone is half of a composite, which names no index.
             assertNull(assertDoesNotThrow(() -> lookup(new SplitBase[] { sub, base }, BY_REGION, "x")));
+        }
+
+        @Test
+        void lookup_keyASubclassWidened_scansWhereOnlyOneElementPromisedIt() {
+            // Read from the supertype the key is (a, b), and the subclass promises (a, b, c) and
+            // nothing narrower, so sharing (a, b) with it breaks no promise it made. The scan
+            // answers both.
+            NarrowKey narrow = new NarrowKey(1, 1);
+            WideKey wide = new WideKey(1, 1, 2);
+
+            assertNull(assertDoesNotThrow(() -> byKey(new NarrowKey[] { narrow, wide }, 1, 1)));
+        }
+
+        @Test
+        void lookup_keyASubclassWidened_answersWhileNoKeyRepeats() {
+            NarrowKey narrow = new NarrowKey(1, 1);
+            WideKey wide = new WideKey(1, 2, 3);
+            NarrowKey[] elements = { narrow, wide };
+
+            assertEquals(List.of(narrow), byKey(elements, 1, 1));
+            assertEquals(List.of(wide), byKey(elements, 1, 2));
+        }
+
+        @Test
+        void lookup_groupAnOverrideTookAMemberFrom_declaresNoKeyToBreak() {
+            // The override restates c on its own, so the key is broken on this class and the two
+            // members left behind promise nothing - two elements sharing them keep every promise.
+            RestatedWide first = new RestatedWide(1, 1, 2);
+            RestatedWide second = new RestatedWide(1, 1, 3);
+            RestatedWide[] elements = { first, second };
+
+            assertNull(assertDoesNotThrow(() -> byKey(elements, 1, 1)));
+            assertEquals(List.of(first), lookup(elements, BY_RESTATED_C, 2));
         }
 
     }

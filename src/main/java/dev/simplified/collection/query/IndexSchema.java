@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -187,21 +188,28 @@ final class IndexSchema {
      * Collects the {@link Indexed} annotations a class and its supertypes declare, without reaching
      * through any of them.
      *
+     * <p>A group a supertype puts a property in is broken on this class when the more derived
+     * declaration of that property leaves it out, and none of its members is read. What is left of
+     * it is a narrower key than anybody wrote, whose {@link Indexed#unique} would promise what no
+     * class promised.
+     *
      * @param type the class to read
      * @return one entry per annotation on the most derived declaration of each property, most
-     *         derived first
+     *         derived first, less every member of a broken group
      */
     private static @NotNull List<Local> readLocal(@NotNull Class<?> type) {
         List<Local> locals = new ArrayList<>();
 
         // What a more derived class already declares, which a supertype's declaration of the same
-        // property yields to. Only an annotation claims, so an unannotated override hides nothing.
-        Set<String> claimed = new HashSet<>();
+        // property yields to, and the groups that declaration puts it in. Only an annotation
+        // claims, so an unannotated override hides nothing.
+        Map<String, Set<String>> claimed = new HashMap<>();
+        Set<String> broken = new HashSet<>();
 
         // Most derived first, so a shadowing field or an annotated override wins the way a field
         // read or a virtual call would.
         for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
-            Set<String> declared = new LinkedHashSet<>();
+            Map<String, Set<String>> declared = new HashMap<>();
 
             for (Field field : current.getDeclaredFields()) {
                 // A static field holds one value for every element, so an index over it sorts
@@ -209,12 +217,17 @@ final class IndexSchema {
                 if (Modifier.isStatic(field.getModifiers()))
                     continue;
 
-                if (claimed.contains(field.getName()))
-                    continue;
+                Indexed[] found = field.getAnnotationsByType(Indexed.class);
+                Set<String> kept = claimed.get(field.getName());
 
-                for (Indexed found : field.getAnnotationsByType(Indexed.class)) {
-                    declared.add(field.getName());
-                    locals.add(new Local(field.getName(), field.getType(), found, current));
+                if (kept != null) {
+                    breakLeftGroups(found, kept, broken);
+                    continue;
+                }
+
+                for (Indexed one : found) {
+                    declared.computeIfAbsent(field.getName(), name -> new HashSet<>()).add(one.group());
+                    locals.add(new Local(field.getName(), field.getType(), one, current));
                 }
             }
 
@@ -225,20 +238,51 @@ final class IndexSchema {
                 // The property an accessor names is the one its extractor decodes to, so a query
                 // written against the accessor and a declaration written on it agree by name.
                 String property = PropertyReference.propertyOf(accessor.getName());
+                Indexed[] found = accessor.getAnnotationsByType(Indexed.class);
+                Set<String> kept = claimed.get(property);
+
+                if (kept != null) {
+                    breakLeftGroups(found, kept, broken);
+                    continue;
+                }
 
                 // A record propagates a component's annotation to both its field and its accessor,
                 // and a class may carry it on both by hand. Either way it is one declaration.
-                if (claimed.contains(property) || !declared.add(property))
+                if (declared.containsKey(property))
                     continue;
 
-                for (Indexed found : accessor.getAnnotationsByType(Indexed.class))
-                    locals.add(new Local(property, accessor.getReturnType(), found, current));
+                Set<String> groups = new HashSet<>();
+                declared.put(property, groups);
+
+                for (Indexed one : found) {
+                    groups.add(one.group());
+                    locals.add(new Local(property, accessor.getReturnType(), one, current));
+                }
             }
 
-            claimed.addAll(declared);
+            claimed.putAll(declared);
         }
 
+        // Standalone declarations of the same properties stay, since only the key is broken.
+        if (!broken.isEmpty())
+            locals.removeIf(local -> broken.contains(local.declared().group()));
+
         return List.copyOf(locals);
+    }
+
+    /**
+     * Notes every group a supertype puts a property in that the more derived declaration of it
+     * leaves out, which is a group that declaration has taken the property out of.
+     *
+     * @param supertype the annotations the supertype's declaration carries
+     * @param kept the groups the more derived declaration puts the property in
+     * @param broken the groups broken so far, added to here
+     */
+    private static void breakLeftGroups(@NotNull Indexed @NotNull [] supertype, @NotNull Set<String> kept, @NotNull Set<String> broken) {
+        for (Indexed found : supertype) {
+            if (!found.group().isEmpty() && !kept.contains(found.group()))
+                broken.add(found.group());
+        }
     }
 
     /**
@@ -397,19 +441,26 @@ final class IndexSchema {
      * Reduces one group's members to a single composite declaration, or to nothing when the class
      * sees only one of them.
      *
-     * @throws IllegalArgumentException if the members disagree on uniqueness or share a position
+     * <p>The members on the most derived class holding any of them decide whether the key is
+     * unique, so an override restating a member in its group can promise the whole key or stop
+     * promising it.
+     *
+     * @throws IllegalArgumentException if the members on the most derived class holding any of them
+     *         disagree on uniqueness, or any two members share a position
      */
     private static void declare(@NotNull Map<List<PropertyReference>, Declaration> declarations, @NotNull Class<?> type, @NotNull String name, @NotNull List<Local> grouped) {
         // One value is no composite. It is how a group split across a hierarchy looks from the
-        // class holding one member, or a group an override has taken a member out of, and a unique
-        // there would promise a key nobody wrote.
+        // class holding one member, and a unique there would promise a key nobody wrote.
         if (grouped.size() < 2)
             return;
 
-        boolean unique = grouped.getFirst().declared().unique();
+        // Locals are read most derived first, so the first member sits on the most derived class
+        // holding any of them.
+        Local first = grouped.getFirst();
+        boolean unique = first.declared().unique();
 
         for (Local local : grouped) {
-            if (local.declared().unique() != unique)
+            if (local.declaredOn() == first.declaredOn() && local.declared().unique() != unique)
                 throw new IllegalArgumentException(String.format(
                     "Index group '%s' on '%s' is declared unique by some of its fields and not by others - uniqueness is a promise about the whole key",
                     name,

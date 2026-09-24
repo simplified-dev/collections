@@ -40,12 +40,14 @@ import java.lang.annotation.Target;
  * <p>Repeating the annotation puts one field in more than one index, which is what lets {@code mode}
  * answer both a query about it alone and a query about it together with {@code tier}. {@link #unique}
  * is a promise about the elements rather than a hint about the schema: an index declared unique whose
- * collection holds two elements sharing a value fails to build rather than answering one of them.
+ * collection holds two elements sharing a value fails to build rather than answering one of them,
+ * wherever both of those elements made the promise.
  *
  * <p>The most derived declaration of a property is the one read: a shadowing field or an annotated
  * override restates the property, and nothing a supertype declares about it applies, {@link #unique}
  * included. An override carrying no {@code @Indexed} restates nothing, so the supertype's declaration
- * stands.
+ * stands. Restating a member of a group outside that group breaks the group on the class restating
+ * it, as {@link #group} describes.
  *
  * <h2>Reaching a property of a property</h2>
  *
@@ -110,8 +112,15 @@ public @interface Indexed {
     /**
      * Name joining this field to the other fields of one composite index, empty when the field is
      * an index on its own. A group needs two or more members on the class being read, and a class
-     * seeing only one member of a group declares nothing for it - so declare every member on one
-     * class.
+     * seeing only one member of a group declares nothing for it.
+     *
+     * <p>A group may span a hierarchy, and a subclass may widen it with members of its own. A
+     * shadowing field or an annotated override restating a member without this group takes the
+     * member out, and the group declares nothing at all on the class it sits on, since the members
+     * left behind would be a narrower key than anybody wrote. Restating a member in the same group
+     * keeps the key, and the members on the most derived class holding any of them decide whether
+     * it is {@link #unique}, so such an override can promise the whole key or stop promising it.
+     * The members on that class must agree with one another.
      */
     @NotNull String group() default "";
 
@@ -123,6 +132,12 @@ public @interface Indexed {
 
     /**
      * Whether at most one element may carry any one value of this index.
+     *
+     * <p>Each element makes this promise through its own class, and two elements sharing a value
+     * break it only when both made it. An element of a subclass that restates the property without
+     * {@code unique}, or widens a group into a larger key, promised nothing about this one, so where
+     * it shares a value with an instance of the class above it the query answers from a scan rather
+     * than failing.
      */
     boolean unique() default false;
 

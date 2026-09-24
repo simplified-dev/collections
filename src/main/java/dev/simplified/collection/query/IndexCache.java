@@ -163,7 +163,7 @@ public final class IndexCache<E> {
      *        time a property is asked for
      * @param values the value each predicate compares against
      * @return the matching elements in source order, or {@code null} when no index covers the query
-     * @throws IllegalStateException if an index declared unique finds two elements sharing a value
+     * @throws IllegalStateException if two elements that each promise an index unique share a value
      */
     public @Nullable List<E> lookup(@NotNull List<PropertyReference> references, @NotNull List<SearchFunction<E, ?>> extractors, @NotNull List<Object> values) {
         if (this.isEmpty() || references.isEmpty() || references.size() != extractors.size() || references.size() != values.size())
@@ -214,7 +214,7 @@ public final class IndexCache<E> {
      * @param value the value the property must carry
      * @return the matching elements in source order, or {@code null} when the property carries no
      *         index
-     * @throws IllegalStateException if an index declared unique finds two elements sharing a value
+     * @throws IllegalStateException if two elements that each promise an index unique share a value
      */
     public @Nullable List<E> lookup(@NotNull PropertyReference reference, @NotNull SearchFunction<E, ?> extractor, @Nullable Object value) {
         IndexSchema.Declaration declaration = this.declaring(reference);
@@ -301,8 +301,14 @@ public final class IndexCache<E> {
      * taken refuses the same way, because the scan compares with {@code equals} and never asks for
      * one.
      *
+     * <p>Two elements sharing a key of a unique index break its promise only when both made it,
+     * each through its own class. An element of a subclass that restates the key without
+     * {@link Indexed#unique}, or widens it into a larger group, promised nothing about this key, so
+     * sharing one with it refuses the index and the scan answers both.
+     *
      * @return the built index, or the {@link #UNUSABLE} marker
-     * @throws IllegalStateException if the declaration promises uniqueness the elements do not keep
+     * @throws IllegalStateException if two elements that each promise the declaration unique carry
+     *         one key
      */
     @SuppressWarnings("unchecked")
     private @NotNull Index<E> build(@NotNull IndexSchema.Declaration declaration, @NotNull List<SearchFunction<E, ?>> extractors) {
@@ -336,27 +342,61 @@ public final class IndexCache<E> {
                 return (Index<E>) UNUSABLE;
             }
 
-            boolean fresh;
+            Object earlier;
 
             try {
-                fresh = index.file(key, element);
+                earlier = index.file(key, element);
             } catch (RuntimeException unhashable) {
                 // A throw part way through filing can leave the table half rehashed, so even a
                 // NullPointerException refuses here rather than reading as a non-match.
                 return (Index<E>) UNUSABLE;
             }
 
-            if (!fresh && unique)
+            // A unique index grows no bucket before its first collision, so what was filed there
+            // is the bare element that carried the key first.
+            if (earlier != null && unique) {
+                if (!this.promises(earlier, declaration) || !this.promises(element, declaration))
+                    return (Index<E>) UNUSABLE;
+
                 throw new IllegalStateException(String.format(
                     "Index '%s' on '%s' is declared unique and two elements carry '%s'",
                     declaration.describe(),
                     this.elementType.getSimpleName(),
                     key
                 ));
+            }
         }
 
         index.seal();
         return index;
+    }
+
+    /**
+     * Whether an element promises through its own class that no other element carries its key.
+     *
+     * <p>An element of the class the schema was read from made the promise the declaration carries.
+     * Any other is an instance of a subclass, which may restate the key or widen it into a larger
+     * group, so what that class declares about the same components is what it promised. This is
+     * asked only once two elements share a key, so a build filing every key once reads no schema
+     * but its own.
+     *
+     * @param element an element sharing its key with another
+     * @param declaration the unique declaration being built
+     * @return {@code true} when the element's own class declares the same components unique
+     */
+    private boolean promises(@NotNull Object element, @NotNull IndexSchema.Declaration declaration) {
+        Class<?> type = element.getClass();
+
+        if (type == this.elementType)
+            return true;
+
+        List<PropertyReference> restated = new ArrayList<>(declaration.components().size());
+
+        for (PropertyReference component : declaration.components())
+            restated.add(component.against(type));
+
+        IndexSchema.Declaration own = IndexSchema.of(type).covering(restated);
+        return own != null && own.unique();
     }
 
     /**
@@ -532,20 +572,21 @@ public final class IndexCache<E> {
          *
          * @param key the value the element carries
          * @param element the element to file
-         * @return {@code true} when nothing was filed under that key yet
+         * @return what was filed under that key before, a bare element until a second one joined
+         *         it, or {@code null} when nothing was
          */
-        private boolean file(@Nullable Object key, @NotNull Object element) {
+        private @Nullable Object file(@Nullable Object key, @NotNull Object element) {
             Object probe = probeOf(key);
             int at = this.slotFor(probe);
             Object filed = this.table[at + 1];
 
             if (filed == null) {
                 this.take(at, probe, element);
-                return true;
+                return null;
             }
 
             this.join(at, filed, element);
-            return false;
+            return filed;
         }
 
         /**

@@ -717,6 +717,79 @@ class IndexSchemaTest {
 
     }
 
+    /**
+     * Supertype promising a unique key over three accessors.
+     */
+    static class TripleKey {
+
+        @Indexed(group = "key", order = 0, unique = true)
+        public String getA() {
+            return "";
+        }
+
+        @Indexed(group = "key", order = 1, unique = true)
+        public String getB() {
+            return "";
+        }
+
+        @Indexed(group = "key", order = 2, unique = true)
+        public String getC() {
+            return "";
+        }
+
+    }
+
+    /**
+     * Subtype restating one member of that key as an index of its own, which leaves two members
+     * behind.
+     */
+    static class RestatedC extends TripleKey {
+
+        @Override
+        @Indexed
+        public String getC() {
+            return "";
+        }
+
+    }
+
+    /**
+     * Subtype restating one member of its supertype's plain composite in the same group, promising
+     * the key unique.
+     */
+    static class UniqueMemberSub extends GroupBase {
+
+        @Override
+        @Indexed(group = "pair", order = 0, unique = true)
+        public String getMode() {
+            return "";
+        }
+
+    }
+
+    /**
+     * Subtype adding two members to its supertype's plain composite that disagree with each other
+     * about uniqueness.
+     */
+    static class DisagreeingMembers extends GroupBase {
+
+        @Indexed(group = "pair", order = 2, unique = true)
+        public String getLeft() {
+            return "";
+        }
+
+        @Indexed(group = "pair", order = 3)
+        public String getRight() {
+            return "";
+        }
+
+    }
+
+    /**
+     * Subtype declaring nothing of its own over a class whose group members disagree.
+     */
+    static class QuietDisagreeing extends Disagreeing {}
+
     @Nested
     class Hierarchy {
 
@@ -818,6 +891,54 @@ class IndexSchemaTest {
             assertNull(schema.coveringPath(List.of("a")));
             assertNotNull(b);
             assertFalse(b.unique());
+        }
+
+        @Test
+        void of_overrideTakingAMemberOutOfAWiderGroup_declaresNoneOfIt() {
+            // Two members are left behind, which is still a composite by count - but a narrower
+            // key than anybody wrote, whose unique would promise what no class promised.
+            IndexSchema schema = IndexSchema.of(RestatedC.class);
+            IndexSchema.Declaration c = schema.coveringPath(List.of("c"));
+
+            assertNull(schema.declaring(tuple(RestatedC.class, "a", "b")));
+            assertNull(schema.declaring(tuple(RestatedC.class, "a", "b", "c")));
+            assertNotNull(c);
+            assertFalse(c.unique());
+            assertEquals(1, schema.declarations().size());
+            assertNotNull(IndexSchema.of(TripleKey.class).declaring(tuple(TripleKey.class, "a", "b", "c")));
+        }
+
+        @Test
+        void of_overrideRestatingAMemberInItsGroup_keepsTheComposite() {
+            IndexSchema.Declaration pair = IndexSchema.of(GroupSub.class).declaring(tuple(GroupSub.class, "mode", "tier"));
+
+            assertNotNull(pair);
+            assertFalse(pair.unique());
+        }
+
+        @Test
+        void of_groupMembersDisagreeingAcrossClasses_takeTheMostDerivedPromise() {
+            // The override restates mode in the same group and promises the key unique, and the
+            // most derived class holding a member decides for the whole key.
+            IndexSchema.Declaration derived = IndexSchema.of(UniqueMemberSub.class).declaring(tuple(UniqueMemberSub.class, "mode", "tier"));
+            IndexSchema.Declaration base = IndexSchema.of(GroupBase.class).declaring(tuple(GroupBase.class, "mode", "tier"));
+
+            assertNotNull(derived);
+            assertTrue(derived.unique());
+            assertNotNull(base);
+            assertFalse(base.unique());
+        }
+
+        @Test
+        void of_mostDerivedMembersDisagreeing_throws() {
+            IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> IndexSchema.of(DisagreeingMembers.class));
+            assertTrue(thrown.getMessage().contains("'pair'"));
+        }
+
+        @Test
+        void of_inheritedMembersDisagreeingOnOneClass_throws() {
+            IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> IndexSchema.of(QuietDisagreeing.class));
+            assertTrue(thrown.getMessage().contains("'pair'"));
         }
 
     }
