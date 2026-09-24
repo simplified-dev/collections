@@ -3,6 +3,7 @@ package dev.simplified.collection.query;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.AbstractList;
 import java.util.Collections;
 import java.util.List;
 
@@ -60,6 +61,51 @@ class IndexCacheTest {
 
         String getLabel() {
             return this.label;
+        }
+
+    }
+
+    /**
+     * Fixture that can no longer be read, the way a detached proxy of an entity raises from every
+     * accessor once the session that could load it is gone. It counts its reads, so a test can show
+     * a refusal is held rather than decided again.
+     */
+    static class Detached extends Row {
+
+        private int reads;
+
+        Detached() {
+            super(null, null, 0, null);
+        }
+
+        @Override
+        String getMode() {
+            throw this.detached();
+        }
+
+        @Override
+        String getCode() {
+            throw this.detached();
+        }
+
+        @Override
+        String getGroupedMode() {
+            throw this.detached();
+        }
+
+        @Override
+        int getTier() {
+            throw this.detached();
+        }
+
+        @Override
+        String getLabel() {
+            throw this.detached();
+        }
+
+        private IllegalStateException detached() {
+            this.reads++;
+            return new IllegalStateException("detached");
         }
 
     }
@@ -138,11 +184,79 @@ class IndexCacheTest {
 
     }
 
+    /**
+     * Fixture carrying one list-valued index, which a containment query reads member by member.
+     */
+    static class Tagged {
+
+        @Indexed
+        private final List<String> tags;
+
+        Tagged(List<String> tags) {
+            this.tags = tags;
+        }
+
+        List<String> getTags() {
+            return this.tags;
+        }
+
+    }
+
+    /**
+     * Fixture whose list cannot be read at all.
+     */
+    static class BrokenTags extends Tagged {
+
+        BrokenTags() {
+            super(null);
+        }
+
+        @Override
+        List<String> getTags() {
+            throw new IllegalStateException("detached");
+        }
+
+    }
+
+    /**
+     * Key whose hash cannot be taken, the way a reference to an entity raises from
+     * {@code hashCode} once the session that could load it is gone. Its {@code equals} still
+     * answers, which is all a scan ever asks of it.
+     */
+    record Unhashable(String name) {
+
+        @Override
+        public int hashCode() {
+            throw new IllegalStateException("detached");
+        }
+
+    }
+
+    /**
+     * Fixture keyed by a value of any class.
+     */
+    static class Referencing {
+
+        @Indexed
+        private final Object target;
+
+        Referencing(Object target) {
+            this.target = target;
+        }
+
+        Object getTarget() {
+            return this.target;
+        }
+
+    }
+
     private static final SearchFunction<Row, String> BY_MODE = Row::getMode;
     private static final SearchFunction<Row, String> BY_CODE = Row::getCode;
     private static final SearchFunction<Row, String> BY_GROUPED_MODE = Row::getGroupedMode;
     private static final SearchFunction<Row, Integer> BY_TIER = Row::getTier;
     private static final SearchFunction<Row, String> BY_LABEL = Row::getLabel;
+    private static final SearchFunction<Tagged, List<String>> BY_TAGS = Tagged::getTags;
+    private static final SearchFunction<Referencing, Object> BY_TARGET = Referencing::getTarget;
 
     private static final Row ALPHA_ONE = new Row("alpha", "A1", 1, "first");
     private static final Row ALPHA_TWO = new Row("alpha", "A2", 2, "second");
@@ -158,6 +272,33 @@ class IndexCacheTest {
      */
     private static List<Row> lookup(IndexCache<Row> cache, SearchFunction<Row, ?> extractor, Object value) {
         return cache.lookup(List.of(PropertyReference.of(extractor)), List.of(extractor), Collections.singletonList(value));
+    }
+
+    /**
+     * Probes the containment index over the tags.
+     */
+    private static List<Tagged> containing(IndexCache<Tagged> cache, String tag) {
+        return cache.lookupContaining(PropertyReference.of(BY_TAGS), BY_TAGS, tag);
+    }
+
+    /**
+     * A list that claims a member and raises on reaching it, the way a lazily loaded collection does
+     * once the session that could load it is gone.
+     */
+    private static List<String> unwalkable() {
+        return new AbstractList<>() {
+
+            @Override
+            public String get(int index) {
+                throw new IllegalStateException("detached");
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+
+        };
     }
 
     @Nested
@@ -445,6 +586,68 @@ class IndexCacheTest {
             IllegalStateException thrown = assertThrows(
                 IllegalStateException.class,
                 () -> lookup(cacheOf(first, second), BY_CODE, "SAME")
+            );
+
+            assertTrue(thrown.getMessage().contains("unique"));
+        }
+
+    }
+
+    @Nested
+    class Mixed {
+
+        @Test
+        void lookup_extractorRaisingSomethingElse_isRefused() {
+            // A first-match scan answers ALPHA_ONE without ever reaching the detached element, so a
+            // build that let its exception out would throw where the scan answers.
+            Detached detached = new Detached();
+            IndexCache<Row> cache = cacheOf(ALPHA_ONE, detached, ALPHA_TWO);
+
+            assertNull(assertDoesNotThrow(() -> lookup(cache, BY_MODE, "alpha")));
+            assertNull(assertDoesNotThrow(() -> lookup(cache, BY_MODE, "alpha")));
+
+            // The refusal is held for the snapshot, so the second query never reads it again.
+            assertEquals(1, detached.reads);
+        }
+
+        @Test
+        void lookupContaining_extractorRaisingSomethingElse_isRefused() {
+            IndexCache<Tagged> cache = IndexCache.over(new Tagged[] { new Tagged(List.of("a", "b")), new BrokenTags() });
+
+            assertNull(assertDoesNotThrow(() -> containing(cache, "a")));
+            assertNull(assertDoesNotThrow(() -> containing(cache, "a")));
+        }
+
+        @Test
+        void lookupContaining_listThatCannotBeWalked_isRefused() {
+            IndexCache<Tagged> cache = IndexCache.over(new Tagged[] { new Tagged(List.of("a", "b")), new Tagged(unwalkable()) });
+
+            assertNull(assertDoesNotThrow(() -> containing(cache, "a")));
+            assertNull(assertDoesNotThrow(() -> containing(cache, "a")));
+        }
+
+        @Test
+        void lookup_keyThatCannotBeHashed_isRefused() {
+            // The scan compares with equals and never hashes, so it answers the first element and
+            // passes over the second - where filing the second one's key would throw.
+            IndexCache<Referencing> cache = IndexCache.over(new Referencing[] {
+                new Referencing("a"),
+                new Referencing(new Unhashable("b"))
+            });
+
+            assertNull(assertDoesNotThrow(() -> cache.lookup(PropertyReference.of(BY_TARGET), BY_TARGET, "a")));
+        }
+
+        @Test
+        void lookup_duplicateUniqueValuesAheadOfAnUnreadableElement_stillThrows() {
+            // A broken promise is the collection's to report, so a refusal over a later element must
+            // not swallow it.
+            Row first = new Row("alpha", "SAME", 1, "first");
+            Row second = new Row("beta", "SAME", 2, "second");
+
+            IllegalStateException thrown = assertThrows(
+                IllegalStateException.class,
+                () -> lookup(cacheOf(first, second, new Detached()), BY_CODE, "SAME")
             );
 
             assertTrue(thrown.getMessage().contains("unique"));

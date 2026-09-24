@@ -31,8 +31,8 @@ public final class IndexCache<E> {
     private static final IndexCache<?> NONE = new IndexCache<>(new Object[0], Object.class, IndexSchema.EMPTY);
 
     /**
-     * Marks a property that was asked for and cannot be indexed, so the refusal is decided once
-     * rather than on every query.
+     * Marks a property that was asked for and cannot be indexed over these elements, so the refusal
+     * is decided once per snapshot rather than on every query.
      */
     private static final Index<?> UNUSABLE = new Index<>(0);
 
@@ -247,6 +247,13 @@ public final class IndexCache<E> {
     /**
      * Walks every element once, filing it under the value its extractors read.
      *
+     * <p>An element that is no instance of the class the schema was read from, or whose extractor
+     * raises anything but a {@link NullPointerException}, refuses the whole index. The scan that
+     * takes the query raises that exception exactly when it reaches the element, so a finder
+     * stopping at an earlier match answers where a build would throw. A value whose hash cannot be
+     * taken refuses the same way, because the scan compares with {@code equals} and never asks for
+     * one.
+     *
      * @return the built index, or the {@link #UNUSABLE} marker
      * @throws IllegalStateException if the declaration promises uniqueness the elements do not keep
      */
@@ -277,9 +284,22 @@ public final class IndexCache<E> {
                 // The scan treats a null on the way to the property as a non-match, so an element
                 // that raises one belongs in no bucket at all.
                 continue;
+            } catch (RuntimeException unreadable) {
+                // Raising it here would throw where a first-match scan answers.
+                return (Index<E>) UNUSABLE;
             }
 
-            if (!index.file(key, element) && unique)
+            boolean fresh;
+
+            try {
+                fresh = index.file(key, element);
+            } catch (RuntimeException unhashable) {
+                // A throw part way through filing can leave the table half rehashed, so even a
+                // NullPointerException refuses here rather than reading as a non-match.
+                return (Index<E>) UNUSABLE;
+            }
+
+            if (!fresh && unique)
                 throw new IllegalStateException(String.format(
                     "Index '%s' on '%s' is declared unique and two elements carry '%s'",
                     declaration.describe(),
@@ -297,6 +317,13 @@ public final class IndexCache<E> {
      *
      * <p>Uniqueness is not enforced here: a promise that no two elements carry one list says
      * nothing about how many carry one member of it, which is the question this index answers.
+     *
+     * <p>An element that is no instance of the class the schema was read from, or whose extractor
+     * raises anything but a {@link NullPointerException}, refuses the whole index, and so does a
+     * list that cannot be walked. The scan that takes the query raises that exception exactly when
+     * it reaches the element, so a finder stopping at an earlier match answers where a build would
+     * throw. A member whose hash cannot be taken refuses the same way, because the scan asks the
+     * list whether it holds a value and never hashes a member.
      *
      * @return the built index, or the {@link #UNUSABLE} marker
      */
@@ -317,14 +344,23 @@ public final class IndexCache<E> {
                 read = extractor.apply((E) element);
             } catch (NullPointerException absent) {
                 continue;
+            } catch (RuntimeException unreadable) {
+                // Raising it here would throw where a first-match scan answers.
+                return (Index<E>) UNUSABLE;
             }
 
             // The scan reads a null list as holding nothing, so the element belongs in no bucket.
             if (!(read instanceof Iterable<?> members))
                 continue;
 
-            for (Object member : members)
-                index.fileOnce(member, element);
+            try {
+                for (Object member : members)
+                    index.fileOnce(member, element);
+            } catch (RuntimeException unwalkable) {
+                // A list that cannot be walked is the scan's to report, when it reaches it. Filing
+                // may have taken some members already, so nothing raised here reads as a non-match.
+                return (Index<E>) UNUSABLE;
+            }
         }
 
         index.seal();

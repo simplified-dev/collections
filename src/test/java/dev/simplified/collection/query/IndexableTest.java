@@ -67,7 +67,7 @@ class IndexableTest {
     /**
      * Indexed fixture - a plain index, a unique index, a composite, and one field nothing indexes.
      */
-    static final class Fast implements Row {
+    static class Fast implements Row {
 
         @Indexed
         @Indexed(group = "modeAndTier", order = 0)
@@ -196,6 +196,97 @@ class IndexableTest {
     }
 
     /**
+     * An indexed element that can no longer be read, the way a detached proxy of an entity raises
+     * from every accessor once the session that could load it is gone.
+     */
+    static final class DetachedFast extends Fast {
+
+        DetachedFast() {
+            super(null, null, 0, null, null, null);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public Detail detail() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String mode() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String code() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int tier() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public List<String> tags() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String label() {
+            throw detached();
+        }
+
+    }
+
+    /**
+     * The control's element that can no longer be read.
+     */
+    static final class DetachedSlow implements Row {
+
+        /** {@inheritDoc} */
+        @Override
+        public Detail detail() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String mode() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String code() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int tier() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public List<String> tags() {
+            throw detached();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String label() {
+            throw detached();
+        }
+
+    }
+
+    /**
      * Counts how often the indexed fixture's {@code mode} accessor runs, so a test can show the
      * index is serving rather than merely agreeing.
      */
@@ -294,6 +385,13 @@ class IndexableTest {
 
     private static String labelOf(Row row) {
         return row == null ? null : row.label();
+    }
+
+    /**
+     * The exception a detached fixture raises from every accessor.
+     */
+    private static IllegalStateException detached() {
+        return new IllegalStateException("detached");
     }
 
     @Nested
@@ -750,6 +848,42 @@ class IndexableTest {
 
             assertTrue(custom.indexes().isEmpty());
             assertEquals("only", custom.findFirst(BY_MODE, "alpha").orElseThrow().label());
+        }
+
+    }
+
+    @Nested
+    class Mixed {
+
+        @Test
+        void findFirstOrNull_unreadableElementAfterTheMatch_answersLikeTheScan() {
+            // The scan stops at the first match and never reaches the element behind it, so the
+            // index has to hand the query over rather than throw while it builds.
+            indexed.add(new DetachedFast());
+            scanned.add(new DetachedSlow());
+
+            differentialOrNull(rows -> rows.findFirstOrNull(BY_MODE, "alpha"));
+            differentialFirst(rows -> rows.findFirst(BY_MODE, "alpha"));
+            assertEquals("first", indexed.findFirstOrNull(BY_MODE, "alpha").label());
+            assertEquals("first", indexed.findFirst(BY_MODE, "alpha").orElseThrow().label());
+        }
+
+        @Test
+        void findAll_unreadableElement_throwsLikeTheScan() {
+            // Every match is asked for, so the scan reaches the element and raises what it raises.
+            indexed.add(new DetachedFast());
+            scanned.add(new DetachedSlow());
+
+            IllegalStateException fromScan = assertThrows(
+                IllegalStateException.class,
+                () -> scanned.findAll(BY_MODE, "alpha").toList()
+            );
+            IllegalStateException fromIndex = assertThrows(
+                IllegalStateException.class,
+                () -> indexed.findAll(BY_MODE, "alpha").toList()
+            );
+
+            assertEquals(fromScan.getMessage(), fromIndex.getMessage());
         }
 
     }
